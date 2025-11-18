@@ -21,6 +21,11 @@ internal sealed class QueryBuilder<TResult>(
     ILogger? logger = null,
     bool enableDebugLogging = false) : IQueryBuilder<TResult>
 {
+    /// <summary>
+    /// Maximum safe retry count to prevent infinite loops.
+    /// </summary>
+    private const int MaxSafeRetries = 1000;
+
     private readonly IHttpClientProvider _httpProvider = httpProvider ?? throw new ArgumentNullException(nameof(httpProvider));
     private readonly IConvexSerializer _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     private readonly string _functionName = functionName ?? throw new ArgumentException("Function name cannot be null.", nameof(functionName));
@@ -113,14 +118,37 @@ internal sealed class QueryBuilder<TResult>(
 
         var builder = new RetryPolicyBuilder();
         configure(builder);
-        _retryPolicy = builder.Build();
+        var policy = builder.Build();
+        
+        // Validate MaxRetries to prevent infinite loops
+        if (policy.MaxRetries > MaxSafeRetries)
+        {
+            throw new ArgumentException(
+                $"MaxRetries cannot exceed {MaxSafeRetries} to prevent infinite loops. " +
+                $"Requested value: {policy.MaxRetries}.",
+                nameof(configure));
+        }
+        
+        _retryPolicy = policy;
         return this;
     }
 
     /// <inheritdoc/>
     public IQueryBuilder<TResult> WithRetry(RetryPolicy policy)
     {
-        _retryPolicy = policy ?? throw new ArgumentNullException(nameof(policy));
+        if (policy == null)
+            throw new ArgumentNullException(nameof(policy));
+        
+        // Validate MaxRetries to prevent infinite loops
+        if (policy.MaxRetries > MaxSafeRetries)
+        {
+            throw new ArgumentException(
+                $"MaxRetries cannot exceed {MaxSafeRetries} to prevent infinite loops. " +
+                $"Requested value: {policy.MaxRetries}.",
+                nameof(policy));
+        }
+        
+        _retryPolicy = policy;
         return this;
     }
 
@@ -176,6 +204,14 @@ internal sealed class QueryBuilder<TResult>(
     /// </summary>
     private async Task<TResult> ExecuteWithRetryAsync(CancellationToken cancellationToken)
     {
+        // Safety check: Ensure MaxRetries is within safe bounds (defense in depth)
+        if (_retryPolicy!.MaxRetries > MaxSafeRetries)
+        {
+            throw new InvalidOperationException(
+                $"Retry policy has MaxRetries ({_retryPolicy.MaxRetries}) exceeding safe limit ({MaxSafeRetries}). " +
+                "This should have been caught during policy configuration.");
+        }
+
         var attempt = 0;
         Exception? lastException = null;
 
