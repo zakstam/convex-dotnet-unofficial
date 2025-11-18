@@ -5,6 +5,18 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.1.0-alpha...v0.2.0-alpha) (2025-11-18)
+
+
+### Features
+
+* add demo video and update README to include link ([a5932e8](https://github.com/zakstam/convex-dotnet-unofficial/commit/a5932e8f69a5b3c6db7c397fa175d6c419015d5d))
+
+
+### Bug Fixes
+
+* streamline serialization call in BatchQueryBuilder and simplify nullable type check ([e846495](https://github.com/zakstam/convex-dotnet-unofficial/commit/e846495229f01dec623538cb48e4f8fc924faf3a))
+
 ## [0.1.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.0.2-alpha...v0.1.0-alpha) (2025-11-18)
 
 
