@@ -5,6 +5,24 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.0.2-alpha...v0.1.0-alpha) (2025-11-18)
+
+
+### Features
+
+* add maximum safe retry count in QueryBuilder to prevent infinite loops ([6df7fdf](https://github.com/zakstam/convex-dotnet-unofficial/commit/6df7fdfa76f6d64858fbb1f182296bbae9e00eed))
+
+
+### Bug Fixes
+
+* add runtime null check in QueryBuilder to ensure arguments are not null ([699ce26](https://github.com/zakstam/convex-dotnet-unofficial/commit/699ce26c5ce470f880bac8567eefb261615d6ef2))
+* enhance deserialization error handling in BatchQueryBuilder to support nullable types and improve error messages ([d0669b8](https://github.com/zakstam/convex-dotnet-unofficial/commit/d0669b8681aec8bfb2478844e772cb470c09fc69))
+* enhance thread safety and immutability in BatchQueryBuilder to prevent modifications after execution starts ([644b3ed](https://github.com/zakstam/convex-dotnet-unofficial/commit/644b3ed594126cd246725fd30bd1e3daede64eef))
+* enhance timeout exception handling in QueryBuilder to provide clearer context and logging ([cff181b](https://github.com/zakstam/convex-dotnet-unofficial/commit/cff181bec25f7637328686a5556251a46efe249b))
+* ensure unique function name keys in BatchQueryBuilder by appending index for duplicates ([e5231a5](https://github.com/zakstam/convex-dotnet-unofficial/commit/e5231a5101981b9b177f31cd8356bfe4261e3798))
+* improve cancellation handling in QueryBuilder to prevent retries on cancellation ([46586aa](https://github.com/zakstam/convex-dotnet-unofficial/commit/46586aa5ac28cfb3c4be126be11e0404021f34d7))
+* improve error handling in BatchQueryBuilder by identifying problematic queries during serialization failures ([44cd684](https://github.com/zakstam/convex-dotnet-unofficial/commit/44cd6843d0e4bdc77db7f6102dcdd5b101e03a10))
+
 ## [0.0.2-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.0.1-alpha...v0.0.2-alpha) (2025-11-18)
 
 
