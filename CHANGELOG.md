@@ -5,6 +5,18 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.2.0-alpha...v0.3.0-alpha) (2025-11-18)
+
+
+### Features
+
+* enhance WebSocket client to manage subscription metadata and re-establish subscriptions after reconnection ([0f679e6](https://github.com/zakstam/convex-dotnet-unofficial/commit/0f679e61d951d5f36f694de83711c6d8db0e3dd1))
+
+
+### Bug Fixes
+
+* improve error handling and channel management in WebSocket client during subscription operations ([d5c9e74](https://github.com/zakstam/convex-dotnet-unofficial/commit/d5c9e7488cfc855df744907455baa985d4cff54e))
+
 ## [0.2.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.1.0-alpha...v0.2.0-alpha) (2025-11-18)
 
 
