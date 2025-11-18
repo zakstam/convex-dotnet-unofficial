@@ -41,7 +41,7 @@ This project is actively maintained by the community and provides protocol compa
 
 </div>
 
-### Demo
+### Demo (Second phase is running the seed script)
 
 ![Demo](demo.gif)
 
