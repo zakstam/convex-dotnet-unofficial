@@ -11,6 +11,10 @@ namespace Convex.Client.Slices.Queries;
 /// Builder for executing multiple queries in a single batch request.
 /// This implementation uses Shared infrastructure instead of CoreOperations.
 /// </summary>
+/// <remarks>
+/// This builder is thread-safe for adding queries, but becomes immutable once execution starts.
+/// After the first ExecuteAsync call, no further queries can be added.
+/// </remarks>
 internal sealed class BatchQueryBuilder(
     IHttpClientProvider httpProvider,
     IConvexSerializer serializer,
@@ -22,19 +26,32 @@ internal sealed class BatchQueryBuilder(
     private readonly ILogger? _logger = logger;
     private readonly bool _enableDebugLogging = enableDebugLogging;
     private readonly List<BatchQueryItem> _queries = [];
+    private readonly object _lock = new();
+    private volatile bool _executionStarted;
 
     /// <inheritdoc/>
     public IBatchQueryBuilder Query<T>(string functionName)
     {
         if (string.IsNullOrWhiteSpace(functionName))
-            throw new ArgumentException("Function name cannot be null or whitespace.", nameof(functionName));
-
-        _queries.Add(new BatchQueryItem
         {
-            FunctionName = functionName,
-            Args = null,
-            ResultType = typeof(T)
-        });
+            throw new ArgumentException("Function name cannot be null or whitespace.", nameof(functionName));
+        }
+
+        lock (_lock)
+        {
+            if (_executionStarted)
+            {
+                throw new InvalidOperationException(
+                    "Cannot add queries after batch execution has started. Create a new BatchQueryBuilder for additional queries.");
+            }
+
+            _queries.Add(new BatchQueryItem
+            {
+                FunctionName = functionName,
+                Args = null,
+                ResultType = typeof(T)
+            });
+        }
 
         return this;
     }
@@ -43,14 +60,31 @@ internal sealed class BatchQueryBuilder(
     public IBatchQueryBuilder Query<T, TArgs>(string functionName, TArgs args) where TArgs : notnull
     {
         if (string.IsNullOrWhiteSpace(functionName))
-            throw new ArgumentException("Function name cannot be null or whitespace.", nameof(functionName));
-
-        _queries.Add(new BatchQueryItem
         {
-            FunctionName = functionName,
-            Args = args,
-            ResultType = typeof(T)
-        });
+            throw new ArgumentException("Function name cannot be null or whitespace.", nameof(functionName));
+        }
+
+        // Runtime null check for defense in depth
+        if (args == null)
+        {
+            throw new ArgumentNullException(nameof(args), "Arguments cannot be null.");
+        }
+
+        lock (_lock)
+        {
+            if (_executionStarted)
+            {
+                throw new InvalidOperationException(
+                    "Cannot add queries after batch execution has started. Create a new BatchQueryBuilder for additional queries.");
+            }
+
+            _queries.Add(new BatchQueryItem
+            {
+                FunctionName = functionName,
+                Args = args,
+                ResultType = typeof(T)
+            });
+        }
 
         return this;
     }
@@ -59,7 +93,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2)> ExecuteAsync<T1, T2>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 2)
+        {
             throw new InvalidOperationException($"Expected 2 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -73,7 +109,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2, T3)> ExecuteAsync<T1, T2, T3>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 3)
+        {
             throw new InvalidOperationException($"Expected 3 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -88,7 +126,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2, T3, T4)> ExecuteAsync<T1, T2, T3, T4>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 4)
+        {
             throw new InvalidOperationException($"Expected 4 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -104,7 +144,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2, T3, T4, T5)> ExecuteAsync<T1, T2, T3, T4, T5>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 5)
+        {
             throw new InvalidOperationException($"Expected 5 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -121,7 +163,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2, T3, T4, T5, T6)> ExecuteAsync<T1, T2, T3, T4, T5, T6>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 6)
+        {
             throw new InvalidOperationException($"Expected 6 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -139,7 +183,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2, T3, T4, T5, T6, T7)> ExecuteAsync<T1, T2, T3, T4, T5, T6, T7>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 7)
+        {
             throw new InvalidOperationException($"Expected 7 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -158,7 +204,9 @@ internal sealed class BatchQueryBuilder(
     public async Task<(T1, T2, T3, T4, T5, T6, T7, T8)> ExecuteAsync<T1, T2, T3, T4, T5, T6, T7, T8>(CancellationToken cancellationToken = default)
     {
         if (_queries.Count != 8)
+        {
             throw new InvalidOperationException($"Expected 8 queries but found {_queries.Count}. Use ExecuteAsync() for dynamic number of queries.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -177,8 +225,17 @@ internal sealed class BatchQueryBuilder(
     /// <inheritdoc/>
     public async Task<object[]> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        if (_queries.Count == 0)
+        // Capture queries snapshot for thread-safe access
+        List<BatchQueryItem> queriesSnapshot;
+        lock (_lock)
+        {
+            queriesSnapshot = [.. _queries];
+        }
+
+        if (queriesSnapshot.Count == 0)
+        {
             throw new InvalidOperationException("No queries have been added to the batch.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
@@ -186,7 +243,7 @@ internal sealed class BatchQueryBuilder(
         var typedResults = new object[results.Count];
         for (var i = 0; i < results.Count; i++)
         {
-            var item = _queries[i];
+            var item = queriesSnapshot[i];
             var result = _serializer.Deserialize(results[i], item.ResultType);
             typedResults[i] = result ?? throw new InvalidOperationException(
                 $"Failed to deserialize result for query {i} ({item.FunctionName})");
@@ -198,18 +255,27 @@ internal sealed class BatchQueryBuilder(
     /// <inheritdoc/>
     public async Task<Dictionary<string, object>> ExecuteAsDictionaryAsync(CancellationToken cancellationToken = default)
     {
-        if (_queries.Count == 0)
+        // Capture queries snapshot for thread-safe access
+        List<BatchQueryItem> queriesSnapshot;
+        lock (_lock)
+        {
+            queriesSnapshot = [.. _queries];
+        }
+
+        if (queriesSnapshot.Count == 0)
+        {
             throw new InvalidOperationException("No queries have been added to the batch.");
+        }
 
         var results = await ExecuteBatchAsync(cancellationToken);
 
         // Convert string results to typed objects and key by function name
-        var dictionary = new Dictionary<string, object>(_queries.Count);
+        var dictionary = new Dictionary<string, object>(queriesSnapshot.Count);
         for (var i = 0; i < results.Count; i++)
         {
-            var item = _queries[i];
+            var item = queriesSnapshot[i];
             var result = _serializer.Deserialize(results[i], item.ResultType);
-            if (result == null)
+            if (result is null)
             {
                 throw new InvalidOperationException(
                     $"Failed to deserialize result for query {i} ({item.FunctionName})");
@@ -234,20 +300,37 @@ internal sealed class BatchQueryBuilder(
     /// </summary>
     private async Task<List<string>> ExecuteBatchAsync(CancellationToken cancellationToken)
     {
-        if (_queries.Count == 0)
-            throw new InvalidOperationException("No queries have been added to the batch.");
+        // Mark execution as started and capture queries snapshot for thread safety
+        List<BatchQueryItem> queriesSnapshot;
+        lock (_lock)
+        {
+            if (_executionStarted)
+            {
+                throw new InvalidOperationException(
+                    "Batch execution has already started. Each BatchQueryBuilder can only be executed once.");
+            }
+
+            if (_queries.Count == 0)
+            {
+                throw new InvalidOperationException("No queries have been added to the batch.");
+            }
+
+            _executionStarted = true;
+            // Create a snapshot of queries to prevent modifications during execution
+            queriesSnapshot = [.. _queries];
+        }
 
         var stopwatch = Stopwatch.StartNew();
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            var queryNames = string.Join(", ", _queries.Select(q => q.FunctionName));
+            var queryNames = string.Join(", ", queriesSnapshot.Select(q => q.FunctionName));
             _logger!.LogDebug("[BatchQuery] Starting batch query execution: {QueryCount} queries, Functions: [{QueryNames}]",
-                _queries.Count, queryNames);
+                queriesSnapshot.Count, queryNames);
         }
 
-        // Build batch request
-        var batchRequest = _queries.Select(q => new
+        // Build batch request using snapshot
+        var batchRequest = queriesSnapshot.Select(q => new
         {
             path = q.FunctionName,
             args = q.Args ?? new { }
@@ -262,7 +345,7 @@ internal sealed class BatchQueryBuilder(
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                $"Failed to serialize batch query request for {_queries.Count} queries: {ex.Message}", ex);
+                $"Failed to serialize batch query request for {queriesSnapshot.Count} queries: {ex.Message}", ex);
         }
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
@@ -281,7 +364,7 @@ internal sealed class BatchQueryBuilder(
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[BatchQuery] Batch query request: URL: {Url}, Method: {Method}, QueryCount: {QueryCount}",
-                url, request.Method, _queries.Count);
+                url, request.Method, queriesSnapshot.Count);
         }
 
         var response = await _httpProvider.SendAsync(request, cancellationToken);
@@ -289,7 +372,7 @@ internal sealed class BatchQueryBuilder(
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[BatchQuery] Batch query response received: StatusCode: {StatusCode}, QueryCount: {QueryCount}",
-                response.StatusCode, _queries.Count);
+                response.StatusCode, queriesSnapshot.Count);
         }
 
         // Handle STATUS_CODE_UDF_FAILED (560) as valid response with error data
@@ -306,7 +389,7 @@ internal sealed class BatchQueryBuilder(
         if (string.IsNullOrWhiteSpace(responseJson))
         {
             throw new InvalidOperationException(
-                $"Empty response from batch query. Expected {_queries.Count} results.");
+                $"Empty response from batch query. Expected {queriesSnapshot.Count} results.");
         }
 
         // Parse the response array
@@ -318,7 +401,7 @@ internal sealed class BatchQueryBuilder(
         catch (System.Text.Json.JsonException jsonEx)
         {
             throw new InvalidOperationException(
-                $"Invalid JSON response from batch query: {jsonEx.Message}. Expected array with {_queries.Count} results.", jsonEx);
+                $"Invalid JSON response from batch query: {jsonEx.Message}. Expected array with {queriesSnapshot.Count} results.", jsonEx);
         }
 
         using (doc)
@@ -328,7 +411,7 @@ internal sealed class BatchQueryBuilder(
             if (root.ValueKind != System.Text.Json.JsonValueKind.Array)
             {
                 throw new InvalidOperationException(
-                    $"Invalid batch query response format: expected array but got {root.ValueKind}. Expected {_queries.Count} results.");
+                    $"Invalid batch query response format: expected array but got {root.ValueKind}. Expected {queriesSnapshot.Count} results.");
             }
 
             var resultList = new List<string>();
@@ -356,13 +439,13 @@ internal sealed class BatchQueryBuilder(
                                 ? errMsg.GetString()
                                 : "Unknown batch query error";
                             var queryIndex = elementIndex;
-                            var functionName = queryIndex < _queries.Count ? _queries[queryIndex].FunctionName : "unknown";
+                            var functionName = queryIndex < queriesSnapshot.Count ? queriesSnapshot[queryIndex].FunctionName : "unknown";
                             throw new InvalidOperationException(
                                 $"Batch query failed at index {queryIndex} ({functionName}): {errorMessage}");
                         }
                         else
                         {
-                            var functionName = elementIndex < _queries.Count ? _queries[elementIndex].FunctionName : "unknown";
+                            var functionName = elementIndex < queriesSnapshot.Count ? queriesSnapshot[elementIndex].FunctionName : "unknown";
                             throw new InvalidOperationException(
                                 $"Invalid batch query response format at index {elementIndex} ({functionName}): unknown status '{statusValue}'");
                         }
@@ -381,19 +464,19 @@ internal sealed class BatchQueryBuilder(
                 catch (Exception ex)
                 {
                     // Wrap unexpected exceptions with context
-                    var functionName = elementIndex < _queries.Count ? _queries[elementIndex].FunctionName : "unknown";
+                    var functionName = elementIndex < queriesSnapshot.Count ? queriesSnapshot[elementIndex].FunctionName : "unknown";
                     throw new InvalidOperationException(
                         $"Failed to process batch query result at index {elementIndex} ({functionName}): {ex.Message}", ex);
                 }
                 elementIndex++;
             }
 
-            if (resultList.Count != _queries.Count)
+            if (resultList.Count != queriesSnapshot.Count)
             {
-                var difference = resultList.Count - _queries.Count;
+                var difference = resultList.Count - queriesSnapshot.Count;
                 var message = difference > 0
-                    ? $"Batch query returned {resultList.Count} results but expected {_queries.Count} (received {difference} extra result(s))"
-                    : $"Batch query returned {resultList.Count} results but expected {_queries.Count} (missing {Math.Abs(difference)} result(s))";
+                    ? $"Batch query returned {resultList.Count} results but expected {queriesSnapshot.Count} (received {difference} extra result(s))"
+                    : $"Batch query returned {resultList.Count} results but expected {queriesSnapshot.Count} (missing {Math.Abs(difference)} result(s))";
                 throw new InvalidOperationException(message);
             }
 
@@ -401,7 +484,7 @@ internal sealed class BatchQueryBuilder(
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[BatchQuery] Batch query execution completed: QueryCount: {QueryCount}, Duration: {DurationMs}ms",
-                    _queries.Count, stopwatch.Elapsed.TotalMilliseconds);
+                    queriesSnapshot.Count, stopwatch.Elapsed.TotalMilliseconds);
             }
 
             return resultList;
