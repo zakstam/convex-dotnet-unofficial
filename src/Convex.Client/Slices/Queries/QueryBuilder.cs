@@ -320,16 +320,33 @@ internal sealed class QueryBuilder<TResult>(
         {
             return await ExecuteDirectAsync(timeoutWrapper.Token);
         }
-        catch (OperationCanceledException) when (timeoutWrapper.WasTimeout)
+        catch (OperationCanceledException ex)
         {
-            // Timeout occurred - wrap in more specific exception
-            var timeoutEx = new TimeoutException($"Query '{_functionName}' timed out after {_timeout}");
+            // Check if timeout was configured and triggered
+            // If timeout was configured, prefer TimeoutException over OperationCanceledException
+            // This handles cases where timeout CTS cancels, even if user cancellation also occurred
+            if (_timeout.HasValue && timeoutWrapper.WasTimeout)
+            {
+                // Timeout occurred - wrap in more specific exception
+                var timeoutEx = new TimeoutException(
+                    $"Query '{_functionName}' timed out after {_timeout}.",
+                    ex);
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogWarning(timeoutEx, "[Query] Query execution timed out: {FunctionName}, Timeout: {TimeoutMs}ms",
+                        _functionName, _timeout.Value.TotalMilliseconds);
+                }
+                throw timeoutEx;
+            }
+            
+            // User cancellation occurred (or cancellation without timeout configured)
+            // Preserve the original exception with context
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                _logger!.LogWarning(timeoutEx, "[Query] Query execution timed out: {FunctionName}, Timeout: {TimeoutMs}ms",
-                    _functionName, _timeout?.TotalMilliseconds ?? 0);
+                _logger!.LogWarning(ex, "[Query] Query execution was canceled: {FunctionName}",
+                    _functionName);
             }
-            throw timeoutEx;
+            throw;
         }
     }
 
