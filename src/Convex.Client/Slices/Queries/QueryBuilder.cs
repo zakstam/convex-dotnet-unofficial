@@ -202,16 +202,20 @@ internal sealed class QueryBuilder<TResult>(
                         attempt, _functionName, ex.GetType().Name);
                 }
 
-                // Check if exception type should trigger a retry
-                if (!_retryPolicy!.ShouldRetry(ex))
+                // Check if cancellation was requested FIRST - don't retry if cancelled
+                if (cancellationToken.IsCancellationRequested)
                 {
+                    var cancelEx = new OperationCanceledException(
+                        $"Query '{_functionName}' was canceled during retry attempt {attempt}.",
+                        ex,
+                        cancellationToken);
                     if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                     {
-                        _logger!.LogError(ex, "[Query] Query execution failed after {Attempt} attempts: {FunctionName}",
-                            attempt, _functionName);
+                        _logger!.LogWarning(cancelEx, "[Query] Query execution canceled during retry: {FunctionName}, Attempt: {Attempt}",
+                            _functionName, attempt);
                     }
-                    SafeInvokeErrorCallback(ex);
-                    throw;
+                    SafeInvokeErrorCallback(cancelEx);
+                    throw cancelEx;
                 }
 
                 // Check if we've exceeded the maximum number of retries
@@ -227,20 +231,16 @@ internal sealed class QueryBuilder<TResult>(
                     throw;
                 }
 
-                // Check if cancellation was requested before waiting
-                if (cancellationToken.IsCancellationRequested)
+                // Check if exception type should trigger a retry
+                if (!_retryPolicy!.ShouldRetry(ex))
                 {
-                    var cancelEx = new OperationCanceledException(
-                        $"Query '{_functionName}' was canceled during retry attempt {attempt}.",
-                        ex,
-                        cancellationToken);
                     if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                     {
-                        _logger!.LogWarning(cancelEx, "[Query] Query execution canceled during retry: {FunctionName}, Attempt: {Attempt}",
-                            _functionName, attempt);
+                        _logger!.LogError(ex, "[Query] Query execution failed after {Attempt} attempts: {FunctionName}",
+                            attempt, _functionName);
                     }
-                    SafeInvokeErrorCallback(cancelEx);
-                    throw cancelEx;
+                    SafeInvokeErrorCallback(ex);
+                    throw;
                 }
 
                 var delay = _retryPolicy.CalculateDelay(attempt);
