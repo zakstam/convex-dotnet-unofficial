@@ -351,8 +351,39 @@ internal sealed class BatchQueryBuilder(
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException(
-                $"Failed to serialize batch query request for {queriesSnapshot.Count} queries: {ex.Message}", ex);
+            // Try to identify which query might have caused the serialization failure
+            // by attempting to serialize each query individually
+            var problematicQueries = new List<string>();
+            for (var i = 0; i < queriesSnapshot.Count; i++)
+            {
+                var query = queriesSnapshot[i];
+                try
+                {
+                    var singleRequest = new[]
+                    {
+                        new { path = query.FunctionName, args = query.Args ?? new { } }
+                    };
+                    _serializer.Serialize(singleRequest);
+                }
+                catch
+                {
+                    problematicQueries.Add($"Query {i} ({query.FunctionName})");
+                }
+            }
+
+            var queryList = string.Join(", ", queriesSnapshot.Select((q, i) => $"{i}:{q.FunctionName}"));
+            var errorMessage = problematicQueries.Count > 0
+                ? $"Failed to serialize batch query request. Problematic queries: {string.Join(", ", problematicQueries)}. " +
+                  $"All queries: [{queryList}]. Original error: {ex.Message}"
+                : $"Failed to serialize batch query request for {queriesSnapshot.Count} queries: [{queryList}]. " +
+                  $"Error: {ex.Message}";
+
+            if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+            {
+                _logger!.LogError(ex, "[BatchQuery] Serialization failed: {ErrorMessage}", errorMessage);
+            }
+
+            throw new InvalidOperationException(errorMessage, ex);
         }
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
