@@ -412,9 +412,11 @@ internal sealed class ConvexWebSocketClient(
     /// </summary>
     private async Task SendSubscriptionRequestAsync(string subscriptionId, string functionName, object? args)
     {
-        // Increment query set version
-        var baseVersion = _querySetVersion;
-        var newVersion = ++_querySetVersion;
+        // Atomically increment query set version to prevent race conditions in concurrent subscription creation
+        // This ensures each subscription gets a unique, sequential version number
+        // Interlocked.Increment returns the incremented value atomically
+        var newVersion = Interlocked.Increment(ref _querySetVersion);
+        var baseVersion = newVersion - 1;
 
         // Create ModifyQuerySet message with Add query modification
         var message = new ModifyQuerySetMessage
@@ -443,9 +445,10 @@ internal sealed class ConvexWebSocketClient(
     /// </summary>
     private async Task SendUnsubscribeRequestAsync(string subscriptionId)
     {
-        // Increment query set version
-        var baseVersion = _querySetVersion;
-        var newVersion = ++_querySetVersion;
+        // Atomically increment query set version to prevent race conditions in concurrent unsubscribe operations
+        // Interlocked.Increment returns the incremented value atomically
+        var newVersion = Interlocked.Increment(ref _querySetVersion);
+        var baseVersion = newVersion - 1;
 
         // Create ModifyQuerySet message with Remove query modification
         var message = new ModifyQuerySetMessage
