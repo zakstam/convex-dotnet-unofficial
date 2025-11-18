@@ -2,12 +2,15 @@ name: CI/CD
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   release:
-    types: [ published ]
+    types: [published]
+
+permissions:
+  contents: write
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: "9.0.x"
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true
@@ -17,77 +20,77 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Display .NET info
-      run: dotnet --info
+      - name: Display .NET info
+        run: dotnet --info
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-    - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Run tests
+        run: dotnet test --no-build --configuration Release --verbosity normal
 
-    - name: Pack packages (main branch only)
-      if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-      run: |
-        mkdir -p ./nupkg
+      - name: Pack packages (main branch only)
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          mkdir -p ./nupkg
 
-        # Pack all packable projects
-        for project in $(find ./src -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*"); do
-          # Skip non-packable projects
-          if grep -q "<IsPackable>false</IsPackable>" "$project"; then
-            echo "⏭️  Skipping non-packable: $project"
-            continue
+          # Pack all packable projects
+          for project in $(find ./src -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*"); do
+            # Skip non-packable projects
+            if grep -q "<IsPackable>false</IsPackable>" "$project"; then
+              echo "⏭️  Skipping non-packable: $project"
+              continue
+            fi
+
+            echo "📦 Packing: $project"
+            if [ "${{ github.event_name }}" = "release" ]; then
+              VERSION="${{ github.event.release.tag_name }}"
+              VERSION="${VERSION#v}"  # Remove 'v' prefix
+              dotnet pack "$project" \
+                --no-build \
+                --configuration Release \
+                --output ./nupkg \
+                -p:Version="$VERSION" \
+                -p:PackageVersion="$VERSION" \
+                -p:ContinuousIntegrationBuild=true
+            else
+              dotnet pack "$project" \
+                --no-build \
+                --configuration Release \
+                --output ./nupkg
+            fi
+          done
+
+          # Validate packages were created
+          PACKAGE_COUNT=$(find ./nupkg -name "*.nupkg" -not -name "*.snupkg" | wc -l)
+          if [ "$PACKAGE_COUNT" -eq 0 ]; then
+            echo "❌ No packages found"
+            exit 1
           fi
 
-          echo "📦 Packing: $project"
-          if [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-            VERSION="${VERSION#v}"  # Remove 'v' prefix
-            dotnet pack "$project" \
-              --no-build \
-              --configuration Release \
-              --output ./nupkg \
-              -p:Version="$VERSION" \
-              -p:PackageVersion="$VERSION" \
-              -p:ContinuousIntegrationBuild=true
-          else
-            dotnet pack "$project" \
-              --no-build \
-              --configuration Release \
-              --output ./nupkg
-          fi
-        done
+          echo "✅ Created $PACKAGE_COUNT package(s)"
+          ls -lh ./nupkg/
 
-        # Validate packages were created
-        PACKAGE_COUNT=$(find ./nupkg -name "*.nupkg" -not -name "*.snupkg" | wc -l)
-        if [ "$PACKAGE_COUNT" -eq 0 ]; then
-          echo "❌ No packages found"
-          exit 1
-        fi
-
-        echo "✅ Created $PACKAGE_COUNT package(s)"
-        ls -lh ./nupkg/
-
-    - name: Upload packages as artifacts
-      if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-      uses: actions/upload-artifact@v4
-      with:
-        name: nuget-packages
-        path: ./nupkg/*.nupkg
-        retention-days: 7
+      - name: Upload packages as artifacts
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./nupkg/*.nupkg
+          retention-days: 7
 
   publish-nuget:
     needs: build-and-test
@@ -95,59 +98,59 @@ jobs:
     if: github.event_name == 'release'
 
     steps:
-    - name: Download packages
-      uses: actions/download-artifact@v4
-      with:
-        name: nuget-packages
-        path: ./nupkg
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./nupkg
 
-    - name: Publish to NuGet.org
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: |
-        echo "📦 Publishing packages to NuGet.org..."
-        dotnet nuget push ./nupkg/*.nupkg \
-          --api-key "$NUGET_API_KEY" \
-          --source https://api.nuget.org/v3/index.json \
-          --skip-duplicate \
-          --no-symbols
-
-        echo "📦 Publishing symbol packages to NuGet.org..."
-        if ls ./nupkg/*.snupkg 1> /dev/null 2>&1; then
-          dotnet nuget push ./nupkg/*.snupkg \
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          echo "📦 Publishing packages to NuGet.org..."
+          dotnet nuget push ./nupkg/*.nupkg \
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate
-        else
-          echo "ℹ️  No symbol packages found (this is okay)"
-        fi
+            --skip-duplicate \
+            --no-symbols
 
-    - name: Update GitHub Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      shell: bash
-      run: |
-        echo "📝 Updating GitHub release with NuGet info..."
+          echo "📦 Publishing symbol packages to NuGet.org..."
+          if ls ./nupkg/*.snupkg 1> /dev/null 2>&1; then
+            dotnet nuget push ./nupkg/*.snupkg \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          else
+            echo "ℹ️  No symbol packages found (this is okay)"
+          fi
 
-        VERSION="${{ github.event.release.tag_name }}"
-        VERSION="${VERSION#v}"  # Remove 'v' prefix
+      - name: Update GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          echo "📝 Updating GitHub release with NuGet info..."
 
-        # Get current release body
-        gh release view "${{ github.event.release.tag_name }}" --json body -q .body > /tmp/current-body.md
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"  # Remove 'v' prefix
 
-        # Append NuGet info
-        {
-          echo ""
-          echo ""
-          echo "## 📦 NuGet Packages"
-          echo ""
-          echo "[![NuGet](https://img.shields.io/nuget/v/Convex.Client.svg)](https://www.nuget.org/packages/Convex.Client/)"
-          echo ""
-          echo "Install via:"
-          echo '```bash'
-          echo "dotnet add package Convex.Client"
-          echo '```'
-        } >> /tmp/current-body.md
+          # Get current release body
+          gh release view "${{ github.event.release.tag_name }}" --json body -q .body > /tmp/current-body.md
 
-        # Update release
-        gh release edit "${{ github.event.release.tag_name }}" --notes-file /tmp/current-body.md
+          # Append NuGet info
+          {
+            echo ""
+            echo ""
+            echo "## 📦 NuGet Packages"
+            echo ""
+            echo "[![NuGet](https://img.shields.io/nuget/v/Convex.Client.svg)](https://www.nuget.org/packages/Convex.Client/)"
+            echo ""
+            echo "Install via:"
+            echo '```bash'
+            echo "dotnet add package Convex.Client"
+            echo '```'
+          } >> /tmp/current-body.md
+
+          # Update release
+          gh release edit "${{ github.event.release.tag_name }}" --notes-file /tmp/current-body.md
