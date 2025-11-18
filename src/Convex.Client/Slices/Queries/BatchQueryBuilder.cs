@@ -377,7 +377,7 @@ internal sealed class BatchQueryBuilder(
                     {
                         new { path = query.FunctionName, args = query.Args ?? new { } }
                     };
-                    _serializer.Serialize(singleRequest);
+                    _ = _serializer.Serialize(singleRequest);
                 }
                 catch
                 {
@@ -577,12 +577,7 @@ internal sealed class BatchQueryBuilder(
 
         // Check for nullable reference types (reference types are nullable by default in C#)
         // Value types are non-nullable unless wrapped in Nullable<>
-        if (!type.IsValueType)
-        {
-            return true;
-        }
-
-        return false;
+        return !type.IsValueType;
     }
 
     /// <summary>
