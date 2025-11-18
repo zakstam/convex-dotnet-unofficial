@@ -40,6 +40,14 @@ internal sealed class QueryBuilder<TResult>(
     /// <inheritdoc/>
     public IQueryBuilder<TResult> WithArgs<TArgs>(TArgs args) where TArgs : notnull
     {
+        // Runtime null check for defense in depth
+        // The 'notnull' constraint is compile-time only and may not catch all cases
+        // (e.g., nullable reference types in nullable-oblivious contexts, or explicit null assignments)
+        if (args == null)
+        {
+            throw new ArgumentNullException(nameof(args), "Arguments cannot be null.");
+        }
+        
         _args = args;
         return this;
     }
