@@ -1149,7 +1149,12 @@ public class QueriesSliceTests : IDisposable
             batchBuilder.ExecuteAsync());
 
         Assert.Contains("Failed to serialize batch query request", ex.Message);
-        Assert.Contains("2 queries", ex.Message);
+        // The new error message format identifies problematic queries and lists all queries
+        // Since serialization fails for all queries, they will all be identified as problematic
+        Assert.Contains("Problematic queries:", ex.Message);
+        Assert.Contains("All queries:", ex.Message);
+        Assert.Contains(TestFunctionName, ex.Message);
+        Assert.Contains("test:query2", ex.Message);
         Assert.Same(serializationException, ex.InnerException);
     }
 

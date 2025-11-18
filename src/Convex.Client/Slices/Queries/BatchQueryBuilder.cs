@@ -245,8 +245,17 @@ internal sealed class BatchQueryBuilder(
         {
             var item = queriesSnapshot[i];
             var result = _serializer.Deserialize(results[i], item.ResultType);
-            typedResults[i] = result ?? throw new InvalidOperationException(
-                $"Failed to deserialize result for query {i} ({item.FunctionName})");
+
+            // Allow null for nullable types (nullable value types or nullable reference types)
+            // For non-nullable types, null indicates deserialization failure
+            if (result is null && !IsNullableType(item.ResultType))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to deserialize result for query {i} ({item.FunctionName}) to non-nullable type {item.ResultType.Name}. " +
+                    $"Deserialization returned null, which is not valid for this type.");
+            }
+
+            typedResults[i] = result!; // Safe to use ! here since we've validated non-nullable types
         }
 
         return typedResults;
@@ -275,10 +284,14 @@ internal sealed class BatchQueryBuilder(
         {
             var item = queriesSnapshot[i];
             var result = _serializer.Deserialize(results[i], item.ResultType);
-            if (result is null)
+
+            // Allow null for nullable types (nullable value types or nullable reference types)
+            // For non-nullable types, null indicates deserialization failure
+            if (result is null && !IsNullableType(item.ResultType))
             {
                 throw new InvalidOperationException(
-                    $"Failed to deserialize result for query {i} ({item.FunctionName})");
+                    $"Failed to deserialize result for query {i} ({item.FunctionName}) to non-nullable type {item.ResultType.Name}. " +
+                    $"Deserialization returned null, which is not valid for this type.");
             }
 
             // Use function name as key (handle duplicates by appending index if needed)
@@ -296,7 +309,8 @@ internal sealed class BatchQueryBuilder(
                 } while (dictionary.ContainsKey(key));
             }
 
-            dictionary[key] = result;
+            // result can be null for nullable types, which is valid for Dictionary<string, object>
+            dictionary[key] = result!;
         }
 
         return dictionary;
@@ -535,7 +549,40 @@ internal sealed class BatchQueryBuilder(
     private T DeserializeResult<T>(string json)
     {
         var result = _serializer.Deserialize<T>(json);
-        return result ?? throw new InvalidOperationException($"Failed to deserialize result to type {typeof(T).Name}");
+
+        // Allow null for nullable types (nullable value types or nullable reference types)
+        // For non-nullable types, null indicates deserialization failure
+        if (result is null && !IsNullableType(typeof(T)))
+        {
+            throw new InvalidOperationException(
+                $"Failed to deserialize result to non-nullable type {typeof(T).Name}. " +
+                $"Deserialization returned null, which is not valid for this type.");
+        }
+
+        return result!; // Safe to use ! here since we've validated non-nullable types
+    }
+
+    /// <summary>
+    /// Determines if a type is nullable (nullable value type or nullable reference type).
+    /// </summary>
+    /// <param name="type">The type to check.</param>
+    /// <returns>True if the type is nullable, false otherwise.</returns>
+    private static bool IsNullableType(Type type)
+    {
+        // Check for nullable value types (e.g., int?, bool?)
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+        {
+            return true;
+        }
+
+        // Check for nullable reference types (reference types are nullable by default in C#)
+        // Value types are non-nullable unless wrapped in Nullable<>
+        if (!type.IsValueType)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
