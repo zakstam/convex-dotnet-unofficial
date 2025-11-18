@@ -36,17 +36,17 @@ Release-please determines version bumps and generates changelogs from your commi
 
 ### Commit Types
 
-| Type | Description | Version Bump | Example |
-|------|-------------|--------------|---------|
-| `feat` | New feature | Minor (0.x.0) | `feat: add query batching support` |
-| `fix` | Bug fix | Patch (0.0.x) | `fix: handle null values in serialization` |
-| `perf` | Performance improvement | Patch (0.0.x) | `perf: optimize connection pooling` |
-| `docs` | Documentation only | None | `docs: update getting started guide` |
-| `refactor` | Code refactoring | None | `refactor: simplify client initialization` |
-| `test` | Test updates | None | `test: add integration tests for mutations` |
-| `chore` | Maintenance tasks | None | `chore: update dependencies` |
-| `ci` | CI/CD changes | None | `ci: add caching to workflows` |
-| `build` | Build system changes | None | `build: update to .NET 9.0` |
+| Type       | Description             | Version Bump  | Example                                     |
+| ---------- | ----------------------- | ------------- | ------------------------------------------- |
+| `feat`     | New feature             | Minor (0.x.0) | `feat: add query batching support`          |
+| `fix`      | Bug fix                 | Patch (0.0.x) | `fix: handle null values in serialization`  |
+| `perf`     | Performance improvement | Patch (0.0.x) | `perf: optimize connection pooling`         |
+| `docs`     | Documentation only      | None          | `docs: update getting started guide`        |
+| `refactor` | Code refactoring        | None          | `refactor: simplify client initialization`  |
+| `test`     | Test updates            | None          | `test: add integration tests for mutations` |
+| `chore`    | Maintenance tasks       | None          | `chore: update dependencies`                |
+| `ci`       | CI/CD changes           | None          | `ci: add caching to workflows`              |
+| `build`    | Build system changes    | None          | `build: update to .NET 9.0`                 |
 
 ### Breaking Changes
 
@@ -134,14 +134,17 @@ The Release PR includes:
 ## 🚀 Release v0.3.0
 
 ### ✨ Features
+
 - feat: add query batching support (#42)
 - feat: implement connection retry logic (#45)
 
 ### 🐛 Bug Fixes
+
 - fix: handle null values in serialization (#43)
 - fix: prevent memory leak in subscription cleanup (#47)
 
 ### 📚 Documentation
+
 - docs: add examples for authentication flow (#44)
 ```
 
@@ -171,6 +174,7 @@ We use [Semantic Versioning](https://semver.org/) (SemVer):
 - Git tags: Prefixed with `v` (e.g., `v1.2.3`)
 
 **Version bumps:**
+
 - **Major (x.0.0)**: Breaking changes (BREAKING CHANGE in commit)
 - **Minor (0.x.0)**: New features (feat commits)
 - **Patch (0.0.x)**: Bug fixes (fix, perf commits)
@@ -186,6 +190,7 @@ We use [Semantic Versioning](https://semver.org/) (SemVer):
 **Jobs:**
 
 1. **Release-Please**
+
    - Analyzes commits since last release
    - Creates/updates Release PR with version bump and CHANGELOG
    - When Release PR is merged:
@@ -193,6 +198,7 @@ We use [Semantic Versioning](https://semver.org/) (SemVer):
      - Triggers build and publish
 
 2. **Build**
+
    - Builds all packages with the new version
    - Runs tests
    - Creates NuGet packages (.nupkg and .snupkg)
@@ -202,7 +208,6 @@ We use [Semantic Versioning](https://semver.org/) (SemVer):
    - Downloads package artifacts
    - Publishes to NuGet.org only
    - Updates GitHub Release with package info
-
 
 ## Configuration Files
 
@@ -261,14 +266,17 @@ Release workflows require:
 **Solutions:**
 
 1. **Check commits use conventional format**
+
    - Must have `feat:`, `fix:`, etc. prefix
    - Check commit messages: `git log --oneline`
 
 2. **Verify no releasable commits**
+
    - Only `feat`, `fix`, `perf`, and `BREAKING CHANGE` trigger releases
    - `docs`, `test`, `chore` commits don't trigger releases
 
 3. **Check workflow logs**
+
    - Go to Actions → "Release Please" → Check latest run
    - Look for errors or warnings
 
@@ -283,11 +291,13 @@ Release workflows require:
 **Solutions:**
 
 1. **Review commit types**
+
    - `feat` → minor bump (0.x.0)
    - `fix`/`perf` → patch bump (0.0.x)
    - `BREAKING CHANGE` → major bump (x.0.0)
 
 2. **Check commit history**
+
    - Review commits included in the release
    - Ensure commits are properly formatted
 
@@ -303,10 +313,12 @@ Release workflows require:
 **Solutions:**
 
 1. **Check commit format**
+
    - Only commits with proper conventional format are included
    - `docs`, `test`, `chore`, etc. are hidden by default
 
 2. **Review changelog sections**
+
    - Configured in `.github/release-please-config.json`
    - Some types are hidden: style, test, build, ci, chore
 
@@ -321,14 +333,17 @@ Release workflows require:
 **Solutions:**
 
 1. **Check workflow logs**
+
    - Go to Actions → "Release Please" → Find your release run
    - Check the "nuget-publish" job logs
 
 2. **Verify NUGET_API_KEY secret**
+
    - Settings → Secrets → Actions
    - Ensure `NUGET_API_KEY` is set and valid
 
 3. **Check API key permissions**
+
    - NuGet.org → Account → API Keys
    - Key must have "Push" permission
 
@@ -343,10 +358,12 @@ Release workflows require:
 **Solutions:**
 
 1. **Fix issues before merging**
+
    - CI should pass before merging to main
    - Release-please creates PR, but publish happens on merge
 
 2. **Review test failures**
+
    - Check workflow logs for specific failures
    - Fix issues and push to Release PR branch
 
@@ -362,11 +379,13 @@ Release workflows require:
 **Solutions:**
 
 1. **Fix commit messages**
+
    - Use interactive rebase: `git rebase -i HEAD~3`
    - Update commit messages to conventional format
    - Force push: `git push --force-with-lease`
 
 2. **Squash and fix**
+
    - Squash commits with bad messages
    - Write a single good commit message
 
@@ -379,14 +398,17 @@ Release workflows require:
 ### Writing Commits
 
 1. **Be descriptive in commit messages**
+
    - ✅ `feat: add support for file upload in mutations`
    - ❌ `feat: add feature`
 
 2. **One logical change per commit**
+
    - Makes CHANGELOG more readable
    - Easier to revert if needed
 
 3. **Use imperative mood**
+
    - ✅ `fix: prevent memory leak`
    - ❌ `fix: prevented memory leak`
 
@@ -430,10 +452,12 @@ If you were using the old manual release process:
 ### Migration Steps
 
 1. **Start using conventional commits**
+
    - Install commitlint (optional but recommended)
    - Follow commit message format
 
 2. **Let release-please create first Release PR**
+
    - Merge your changes to main
    - Wait for Release PR to appear
    - Review and merge
@@ -468,5 +492,6 @@ If you encounter issues with the release process:
 
 1. Check this documentation
 2. Review workflow logs in GitHub Actions
-3. Check [GitHub Issues](https://github.com/zakstam/convex-dotnet/issues)
+3. Check [GitHub Issues](https://github.com/zakstam/convex-dotnet-unofficial/issues)
 4. Ask in [Discord Community](https://convex.dev/community)
+

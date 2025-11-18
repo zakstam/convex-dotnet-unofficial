@@ -9,8 +9,8 @@
     <Company>ZaksNet</Company>
     <Copyright>Copyright (c) Zak Stam 2025</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/zakstam/convex-dotnet</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/zakstam/convex-dotnet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/zakstam/convex-dotnet-unofficial</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zakstam/convex-dotnet-unofficial</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <!-- Version management is handled in msbuild/Directory.Build.props -->
     <!-- PackageVersion will be set from Version property defined there -->

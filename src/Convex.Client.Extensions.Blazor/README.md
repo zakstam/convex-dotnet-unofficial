@@ -168,6 +168,6 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ## Support
 
-- 📖 [Documentation](https://github.com/zakstam/convex-dotnet)
-- 🐛 [Issue Tracker](https://github.com/zakstam/convex-dotnet/issues)
+- 📖 [Documentation](https://github.com/zakstam/convex-dotnet-unofficial)
+- 🐛 [Issue Tracker](https://github.com/zakstam/convex-dotnet-unofficial/issues)
 - 💬 [Discord Community](https://convex.dev/community)

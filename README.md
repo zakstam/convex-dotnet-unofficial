@@ -7,7 +7,7 @@
 The .NET SDK for [Convex](https://convex.dev) - build **real-time reactive applications** with live data subscriptions, automatic synchronization, and type-safe backend queries. No WebSocket plumbing, no polling, no complexity.
 
 [![NuGet](https://img.shields.io/nuget/v/Convex.Client.svg)](https://www.nuget.org/packages/Convex.Client/)
-[![Build Status](https://YOUR_JENKINS_URL/buildStatus/icon?job=convex-dotnet/main)](https://YOUR_JENKINS_URL/job/convex-dotnet/job/main/)
+[![Build Status](https://github.com/zakstam/convex-dotnet-unofficial/actions/workflows/ci.yml/badge.svg)](https://github.com/zakstam/convex-dotnet-unofficial/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Status](https://img.shields.io/badge/Status-ALPHA-orange)
 ![Community](https://img.shields.io/badge/Project-Community-blue)
@@ -37,7 +37,7 @@ The .NET SDK for [Convex](https://convex.dev) - build **real-time reactive appli
 This project is actively maintained by the community and provides protocol compatibility with Convex.
 **NOT recommended for production use yet.** API may change, breaking changes expected.
 
-[Report Issues](https://github.com/zakstam/convex-dotnet/issues) • [Request Features](https://github.com/zakstam/convex-dotnet/issues/new?labels=enhancement) • [Join Discord](https://convex.dev/community)
+[Report Issues](https://github.com/zakstam/convex-dotnet-unofficial/issues) • [Request Features](https://github.com/zakstam/convex-dotnet-unofficial/issues/new?labels=enhancement) • [Join Discord](https://convex.dev/community)
 
 </div>
 
@@ -1276,16 +1276,16 @@ We welcome contributions!
 ### Getting Started
 
 ```bash
-git clone https://github.com/zakstam/convex-dotnet.git
-cd convex-dotnet
+git clone https://github.com/zakstam/convex-dotnet-unofficial.git
+cd convex-dotnet-unofficial
 dotnet build
 dotnet test
 ```
 
 ### Ways to Contribute
 
-- 🐛 [Report bugs](https://github.com/zakstam/convex-dotnet/issues/new?labels=bug)
-- 💡 [Request features](https://github.com/zakstam/convex-dotnet/issues/new?labels=enhancement)
+- 🐛 [Report bugs](https://github.com/zakstam/convex-dotnet-unofficial/issues/new?labels=bug)
+- 💡 [Request features](https://github.com/zakstam/convex-dotnet-unofficial/issues/new?labels=enhancement)
 - 📝 Improve documentation
 - 🔧 Submit pull requests
 - ✅ Write tests
@@ -1302,11 +1302,11 @@ dotnet test
 
 Need help?
 
-| Channel              | Link                                                             |
-| -------------------- | ---------------------------------------------------------------- |
-| 📖 Documentation     | [docs.convex.dev](https://docs.convex.dev)                       |
-| 💬 Discord Community | [convex.dev/community](https://convex.dev/community)             |
-| 🐛 Issue Tracker     | [GitHub Issues](https://github.com/zakstam/convex-dotnet/issues) |
+| Channel              | Link                                                                        |
+| -------------------- | --------------------------------------------------------------------------- |
+| 📖 Documentation     | [docs.convex.dev](https://docs.convex.dev)                                  |
+| 💬 Discord Community | [convex.dev/community](https://convex.dev/community)                        |
+| 🐛 Issue Tracker     | [GitHub Issues](https://github.com/zakstam/convex-dotnet-unofficial/issues) |
 
 ---
 
@@ -1324,6 +1324,6 @@ This is a **community-driven Convex client** for .NET developers.
 
 Built with ❤️ by the community • Maintained by contributors • Not affiliated with Convex, Inc.
 
-[⭐ Star us on GitHub](https://github.com/zakstam/convex-dotnet) | [📦 View on NuGet](https://www.nuget.org/packages/Convex.Client/)
+[⭐ Star us on GitHub](https://github.com/zakstam/convex-dotnet-unofficial) | [📦 View on NuGet](https://www.nuget.org/packages/Convex.Client/)
 
 </div>

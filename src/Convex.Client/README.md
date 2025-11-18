@@ -71,5 +71,5 @@ This architecture provides:
 ## Learn More
 
 - [Main Package](https://www.nuget.org/packages/Convex.Client/)
-- [Documentation](https://github.com/zakstam/convex-dotnet)
+- [Documentation](https://github.com/zakstam/convex-dotnet-unofficial)
 - [Vertical Slice Architecture](https://jimmybogard.com/vertical-slice-architecture/)

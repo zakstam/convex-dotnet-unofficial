@@ -421,7 +421,7 @@ The non-Clerk version (`examples/RealtimeChat/GodotRealtimeChat`) uses simple us
 
 - **Clerk Documentation:** https://clerk.com/docs
 - **Convex Documentation:** https://docs.convex.dev
-- **GitHub Issues:** https://github.com/get-convex/convex-dotnet/issues
+- **GitHub Issues:** https://github.com/zakstam/convex-dotnet-unofficial/issues
 - **Clerk Community:** https://clerk.com/discord
 - **Convex Community:** https://convex.dev/community
 

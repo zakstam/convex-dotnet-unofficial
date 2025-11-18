@@ -360,7 +360,7 @@ var observable = client.Observe<List<Todo>, object>("todos:search", new { term }
 
 - Check the [API Reference](api-reference.md) for correct usage
 - Review [Transpiler Limitations](transpiler-limitations.md) for code generation issues
-- [Report a bug](https://github.com/zakstam/convex-dotnet/issues) with details:
+- [Report a bug](https://github.com/zakstam/convex-dotnet-unofficial/issues) with details:
   - Error message and stack trace
   - Code that reproduces the issue
   - .NET version and platform

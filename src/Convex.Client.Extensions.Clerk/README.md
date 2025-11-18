@@ -369,7 +369,7 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ## Links
 
-- [GitHub Repository](https://github.com/zakstam/convex-dotnet)
+- [GitHub Repository](https://github.com/zakstam/convex-dotnet-unofficial)
 - [Convex Documentation](https://docs.convex.dev)
 - [Clerk Documentation](https://clerk.com/docs)
 - [Convex Clerk Integration Guide](https://docs.convex.dev/auth/clerk)

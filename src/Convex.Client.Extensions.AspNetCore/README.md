@@ -171,6 +171,6 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ## Links
 
-- [GitHub Repository](https://github.com/zakstam/convex-dotnet)
+- [GitHub Repository](https://github.com/zakstam/convex-dotnet-unofficial)
 - [Core Extensions Package](https://www.nuget.org/packages/Convex.Client.Extensions)
 - [Convex Documentation](https://docs.convex.dev)
