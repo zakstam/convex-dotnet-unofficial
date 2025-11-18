@@ -1,0 +1,117 @@
+[gd_scene load_steps=6 format=3 uid="uid://c2dqgjqbk76i3"]
+
+[ext_resource type="Script" uid="uid://cc70kwbdblwiq" path="res://ChatScene.cs" id="1_e1z8e"]
+[ext_resource type="PackedScene" uid="uid://typing_indicator_scene" path="res://TypingIndicator.tscn" id="2_typing"]
+[ext_resource type="PackedScene" uid="uid://skeleton_loader_scene" path="res://SkeletonLoader.tscn" id="3_skeleton"]
+[ext_resource type="PackedScene" uid="uid://emoji_picker_scene" path="res://EmojiPicker.tscn" id="4_emoji"]
+[ext_resource type="PackedScene" uid="uid://search_panel_scene" path="res://SearchPanel.tscn" id="5_search"]
+
+[node name="ChatScene" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+script = ExtResource("1_e1z8e")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="UserLabel" type="Label" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 2
+text = "User: Anonymous"
+
+[node name="UsernameDropdown" type="OptionButton" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+selected = 0
+item_count = 5
+popup/item_0/text = "Anonymous"
+popup/item_0/id = 0
+popup/item_1/text = "Alice"
+popup/item_1/id = 1
+popup/item_2/text = "Bob"
+popup/item_2/id = 2
+popup/item_3/text = "Charlie"
+popup/item_3/id = 3
+popup/item_4/text = "Diana"
+popup/item_4/id = 4
+
+[node name="ConnectButton" type="Button" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reconnect"
+
+[node name="AuthButton" type="Button" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Sign In"
+visible = false
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Connecting..."
+
+[node name="Separator1" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MessageContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TypingIndicator" parent="VBoxContainer/ScrollContainer/MessageContainer" instance=ExtResource("2_typing")]
+layout_mode = 2
+
+[node name="SkeletonLoader" parent="VBoxContainer/ScrollContainer/MessageContainer" instance=ExtResource("3_skeleton")]
+layout_mode = 2
+
+[node name="Separator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+
+[node name="InputContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+
+[node name="MessageInput" type="LineEdit" parent="VBoxContainer/InputContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Type a message..."
+clear_button_enabled = true
+
+[node name="SendButton" type="Button" parent="VBoxContainer/InputContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Send"
+
+[node name="ContextMenu" type="PopupMenu" parent="."]
+unique_name_in_owner = true
+
+[node name="EmojiPickerPanel" parent="." instance=ExtResource("4_emoji")]
+
+[node name="SearchPanel" parent="." instance=ExtResource("5_search")]

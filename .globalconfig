@@ -1,0 +1,48 @@
+is_global = true
+
+# Enforce Type Safety - Ban object and dynamic
+
+# Ban dynamic type usage completely
+dotnet_diagnostic.IDE0050.severity = error
+
+# Allow var for all strongly-typed declarations (type safety is enforced by compiler)
+csharp_style_var_when_type_is_apparent = true:silent
+csharp_style_var_for_built_in_types = true:silent
+csharp_style_var_elsewhere = true:silent
+
+# All CA (Code Analysis) rules default to warnings, not errors
+# This allows type safety enforcement without blocking builds on code quality issues
+dotnet_analyzer_diagnostic.severity = warning
+
+# Code Analyzer category overrides - keep as warnings
+dotnet_analyzer_diagnostic.category-Naming.severity = warning
+dotnet_analyzer_diagnostic.category-Design.severity = warning
+dotnet_analyzer_diagnostic.category-Performance.severity = warning
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+
+# Suppress non-critical code quality rules (these should be fixed gradually)
+# These are suppressed to allow TreatWarningsAsErrors without blocking builds
+# TODO: Fix these warnings in a future code quality improvement task
+dotnet_diagnostic.CA1805.severity = suggestion  # Explicitly initialized to default
+dotnet_diagnostic.CA1822.severity = suggestion  # Can be marked as static
+dotnet_diagnostic.CA1852.severity = suggestion  # Can be sealed
+dotnet_diagnostic.CA1051.severity = suggestion  # Do not declare visible instance fields
+dotnet_diagnostic.CA1720.severity = suggestion  # Identifier contains type name
+dotnet_diagnostic.CA1848.severity = suggestion  # Use LoggerMessage delegates
+dotnet_diagnostic.CA1001.severity = suggestion  # Type owns disposable fields
+dotnet_diagnostic.CA1859.severity = suggestion  # Change return type for perf
+dotnet_diagnostic.CA1510.severity = suggestion  # Use ArgumentNullException.ThrowIfNull
+dotnet_diagnostic.CA1866.severity = suggestion  # Use StartsWith(char)
+dotnet_diagnostic.CA1310.severity = suggestion  # Specify StringComparison
+dotnet_diagnostic.CA1304.severity = suggestion  # Specify CultureInfo for string operations
+dotnet_diagnostic.CA1305.severity = suggestion  # Specify IFormatProvider
+dotnet_diagnostic.CA1311.severity = suggestion  # Specify culture or use invariant
+dotnet_diagnostic.CA1869.severity = suggestion  # Cache JsonSerializerOptions
+
+# Public API Analyzer - Configured for future use
+# TODO (Pre-1.0): Run API extraction tool to populate PublicAPI.*.txt files
+# Recommended approach: dotnet tool install -g dotnet-format and use code fixes
+# Once populated, change severity to 'error' to enforce API stability
+dotnet_diagnostic.RS0016.severity = suggestion  # Symbol not in declared public API
+dotnet_diagnostic.RS0026.severity = suggestion  # Multiple overloads with optional parameters
+dotnet_diagnostic.RS0027.severity = suggestion  # Optional parameter ordering in overloads

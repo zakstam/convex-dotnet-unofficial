@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;NU1608</NoWarn>
+    <!-- Centralized version management for NuGet packages -->
+    <!-- Version is automatically managed by release-please bot based on conventional commits -->
+    <!-- The version below is updated automatically when release-please creates a release PR -->
+    <!-- CI/CD can override via MSBuild property: -p:Version=1.2.3 -p:PackageVersion=1.2.3 -->
+    <!-- DO NOT manually edit this version - use conventional commits instead -->
+    <!--   - feat: triggers minor version bump (0.x.0) -->
+    <!--   - fix: triggers patch version bump (0.0.x) -->
+    <!--   - BREAKING CHANGE: triggers major version bump (x.0.0) -->
+    <Version Condition="'$(Version)' == ''">0.2.0</Version>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <Optimize>true</Optimize>
+    <DebugType>portable</DebugType>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+</Project>

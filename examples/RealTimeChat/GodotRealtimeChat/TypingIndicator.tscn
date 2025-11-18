@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://dpxb67k5yh4k0"]
+
+[node name="TypingIndicator" type="PanelContainer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(200, 0)
+
+[node name="TypingContent" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="TypingLabel" type="Label" parent="TypingContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Someone is typing"
+
+[node name="Dot1" type="Label" parent="TypingContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "."
+
+[node name="Dot2" type="Label" parent="TypingContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "."
+
+[node name="Dot3" type="Label" parent="TypingContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "."

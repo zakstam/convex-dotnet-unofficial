@@ -1,0 +1,37 @@
+<Project>
+  <!--
+    MSBuild properties file for packing Convex .NET packages with GitHub Packages prefix.
+    This file is imported during the pack process to override PackageId and handle targets files.
+    
+    Usage: dotnet pack -p:PackForGitHub=true -p:GitHubOwner=zakstam
+    
+    Note: Projects now use conditional ProjectReference/PackageReference, so no transformation is needed.
+  -->
+
+  <PropertyGroup>
+    <!-- Default GitHub owner - can be overridden -->
+    <GitHubOwner Condition="'$(GitHubOwner)' == ''">$(GITHUB_OWNER)</GitHubOwner>
+    
+    <!-- Override targets file path to match prefixed PackageId -->
+    <!-- PackageId is already set by Directory.Build.props from BasePackageId -->
+    <TargetsFilePackagePath Condition="'$(PackForGitHub)' == 'true' And '$(BasePackageId)' != '' And '$(PackageId)' != '$(BasePackageId)'">build/$(PackageId).targets</TargetsFilePackagePath>
+    
+    <!-- Disable lock file restoration during pack to allow dependency override -->
+    <RestorePackagesWithLockFile Condition="'$(PackForGitHub)' == 'true'">false</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <!-- Override targets file in package if it exists -->
+  <Target Name="OverrideTargetsFileForGitHubPack" BeforeTargets="Pack" Condition="'$(PackForGitHub)' == 'true' And '$(TargetsFilePackagePath)' != '' And '$(BasePackageId)' != ''">
+    <ItemGroup>
+      <!-- Remove the original targets file reference -->
+      <None Remove="build\$(BasePackageId).targets" />
+      <!-- Add the prefixed targets file reference -->
+      <None Include="build\$(BasePackageId).targets" 
+            Pack="true" 
+            PackagePath="$(TargetsFilePackagePath)" 
+            Condition="Exists('build\$(BasePackageId).targets')" />
+    </ItemGroup>
+  </Target>
+
+</Project>
+

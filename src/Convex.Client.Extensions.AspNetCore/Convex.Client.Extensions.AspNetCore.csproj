@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Package Metadata -->
+    <BasePackageId>Convex.Client.Extensions.AspNetCore</BasePackageId>
+    <Product>Convex .NET Client - ASP.NET Core Extensions</Product>
+    <Description>ASP.NET Core integration for Convex .NET Client. Includes middleware (authentication), health checks, and HttpContext helpers. Requires ASP.NET Core server runtime. For Blazor WebAssembly, use only Convex.Client.Extensions package.</Description>
+    <PackageTags>convex;aspnetcore;middleware;healthchecks;server;net8;net9</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) providing ASP.NET Core middleware for authentication token handling and health check integration. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- ASP.NET Core Framework Reference -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- Source Link and Analyzers -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <!-- Conditional references: ProjectReference for local dev, PackageReference for packaging -->
+  <ItemGroup Condition="'$(PackForGitHub)' != 'true'">
+    <!-- Reference the core extensions library -->
+    <ProjectReference Include="..\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
+    <!-- Core client is transitively referenced through Extensions -->
+  </ItemGroup>
+  <ItemGroup Condition="'$(PackForGitHub)' == 'true'">
+    <PackageReference Include="$(GitHubOwner).Convex.Client.Extensions" Version="1.0.0" />
+    <!-- Core client is transitively referenced through Extensions -->
+  </ItemGroup>
+
+  <!-- Link ASP.NET Core-specific files from the Extensions project -->
+  <ItemGroup>
+    <Compile Include="..\Convex.Client.Extensions\Middleware\**\*.cs" Link="Middleware\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Convex.Client.Extensions\HealthChecks\**\*.cs" Link="HealthChecks\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- Package Files -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\README.md" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>

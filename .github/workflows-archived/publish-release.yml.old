@@ -1,0 +1,78 @@
+name: Publish Release to NuGet
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  # Build packages
+  build:
+    uses: ./.github/workflows/build-packages.yml
+    with:
+      version: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  # Publish to NuGet.org
+  nuget-publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: ./nupkg
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Publish to NuGet.org
+        run: |
+          echo "📦 Publishing packages to NuGet.org..."
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Publish symbols to NuGet.org
+        run: |
+          echo "📦 Publishing symbol packages to NuGet.org..."
+          if ls ./nupkg/*.snupkg 1> /dev/null 2>&1; then
+            dotnet nuget push ./nupkg/*.snupkg \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          else
+            echo "ℹ️  No symbol packages found (this is okay)"
+          fi
+        continue-on-error: true
+
+      - name: Update release with NuGet package info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ github.event.release.tag_name }}'.replace(/^v/, '');
+            const tag = '${{ github.event.release.tag_name }}';
+
+            // Get the release
+            const { data: release } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: tag
+            });
+
+            // Update release body with NuGet link
+            const nugetBadge = `\n\n## 📦 NuGet Packages\n\n[![NuGet](https://img.shields.io/nuget/v/Convex.Client.svg)](https://www.nuget.org/packages/Convex.Client/${version})\n\nInstall via:\n\`\`\`bash\ndotnet add package Convex.Client --version ${version}\n\`\`\``;
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              body: release.body + nugetBadge
+            });

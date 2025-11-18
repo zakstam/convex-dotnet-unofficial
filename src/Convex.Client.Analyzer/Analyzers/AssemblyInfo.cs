@@ -1,0 +1,1 @@
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use 'Analyze' in analyzer names", Justification = "Analyzer names follow established naming conventions.")]

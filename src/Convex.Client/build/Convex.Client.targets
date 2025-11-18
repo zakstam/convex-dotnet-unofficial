@@ -1,0 +1,52 @@
+<Project>
+  <!-- Automatic Convex Backend Generation -->
+  <PropertyGroup>
+    <!-- Backend generation is disabled by default when using NuGet package -->
+    <!-- Set ConvexEnableBackendGeneration=true and ConvexBackendGeneratorPath to enable -->
+    <ConvexEnableBackendGeneration Condition="'$(ConvexEnableBackendGeneration)' == ''">false</ConvexEnableBackendGeneration>
+
+    <!-- Default backend path - users can override -->
+    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == ''">$(MSBuildProjectDirectory)\convex</ConvexBackendPath>
+
+    <!-- Path to BackendGenerator tool - must be set by user if backend generation is enabled -->
+    <!-- Example: <ConvexBackendGeneratorPath>C:\path\to\BackendGenerator</ConvexBackendGeneratorPath> -->
+    <ConvexBackendGeneratorPath Condition="'$(ConvexBackendGeneratorPath)' == ''"></ConvexBackendGeneratorPath>
+
+    <!-- Path to api.d.ts for type-safe function constants generation -->
+    <!-- Users must set this to enable type-safe function names -->
+    <!-- Example: <ConvexApiDefinitionPath>convex\_generated\api.d.ts</ConvexApiDefinitionPath> -->
+    <ConvexApiDefinitionPath Condition="'$(ConvexApiDefinitionPath)' == ''"></ConvexApiDefinitionPath>
+  </PropertyGroup>
+
+  <!-- Automatically include api.d.ts for source generator if path is configured -->
+  <ItemGroup Condition="'$(ConvexApiDefinitionPath)' != '' And Exists('$(ConvexApiDefinitionPath)')">
+    <AdditionalFiles Include="$(ConvexApiDefinitionPath)" />
+  </ItemGroup>
+
+  <!-- Run backend generator before build if enabled -->
+  <Target Name="ConvexGenerateBackend"
+          BeforeTargets="BeforeBuild"
+          Condition="'$(ConvexEnableBackendGeneration)' == 'true' And '$(ConvexBackendGeneratorPath)' != ''">
+
+    <Message Text="🔧 Convex: Generating backend from C# models..." Importance="high" />
+
+    <!-- Create output directory if it doesn't exist -->
+    <MakeDir Directories="$(ConvexBackendPath)" Condition="!Exists('$(ConvexBackendPath)')" />
+
+    <!-- Run the backend generator -->
+    <Exec Command="dotnet run --project &quot;$(ConvexBackendGeneratorPath)&quot; -- &quot;$(MSBuildProjectDirectory)&quot; &quot;$(ConvexBackendPath)&quot;"
+          ContinueOnError="false"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="ConvexGeneratorExitCode" />
+    </Exec>
+
+    <Message Text="✅ Convex: Backend generated successfully!" Importance="high" Condition="'$(ConvexGeneratorExitCode)' == '0'" />
+    <Error Text="❌ Convex: Backend generation failed with exit code $(ConvexGeneratorExitCode)" Condition="'$(ConvexGeneratorExitCode)' != '0'" />
+  </Target>
+
+  <!-- Add generated TypeScript files as Content items so they show in IDE -->
+  <ItemGroup Condition="Exists('$(ConvexBackendPath)')">
+    <Content Include="$(ConvexBackendPath)\**\*.ts" Visible="true" />
+  </ItemGroup>
+</Project>

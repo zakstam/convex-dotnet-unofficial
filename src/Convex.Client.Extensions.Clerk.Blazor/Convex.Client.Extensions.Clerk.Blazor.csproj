@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Package Metadata -->
+    <BasePackageId>Convex.Client.Extensions.Clerk.Blazor</BasePackageId>
+    <Product>Convex .NET Client - Clerk Authentication Blazor Extensions</Product>
+    <Description>Blazor WebAssembly support for Convex Clerk authentication. Zero-configuration setup with automatic JavaScript injection. No manual JavaScript files needed.</Description>
+    <PackageTags>convex;clerk;authentication;auth;jwt;token;blazor;blazor-wasm;net8;net9</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) of Blazor-specific Clerk authentication package with automatic JavaScript injection for WebAssembly apps. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- Source Link and Analyzers -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <!-- Conditional references: ProjectReference for local dev, PackageReference for packaging -->
+  <ItemGroup Condition="'$(PackForGitHub)' != 'true'">
+    <ProjectReference Include="..\Convex.Client.Extensions.Clerk\Convex.Client.Extensions.Clerk.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PackForGitHub)' == 'true'">
+    <PackageReference Include="$(GitHubOwner).Convex.Client.Extensions.Clerk" Version="1.0.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+
+  <!-- Embedded Resources -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\js\clerk.js" />
+  </ItemGroup>
+
+  <!-- Package Files -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\README.md" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>
+

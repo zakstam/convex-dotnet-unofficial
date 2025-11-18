@@ -1,0 +1,38 @@
+{
+  "name": "Convex .NET Client Development",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:8.0",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "editorconfig.editorconfig",
+        "github.copilot",
+        "github.vscode-pull-request-github"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "postCreateCommand": "dotnet restore && npm install --prefix testing/oracle",
+
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "TypeScript Test Oracle",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "remoteUser": "vscode"
+}

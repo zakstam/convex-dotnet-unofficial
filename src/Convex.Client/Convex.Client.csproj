@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;CA1513;CA2016;CA1716;CA1000</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <BasePackageId>Convex.Client</BasePackageId>
+    <Product>Convex .NET Client</Product>
+    <Description>Modern .NET client for Convex - the reactive backend-as-a-service. Provides real-time synchronization, authentication, file storage, vector search, and more. This is the main package that includes all Convex client features.</Description>
+    <PackageTags>convex;database;realtime;backend-as-a-service;nosql;reactive;websocket;authentication;file-storage;vector-search;baas;netstandard21;net8;net9;unity</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) of Convex .NET SDK with vertical slice architecture, real-time subscriptions, authentication, file storage, and vector search. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="System.Net.Http.Json" />
+    <PackageReference Include="System.Threading.Channels" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="System.Reactive.Linq" />
+    <PackageReference Include="Polyfill" PrivateAssets="all" />
+  </ItemGroup>
+
+
+  <!-- Source generator and analyzers - always use ProjectReference (they're not published as separate packages) -->
+  <ItemGroup>
+    <ProjectReference Include="..\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\Convex.Client.Analyzer.CodeFixes\Convex.Client.Analyzer.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Targets file path - can be overridden during pack (e.g., for GitHub Packages) -->
+    <TargetsFileName Condition="'$(TargetsFileName)' == ''">$(BasePackageId).targets</TargetsFileName>
+    <TargetsFilePackagePath Condition="'$(TargetsFilePackagePath)' == ''">build\$(TargetsFileName)</TargetsFilePackagePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+    <None Include="build\$(BasePackageId).targets" Pack="true" PackagePath="$(TargetsFilePackagePath)" Condition="Exists('build\$(BasePackageId).targets')" />
+
+    <!-- Pack analyzer and source generator DLLs into the NuGet package -->
+    <None Include="..\Convex.FunctionGenerator\bin\$(Configuration)\netstandard2.0\Convex.FunctionGenerator.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+    <None Include="..\Convex.Client.Analyzer\bin\$(Configuration)\netstandard2.0\Convex.Client.Analyzer.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+    <None Include="..\Convex.Client.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\Convex.Client.Analyzer.CodeFixes.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
+
+</Project>

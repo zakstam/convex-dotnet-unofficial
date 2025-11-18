@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-icon"><i class="bi bi-chat-dots-fill"></i></div>
+        <h1>Welcome to Realtime Chat</h1>
+        <p class="login-subtitle">Connect and chat in real-time</p>
+        <div class="login-form">
+            <input type="text"
+                   @bind="localUsernameInput"
+                   @bind:event="oninput"
+                   @bind:after="HandleInputChanged"
+                   @onkeydown="HandleLoginKeyDown"
+                   placeholder="Enter your username"
+                   autofocus />
+            <button type="button"
+                    @onclick="HandleLogin"
+                    disabled="@string.IsNullOrWhiteSpace(localUsernameInput)"
+                    class="login-btn">
+                <span>Join Chat</span>
+                <span class="btn-arrow"><i class="bi bi-arrow-right"></i></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string UsernameInput { get; set; } = "";
+    [Parameter] public EventCallback<string> UsernameInputChanged { get; set; }
+    [Parameter] public EventCallback<KeyboardEventArgs> OnLoginKeyDown { get; set; }
+    [Parameter] public EventCallback OnLogin { get; set; }
+
+    private string localUsernameInput = "";
+
+    protected override void OnParametersSet()
+    {
+        if (localUsernameInput != UsernameInput)
+        {
+            localUsernameInput = UsernameInput;
+        }
+    }
+
+    private async Task HandleInputChanged()
+    {
+        UsernameInput = localUsernameInput;
+        if (UsernameInputChanged.HasDelegate)
+        {
+            await UsernameInputChanged.InvokeAsync(localUsernameInput);
+        }
+    }
+
+    private async Task HandleLoginKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(localUsernameInput))
+        {
+            await HandleInputChanged();
+            await OnLogin.InvokeAsync();
+        }
+    }
+
+    private async Task HandleLogin(MouseEventArgs e)
+    {
+        await HandleInputChanged();
+        if (!string.IsNullOrWhiteSpace(localUsernameInput))
+        {
+            await OnLogin.InvokeAsync();
+        }
+    }
+}
+

@@ -1,0 +1,71 @@
+@using Microsoft.AspNetCore.Components
+@using RealtimeChatClerk.Shared.Models
+@implements IDisposable
+
+@if (ShowPopover)
+{
+    <div class="popover-overlay" @onclick="ClosePopover"></div>
+}
+
+<div class="online-users-container">
+    <button class="online-users-trigger" @onclick="TogglePopover" title="Online users">
+        <i class="bi bi-circle-fill online-indicator-icon"></i>
+        <span class="online-count-badge">@FilteredUsers.Count()</span>
+    </button>
+
+    @if (ShowPopover)
+    {
+        <div class="online-users-popover" @onclick:stopPropagation="true">
+            <div class="popover-header">
+                <h4>Online Users</h4>
+                <span class="online-count">@FilteredUsers.Count()</span>
+            </div>
+            <div class="online-users-list">
+                @if (!FilteredUsers.Any())
+                {
+                    <div class="no-users">No users online</div>
+                }
+                else
+                {
+                    @foreach (var user in FilteredUsers)
+                    {
+                        <div class="online-user-item" title="@user.Username">
+                            <div class="user-status-dot"></div>
+                            <div class="user-avatar-small" style="background-color: @GetUserColor(user.Username)">
+                                @GetUserInitial(user.Username)
+                            </div>
+                            <span class="online-username">@user.Username</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<OnlineUserDto> Users { get; set; } = [];
+    [Parameter] public string? CurrentUsername { get; set; }
+    [Parameter] public Func<string, string> GetUserColor { get; set; } = _ => "#667eea";
+    [Parameter] public Func<string, string> GetUserInitial { get; set; } = _ => "?";
+
+    private bool ShowPopover { get; set; } = false;
+
+    // Show all users including self
+    private IEnumerable<OnlineUserDto> FilteredUsers => Users;
+
+    private void TogglePopover()
+    {
+        ShowPopover = !ShowPopover;
+    }
+
+    private void ClosePopover()
+    {
+        ShowPopover = false;
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+}

@@ -1,0 +1,91 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Core Dependencies -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
+    <!-- Reactive Extensions -->
+    <PackageVersion Include="System.Reactive" Version="6.0.1" />
+    <PackageVersion Include="System.Reactive.Linq" Version="6.0.1" />
+    <!-- netstandard2.1 Compatibility Packages -->
+    <PackageVersion Include="System.Net.Http.Json" Version="8.0.1" />
+    <PackageVersion Include="System.Threading.Channels" Version="8.0.0" />
+    <PackageVersion Include="Polyfill" Version="2.0.0" />
+    <!-- CLI Dependencies -->
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <!-- Source Generator Dependencies -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+    <PackageVersion Include="Microsoft.CodeAnalysis" Version="4.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" />
+    <!-- SourceLink for Debugging Support -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <!-- Test Dependencies -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="3.6.1" />
+    <PackageVersion Include="MSTest.TestFramework" Version="3.6.1" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.MSTest" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.MSTest" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeRefactoring.Testing.MSTest" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.MSTest" Version="1.1.2" />
+    <!-- Benchmark Dependencies -->
+    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+    <!-- Additional Test Dependencies -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <!-- Sample Project Dependencies -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
+    <PackageVersion Include="Serilog" Version="4.1.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Serilog.Sinks.BrowserConsole" Version="1.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components" Version="8.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" />
+    <!-- Convex .NET Client Packages - GitHub Packages versions -->
+    <!-- Note: Convex.Client.Attributes, Convex.FunctionGenerator, Convex.Client.Analyzer, and Convex.Client.Analyzer.CodeFixes -->
+    <!-- are bundled into Convex.Client and should not be referenced as separate packages -->
+    <PackageVersion Include="Convex.Client" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions.Blazor" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions.AspNetCore" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions.Clerk" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions.Clerk.Blazor" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions.Clerk.Godot" Version="1.0.0" />
+    <PackageVersion Include="Convex.Client.Extensions.DependencyInjection" Version="1.0.0" />
+    <PackageVersion Include="Spectre.Console" Version="0.51.1" />
+    <PackageVersion Include="RazorConsole.Core" Version="0.1.0" />
+    <!-- ASP.NET Core Example Dependencies -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.9.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.11" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <!-- WinUI 3 Dependencies -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
+    <PackageVersion Include="CommunityToolkit.WinUI.UI.Controls" Version="7.1.2" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+</Project>

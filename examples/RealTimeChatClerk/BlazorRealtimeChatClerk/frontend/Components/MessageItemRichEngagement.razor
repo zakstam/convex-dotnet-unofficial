@@ -1,0 +1,389 @@
+@using Microsoft.AspNetCore.Components
+@using RealtimeChat.Frontend.Components
+@using RealtimeChatClerk.Shared.Models
+@using MessageDto = RealtimeChatClerk.Shared.Models.MessageDto
+@using MessageReadDto = RealtimeChatClerk.Shared.Models.MessageReadDto
+@using System.Linq
+
+<div class="message-rich-engagement @(Message.Username == CurrentUsername ? "own" : "other")"
+     @onmouseenter="() => OnShowMessageMenu.InvokeAsync(Message.Id)"
+     @onmouseleave="OnHideMessageMenu"
+     id="@($"message-{Message.Id}")">
+
+    <!-- Status indicators at top right -->
+    @if (Message.Username != CurrentUsername)
+    {
+        <div class="message-status-indicators">
+            @if (CurrentUserReadMessages.Contains(Message.Id))
+            {
+                <span class="read-status-indicator" title="You have read this message">
+                    <i class="bi bi-check2"></i>
+                </span>
+            }
+            else
+            {
+                <span class="new-badge" title="New message">
+                    New
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Author Header with Status -->
+    <div class="engagement-header">
+        <div class="author-section">
+            <div class="author-avatar" style="background-color: @GetUserColorInternal(Message.Username)">
+                @GetUserInitialInternal(Message.Username)
+            </div>
+            <div class="author-meta">
+                <span class="author-name">@Message.Username</span>
+                <span class="message-timestamp">@FormatTimestamp(Message.Timestamp)</span>
+            </div>
+        </div>
+
+        <!-- Status Badge -->
+        @if (Message.EditedAt.HasValue)
+        {
+            <span class="status-badge edited" title="Message was edited">
+                <i class="bi bi-pencil"></i> Edited
+            </span>
+        }
+    </div>
+
+    <!-- Reply Context (Rich) -->
+    @if (Message.ParentMessageId != null && ParentMessage != null)
+    {
+        <div class="engagement-reply-context" @onclick="() => OnScrollToMessage.InvokeAsync(Message.ParentMessageId)">
+            <div class="reply-context-icon">
+                <i class="bi bi-reply-fill"></i>
+            </div>
+            <div class="reply-context-info">
+                <div class="reply-context-user">Replying to <strong>@ParentMessage.Username</strong></div>
+                <div class="reply-context-preview">
+                    @if (ParentMessage.Attachments != null && ParentMessage.Attachments.Any(a => a.ContentType.StartsWith("image/")))
+                    {
+                        <span class="reply-media-hint"><i class="bi bi-camera-fill"></i> Image</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(ParentMessage.Text))
+                    {
+                        <span>@(ParentMessage.Text.Length > 80 ? ParentMessage.Text.Substring(0, 80) + "..." : ParentMessage.Text)</span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Main Content -->
+    <div class="engagement-content">
+        <!-- Message Text -->
+        <div class="message-text">
+            @if (!string.IsNullOrWhiteSpace(Message.Text))
+            {
+                @((MarkupString)RenderMarkdown(Message.Text))
+            }
+        </div>
+
+        <!-- Attachments (Rich Display) -->
+        @if (Message.Attachments != null && Message.Attachments.Count > 0)
+        {
+            var imageAttachments = Message.Attachments.Where(a => a.ContentType.StartsWith("image/")).ToList();
+            var fileAttachments = Message.Attachments.Where(a => !a.ContentType.StartsWith("image/")).ToList();
+
+            @if (imageAttachments.Count > 0)
+            {
+                <div class="engagement-gallery @(imageAttachments.Count > 1 ? "multi" : "single")">
+                    @foreach (var attachment in imageAttachments)
+                    {
+                        var imageUrl = GetAttachmentUrlSync(attachment.StorageId);
+                        <div class="gallery-item">
+                            <img src="@imageUrl"
+                                 alt="@attachment.Filename"
+                                 class="gallery-image"
+                                 loading="lazy"
+                                 @onclick="() => OpenImageLightbox(imageUrl, attachment.Filename)" />
+                            <div class="gallery-overlay">
+                                <i class="bi bi-search"></i>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (fileAttachments.Count > 0)
+            {
+                <div class="engagement-file-list">
+                    @foreach (var attachment in fileAttachments)
+                    {
+                        var fileUrl = GetAttachmentUrlSync(attachment.StorageId);
+                        <a href="@fileUrl"
+                           target="_blank"
+                           class="file-card"
+                           download="@attachment.Filename">
+                            <div class="file-icon">
+                                <i class="bi bi-file-earmark"></i>
+                            </div>
+                            <div class="file-details">
+                                <span class="file-name">@attachment.Filename</span>
+                                <span class="file-size">@FormatFileSize((long)attachment.Size)</span>
+                            </div>
+                            <i class="bi bi-download"></i>
+                        </a>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Engagement Stats (Reactions + Replies) -->
+    <div class="engagement-stats">
+        <!-- Reactions Display -->
+        @if (MessageReactions.ContainsKey(Message.Id) && MessageReactions[Message.Id].Count > 0)
+        {
+            <div class="reactions-display" @onclick:stopPropagation="true">
+                <div class="reactions-group">
+                    @foreach (var reaction in MessageReactions[Message.Id])
+                    {
+                        var currentReaction = reaction;
+                        <button @onclick="() => OnToggleReaction.InvokeAsync((Message.Id, currentReaction.Emoji))"
+                                @onclick:stopPropagation="true"
+                                class="reaction-chip @(currentReaction.Users.Contains(CurrentUsername) ? "user-reacted" : "")"
+                                title="@string.Join(", ", currentReaction.Users)">
+                            <span class="emoji">@currentReaction.Emoji</span>
+                            <span class="count">@currentReaction.Count</span>
+                        </button>
+                    }
+                </div>
+                <button @onclick="() => OnShowReactionPicker.InvokeAsync(Message.Id)"
+                        @onclick:stopPropagation="true"
+                        class="reaction-add-chip"
+                        title="Add reaction">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="reactions-display no-reactions" @onclick:stopPropagation="true">
+                <button @onclick="() => OnShowReactionPicker.InvokeAsync(Message.Id)"
+                        @onclick:stopPropagation="true"
+                        class="reaction-add-chip"
+                        title="Add reaction">
+                    <i class="bi bi-emoji-smile"></i>
+                    <span>React</span>
+                </button>
+            </div>
+        }
+
+        <!-- Reply Count -->
+        @if (ReplyCount > 0)
+        {
+            <button @onclick="() => OnToggleReplies.InvokeAsync(Message.Id)"
+                    @onclick:stopPropagation="true"
+                    class="engagement-stat-btn"
+                    title="@(ShowReplies ? "Hide" : "Show") replies">
+                <i class="bi bi-chat-left-text"></i>
+                <span>@ReplyCount @(ReplyCount == 1 ? "reply" : "replies")</span>
+                <i class="bi bi-chevron-down @(ShowReplies ? "expanded" : "")"></i>
+            </button>
+        }
+    </div>
+
+    <!-- Quick Actions Bar -->
+    <div class="engagement-quick-actions" style="opacity: @(HoveredMessageId == Message.Id ? "1" : "0.6")">
+        <button @onclick="() => OnStartReply.InvokeAsync(Message)"
+                @onclick:stopPropagation="true"
+                class="action-btn primary"
+                title="Reply to this message">
+            <i class="bi bi-reply"></i>
+            <span>Reply</span>
+        </button>
+
+        @if (Message.Username == CurrentUsername)
+        {
+            <button @onclick="() => OnCopyMessage.InvokeAsync(Message.Text)"
+                    @onclick:stopPropagation="true"
+                    class="action-btn"
+                    title="Copy message">
+                <i class="bi bi-clipboard"></i>
+                <span>Copy</span>
+            </button>
+            <button @onclick="() => OnStartEditMessage.InvokeAsync(Message)"
+                    @onclick:stopPropagation="true"
+                    class="action-btn"
+                    title="Edit message">
+                <i class="bi bi-pencil"></i>
+                <span>Edit</span>
+            </button>
+            <button @onclick="() => OnDeleteMessage.InvokeAsync(Message.Id)"
+                    @onclick:stopPropagation="true"
+                    class="action-btn danger"
+                    title="Delete message">
+                <i class="bi bi-trash"></i>
+                <span>Delete</span>
+            </button>
+        }
+    </div>
+
+    <!-- Replies Thread (Rich) -->
+    @if (ShowReplies && MessageReplies.Count > 0)
+    {
+        <div class="engagement-replies">
+            <div class="replies-header">
+                <i class="bi bi-chat-left-text"></i>
+                <span class="replies-count">@MessageReplies.Count @(MessageReplies.Count == 1 ? "reply" : "replies")</span>
+            </div>
+            <div class="replies-container">
+                @foreach (var reply in MessageReplies)
+                {
+                    <div class="reply-card">
+                        <div class="reply-header">
+                            <div class="reply-avatar" style="background-color: @GetUserColorInternal(reply.Username)">
+                                @GetUserInitialInternal(reply.Username)
+                            </div>
+                            <div class="reply-user-info">
+                                <span class="reply-username">@reply.Username</span>
+                                <span class="reply-timestamp">@FormatTimestamp(reply.Timestamp)</span>
+                            </div>
+                        </div>
+                        <div class="reply-body">
+                            @if (!string.IsNullOrWhiteSpace(reply.Text))
+                            {
+                                <div class="reply-text">@((MarkupString)RenderMarkdown(reply.Text))</div>
+                            }
+                            @if (reply.Attachments != null && reply.Attachments.Count > 0)
+                            {
+                                @foreach (var attachment in reply.Attachments)
+                                {
+                                    @if (attachment.ContentType.StartsWith("image/"))
+                                    {
+                                        var imageUrl = GetAttachmentUrlSync(attachment.StorageId);
+                                        <img src="@imageUrl"
+                                             alt="@attachment.Filename"
+                                             class="reply-image"
+                                             loading="lazy"
+                                             @onclick="() => OpenImageLightbox(imageUrl, attachment.Filename)" />
+                                    }
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Image Lightbox -->
+    @if (LightboxImageUrl != null)
+    {
+        <div class="image-lightbox-overlay"
+             @onclick="CloseImageLightbox"
+             @onkeydown="HandleLightboxKeydown"
+             tabindex="0"
+             @ref="lightboxRef">
+            <button class="lightbox-close" @onclick="CloseImageLightbox" @onclick:stopPropagation="true">
+                <i class="bi bi-x"></i>
+            </button>
+            <img src="@LightboxImageUrl" alt="@LightboxImageTitle" class="lightbox-image" @onclick:stopPropagation="true" />
+            <div class="lightbox-caption">@LightboxImageTitle</div>
+        </div>
+    }
+
+    <!-- Read Receipts with Overlapping Avatars (Bottom) - Only on Latest Message -->
+    @if (IsLatestMessage)
+    {
+        @if (MessageReadReceipts.ContainsKey(Message.Id) && MessageReadReceipts[Message.Id].Count > 0)
+        {
+            <div class="read-receipts-bottom" title="@GetReadReceiptTooltip(Message.Id)">
+                <div class="read-avatars-stack">
+                    @foreach (var readReceipt in MessageReadReceipts[Message.Id].Take(3))
+                    {
+                        <div class="read-avatar" style="background-color: @GetUserColorInternal(readReceipt.Username)"
+                             title="@readReceipt.Username">
+                            @GetUserInitialInternal(readReceipt.Username)
+                        </div>
+                    }
+                    @if (MessageReadReceipts[Message.Id].Count > 3)
+                    {
+                        var remainingUsers = MessageReadReceipts[Message.Id].Skip(3).Select(r => r.Username).ToList();
+                        <div class="read-avatar read-avatar-more" title="@string.Join(", ", remainingUsers)">
+                            +@(MessageReadReceipts[Message.Id].Count - 3)
+                        </div>
+                    }
+                </div>
+                <i class="bi bi-check2-all read-icon"></i>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public MessageDto Message { get; set; } = default!;
+    [Parameter] public string CurrentUsername { get; set; } = "";
+    [Parameter] public string? HoveredMessageId { get; set; }
+    [Parameter] public Dictionary<string, List<ReactionDto>> MessageReactions { get; set; } = new();
+    [Parameter] public Dictionary<string, List<MessageReadDto>> MessageReadReceipts { get; set; } = new();
+    [Parameter] public HashSet<string> CurrentUserReadMessages { get; set; } = new();
+    [Parameter] public MessageDto? ParentMessage { get; set; }
+    [Parameter] public List<MessageDto> MessageReplies { get; set; } = new();
+    [Parameter] public int ReplyCount { get; set; } = 0;
+    [Parameter] public bool ShowReplies { get; set; } = false;
+    [Parameter] public bool IsLatestMessage { get; set; } = false;
+    [Parameter] public EventCallback<string> OnShowMessageMenu { get; set; }
+    [Parameter] public EventCallback OnHideMessageMenu { get; set; }
+    [Parameter] public EventCallback<string> OnCopyMessage { get; set; }
+    [Parameter] public EventCallback<MessageDto> OnStartEditMessage { get; set; }
+    [Parameter] public EventCallback<string> OnDeleteMessage { get; set; }
+    [Parameter] public EventCallback<(string messageId, string emoji)> OnToggleReaction { get; set; }
+    [Parameter] public EventCallback<string> OnShowReactionPicker { get; set; }
+    [Parameter] public EventCallback<MessageDto> OnStartReply { get; set; }
+    [Parameter] public EventCallback<string> OnToggleReplies { get; set; }
+    [Parameter] public EventCallback<string> OnScrollToMessage { get; set; }
+    [Parameter] public Func<string, string> RenderMarkdown { get; set; } = text => text;
+    [Parameter] public Func<long, string> FormatTimestamp { get; set; } = _ => "";
+    [Parameter] public Func<string, string> GetAttachmentUrlSync { get; set; } = _ => "";
+    [Parameter] public Func<long, string> FormatFileSize { get; set; } = _ => "";
+    [Parameter] public Func<string, string> GetUserColor { get; set; } = _ => "#667eea";
+    [Parameter] public Func<string, string> GetUserInitial { get; set; } = _ => "?";
+
+    private string? LightboxImageUrl { get; set; }
+    private string? LightboxImageTitle { get; set; }
+    private ElementReference lightboxRef;
+
+    private void OpenImageLightbox(string imageUrl, string title)
+    {
+        LightboxImageUrl = imageUrl;
+        LightboxImageTitle = title;
+    }
+
+    private void CloseImageLightbox()
+    {
+        LightboxImageUrl = null;
+        LightboxImageTitle = null;
+    }
+
+    private void HandleLightboxKeydown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            CloseImageLightbox();
+        }
+    }
+
+    private string GetUserColorInternal(string username) => GetUserColor?.Invoke(username) ?? "#667eea";
+
+    private string GetUserInitialInternal(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return "?";
+        return username.Substring(0, 1).ToUpperInvariant();
+    }
+
+    private string GetReadReceiptTooltip(string messageId)
+    {
+        if (!MessageReadReceipts.ContainsKey(messageId) || MessageReadReceipts[messageId].Count == 0)
+            return "Delivered";
+
+        var readers = MessageReadReceipts[messageId].Select(r => r.Username).ToList();
+        return readers.Count == 1 ? $"Read by {readers[0]}" : $"Read by: {string.Join(", ", readers)}";
+    }
+}

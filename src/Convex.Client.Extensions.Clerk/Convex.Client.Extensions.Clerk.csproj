@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Package Metadata -->
+    <BasePackageId>Convex.Client.Extensions.Clerk</BasePackageId>
+    <Product>Convex .NET Client - Clerk Authentication Extensions</Product>
+    <Description>Clerk authentication integration for Convex .NET Client. Provides seamless Clerk authentication support with dependency injection, token providers, and helper methods. Compatible with all .NET platforms including Blazor, ASP.NET Core, and console applications.</Description>
+    <PackageTags>convex;clerk;authentication;auth;jwt;token;di;blazor;aspnetcore;net8;net9</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) of Clerk authentication integration for Convex .NET SDK. Includes OAuth 2.0 Authorization Code Flow with PKCE. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- Source Link and Analyzers -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <!-- Conditional references: ProjectReference for local dev, PackageReference for packaging -->
+  <ItemGroup Condition="'$(PackForGitHub)' != 'true'">
+    <ProjectReference Include="..\Convex.Client\Convex.Client.csproj" />
+    <ProjectReference Include="..\Convex.Client.Extensions.DependencyInjection\Convex.Client.Extensions.DependencyInjection.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PackForGitHub)' == 'true'">
+    <PackageReference Include="$(GitHubOwner).Convex.Client" Version="1.0.0" />
+    <PackageReference Include="$(GitHubOwner).Convex.Client.Extensions.DependencyInjection" Version="1.0.0" />
+  </ItemGroup>
+  
+  <!-- Microsoft.Extensions.* packages for cross-platform compatibility -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <!-- Package Files -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\README.md" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>
+

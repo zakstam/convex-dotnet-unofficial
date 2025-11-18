@@ -1,0 +1,19 @@
+<Project>
+  <!-- Common targets for all projects -->
+  <Target Name="EnsureSourceLink" BeforeTargets="Restore">
+    <PropertyGroup>
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+      <EmbedUntrackedSources>true</EmbedUntrackedSources>
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+  </Target>
+
+  <!-- Import test service management for test projects -->
+  <Import Project="TestServices.targets" Condition="'$(IsTestProject)' == 'true'" />
+
+  <!-- Enable test services by default for test projects -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <TestServicesEnabled Condition="'$(TestServicesEnabled)' == ''">true</TestServicesEnabled>
+  </PropertyGroup>
+</Project>

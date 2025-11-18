@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- Not packable - bundled into Convex.Client package -->
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;CA1513;CA2016;CA1716;CA1000</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <BasePackageId>Convex.Client.Analyzer.CodeFixes</BasePackageId>
+    <Product>Convex .NET Client Analyzer Code Fixes</Product>
+    <Description>Code fixes for the Convex .NET Client Roslyn analyzers. Provides automatic fixes for common issues detected by the analyzers.</Description>
+    <PackageTags>convex;analyzer;codefix;roslyn;static-analysis;netstandard20</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) of code fixes for Convex .NET Client analyzers. Includes automatic fixes for client usage patterns and error handling. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,35 @@
+<Project>
+  <!-- Conditionally import PackForGitHub.props when packing for GitHub Packages -->
+  <Import Project="build/PackForGitHub.props" Condition="'$(PackForGitHub)' == 'true' And Exists('build/PackForGitHub.props')" />
+
+  <!-- Common Packaging Properties -->
+  <PropertyGroup>
+    <!-- Package Metadata - Common across all Convex packages -->
+    <Authors>Zak Stam</Authors>
+    <Company>ZaksNet</Company>
+    <Copyright>Copyright (c) Zak Stam 2025</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/zakstam/convex-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zakstam/convex-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- Version management is handled in msbuild/Directory.Build.props -->
+    <!-- PackageVersion will be set from Version property defined there -->
+
+    <!-- Source Link and Symbols -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Common Package Files -->
+    <PackageReadmeFile Condition="'$(PackageReadmeFile)' == ''">README.md</PackageReadmeFile>
+    <PackageIcon Condition="'$(PackageIcon)' == ''">icon.png</PackageIcon>
+
+    <!-- PackageId derivation: Support GitHub Packages prefix when PackForGitHub is true -->
+    <!-- BasePackageId should be set in individual .csproj files (e.g., Convex.Client) -->
+    <!-- If PackForGitHub is true, prefix with GitHubOwner -->
+    <PackageId Condition="'$(BasePackageId)' != '' And '$(PackForGitHub)' == 'true' And '$(GitHubOwner)' != ''">$(GitHubOwner).$(BasePackageId)</PackageId>
+    <PackageId Condition="'$(BasePackageId)' != '' And '$(PackageId)' == ''">$(BasePackageId)</PackageId>
+  </PropertyGroup>
+</Project>
+

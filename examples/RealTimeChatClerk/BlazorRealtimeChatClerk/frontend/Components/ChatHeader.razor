@@ -1,0 +1,62 @@
+@using Microsoft.AspNetCore.Components
+@using RealtimeChatClerk.Shared.Models
+
+<div class="floating-controls">
+    <button @onclick="OnToggleSearch" class="control-btn" title="Search messages">
+        <i class="bi bi-search"></i>
+    </button>
+    <button @onclick="OnToggleDarkMode" class="control-btn" title="Toggle dark mode">
+        @if (IsDarkMode)
+        {
+            <i class="bi bi-sun"></i>
+        }
+        else
+        {
+            <i class="bi bi-moon"></i>
+        }
+    </button>
+    <OnlineUsers Users="@OnlineUsers"
+                CurrentUsername="@Username"
+                GetUserColor="GetUserColor"
+                GetUserInitial="GetUserInitial" />
+    @if (UnreadMessageCount > 0)
+    {
+        <button @onclick="OnScrollToUnread" class="unread-count-badge" title="@UnreadMessageCount unread @(UnreadMessageCount == 1 ? "message" : "messages") - Click to scroll">
+            <i class="bi bi-envelope-fill"></i>
+            <span>@UnreadMessageCount</span>
+        </button>
+    }
+    <div class="user-info-mini">
+        <div class="user-avatar-small" style="background-color: @GetUserColorInternal(Username)">@GetUserInitialInternal(Username)</div>
+        <span class="username-display-mini">@Username</span>
+    </div>
+    <button @onclick="OnLogout" class="control-btn logout-btn-mini" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+    </button>
+</div>
+
+@code {
+    [Parameter] public string Username { get; set; } = "";
+    [Parameter] public bool IsDarkMode { get; set; }
+    [Parameter] public List<OnlineUserDto> OnlineUsers { get; set; } = [];
+    [Parameter] public int UnreadMessageCount { get; set; } = 0;
+    [Parameter] public EventCallback OnToggleSearch { get; set; }
+    [Parameter] public EventCallback OnToggleDarkMode { get; set; }
+    [Parameter] public EventCallback OnLogout { get; set; }
+    [Parameter] public EventCallback OnScrollToUnread { get; set; }
+    [Parameter] public Func<string, string> GetUserColor { get; set; } = _ => "#667eea";
+    [Parameter] public Func<string, string> GetUserInitial { get; set; } = _ => "?";
+
+    private string GetUserColorInternal(string username)
+    {
+        return GetUserColor?.Invoke(username) ?? "#667eea";
+    }
+
+    private string GetUserInitialInternal(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return "?";
+        return username.Substring(0, 1).ToUpperInvariant();
+    }
+}
+

@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://search_panel_scene"]
+
+[node name="SearchPanel" type="PopupPanel"]
+unique_name_in_owner = true
+size = Vector2i(400, 500)
+
+[node name="SearchContainer" type="VBoxContainer" parent="."]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 396.0
+offset_bottom = 496.0
+
+[node name="SearchHeader" type="HBoxContainer" parent="SearchContainer"]
+layout_mode = 2
+
+[node name="SearchTitle" type="Label" parent="SearchContainer/SearchHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Search Messages"
+
+[node name="SearchCloseButton" type="Button" parent="SearchContainer/SearchHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "×"
+
+[node name="SearchInput" type="LineEdit" parent="SearchContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Type to search messages..."
+
+[node name="SearchResultsScroll" type="ScrollContainer" parent="SearchContainer"]
+custom_minimum_size = Vector2(0, 400)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SearchResults" type="VBoxContainer" parent="SearchContainer/SearchResultsScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3

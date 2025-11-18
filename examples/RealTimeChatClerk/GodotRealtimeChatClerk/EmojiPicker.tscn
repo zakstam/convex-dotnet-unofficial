@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://emoji_picker_scene"]
+
+[node name="EmojiPickerPanel" type="PopupPanel"]
+unique_name_in_owner = true
+size = Vector2i(320, 280)
+
+[node name="EmojiContainer" type="VBoxContainer" parent="."]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 316.0
+offset_bottom = 276.0
+
+[node name="EmojiHeader" type="HBoxContainer" parent="EmojiContainer"]
+layout_mode = 2
+
+[node name="EmojiTitle" type="Label" parent="EmojiContainer/EmojiHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Pick an Emoji"
+
+[node name="EmojiCloseButton" type="Button" parent="EmojiContainer/EmojiHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "×"
+
+[node name="EmojiScroll" type="ScrollContainer" parent="EmojiContainer"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EmojiGrid" type="GridContainer" parent="EmojiContainer/EmojiScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 8

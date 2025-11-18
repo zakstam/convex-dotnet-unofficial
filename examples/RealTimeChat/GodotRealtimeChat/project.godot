@@ -1,0 +1,30 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Godot Realtime Chat"
+config/description="A real-time chat application using Convex .NET client and Godot"
+run/main_scene="res://ChatScene.tscn"
+config/features=PackedStringArray("4.5", "C#")
+config/icon="res://icon.svg"
+
+[autoload]
+
+ConvexManager="*res://ConvexManager.cs"
+
+[dotnet]
+
+project/assembly_name="GodotRealtimeChat"
+
+[rendering]
+
+texture_driver/driver_name="vulkan"
+global_illumination/sdfgi/enabled=false

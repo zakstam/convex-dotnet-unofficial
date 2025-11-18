@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <BasePackageId>Convex.Client.Extensions</BasePackageId>
+    <Product>Convex .NET Client Extensions</Product>
+    <Description>Core extension library for Convex .NET Client. Includes helper utilities (fluent argument builders, timestamp converters, result wrappers, pagination helpers, batch operations, testing utilities) and dependency injection extensions. Compatible with Blazor WebAssembly, MAUI, WPF, and all .NET platforms. For ASP.NET Core features (middleware, health checks), use Convex.Client.Extensions.AspNetCore package.</Description>
+    <PackageTags>convex;helpers;utilities;extensions;di;blazor;wasm;maui;wpf;testing;fluent-api;net8;net9</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) providing Reactive Extensions patterns, testing utilities, and helper methods. ASP.NET Core features available in Convex.Client.Extensions.AspNetCore package. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <!-- Only Microsoft.Extensions.* packages for true WASM compatibility -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!-- Conditional references: ProjectReference for local dev, PackageReference for packaging -->
+  <ItemGroup Condition="'$(PackForGitHub)' != 'true'">
+    <ProjectReference Include="..\Convex.Client\Convex.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PackForGitHub)' == 'true'">
+    <PackageReference Include="$(GitHubOwner).Convex.Client" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+  <!-- Exclude ASP.NET Core-specific files (moved to Convex.Client.Extensions.AspNetCore project) -->
+  <ItemGroup>
+    <Compile Remove="Middleware\**" />
+    <Compile Remove="HealthChecks\**" />
+    <None Remove="Middleware\**" />
+    <None Remove="HealthChecks\**" />
+  </ItemGroup>
+
+  <!-- Temporarily exclude Blazor extensions until proper conditional compilation is implemented -->
+  <ItemGroup>
+    <Compile Remove="ExtensionMethods\ConvexBlazorExtensions.cs" />
+  </ItemGroup>
+
+  <!-- Temporarily exclude V1 API dependencies until V2 API equivalents are implemented -->
+  <ItemGroup>
+    <Compile Remove="Testing\MockConvexClient.cs" />
+  </ItemGroup>
+
+</Project>

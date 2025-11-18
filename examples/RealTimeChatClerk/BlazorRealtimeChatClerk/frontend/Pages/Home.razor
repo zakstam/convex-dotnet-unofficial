@@ -1,0 +1,110 @@
+@page "/"
+@using Convex.Client
+@using Convex.Client.Extensions.ExtensionMethods
+@using System.Text.Json
+@using System.Collections.Generic
+@using Microsoft.AspNetCore.Components
+@using RealtimeChat.Frontend.Components
+@using RealtimeChatClerk.Shared.Models
+@using RealtimeChat.Frontend.Services
+@using Convex.Client.Extensions.Clerk
+
+<PageTitle>Realtime Chat</PageTitle>
+
+<div class="chat-app @(State.IsDarkMode ? "dark-mode" : "")">
+    @if (string.IsNullOrEmpty(State.Username))
+    {
+        <ClerkAuth OnAuthenticated="HandleClerkAuthenticated" />
+    }
+    else
+    {
+        <!-- Chat Interface -->
+        <div class="chat-container-wrapper">
+            <div class="chat-container">
+                <ChatHeader Username="@State.Username"
+                           IsDarkMode="State.IsDarkMode"
+                           OnlineUsers="@State.OnlineUsers"
+                           UnreadMessageCount="State.UnreadMessageCount"
+                           OnToggleSearch="EventCallback.Factory.Create(this, ToggleSearch)"
+                           OnToggleDarkMode="EventCallback.Factory.Create(this, ToggleDarkMode)"
+                           OnLogout="EventCallback.Factory.Create(this, Logout)"
+                           OnScrollToUnread="EventCallback.Factory.Create(this, ScrollToLatestUnreadMessage)"
+                           GetUserColor="GetUserColor"
+                           GetUserInitial="GetUserInitial" />
+
+            <SearchBar ShowSearch="State.ShowSearch"
+                      @bind-SearchText="State.SearchText"
+                      OnSearch="EventCallback.Factory.Create(this, HandleSearch)"
+                      OnClearSearch="EventCallback.Factory.Create(this, ClearSearch)"
+                      OnScrollToMessage="EventCallback.Factory.Create<string>(this, ScrollToMessage)"
+                      SearchResults="State.SearchResults" />
+
+            <MessagesList @ref="messagesListRef"
+                          Messages="State.Messages"
+                          GroupedMessages="GroupedMessages"
+                          IsLoading="State.IsLoading"
+                          IsLoadingMore="State.IsLoadingMore"
+                          CanLoadMore="State.CanLoadMore"
+                          TypingUsers="State.TypingUsers"
+                          CurrentUsername="@State.Username"
+                          HoveredMessageId="State.HoveredMessageId"
+                          MessageReactions="State.MessageReactions"
+                          MessageReadReceipts="State.MessageReadReceipts"
+                          CurrentUserReadMessages="State.CurrentUserReadMessages"
+                          MessageReplies="State.MessageReplies"
+                          ShowRepliesForMessage="State.ShowRepliesForMessage"
+                          OnLoadMoreMessages="EventCallback.Factory.Create(this, LoadMoreMessages)"
+                          OnShowMessageMenu="EventCallback.Factory.Create<string>(this, ShowMessageMenu)"
+                          OnHideMessageMenu="EventCallback.Factory.Create(this, HideMessageMenu)"
+                          OnCopyMessage="EventCallback.Factory.Create<string>(this, CopyMessage)"
+                          OnStartEditMessage="EventCallback.Factory.Create<MessageDto>(this, StartEditMessage)"
+                          OnDeleteMessage="EventCallback.Factory.Create<string>(this, DeleteMessage)"
+                          OnToggleReaction="EventCallback.Factory.Create<(string, string)>(this, ToggleReaction)"
+                          OnShowReactionPicker="EventCallback.Factory.Create<string>(this, ShowReactionPicker)"
+                          OnStartReply="EventCallback.Factory.Create<MessageDto>(this, StartReply)"
+                          OnToggleReplies="EventCallback.Factory.Create<string>(this, ToggleReplies)"
+                          OnScrollToMessage="EventCallback.Factory.Create<string>(this, ScrollToMessage)"
+                          GetUserColor="GetUserColor"
+                          GetUserInitial="GetUserInitial"
+                          RenderMarkdown="RenderMarkdown"
+                          FormatTimestamp="FormatTimestamp"
+                          GetAttachmentUrlSync="GetAttachmentUrlSync"
+                          FormatFileSize="FormatFileSize" />
+
+            <EditMessageModal EditingMessage="State.EditingMessage"
+                             @bind-EditMessageText="State.EditMessageText"
+                             IsSaving="State.IsSavingEdit"
+                             OnSave="EventCallback.Factory.Create(this, SaveEditMessage)"
+                             OnCancel="EventCallback.Factory.Create(this, CancelEdit)" />
+
+            <MessageInput @bind-MessageText="State.MessageText"
+                         IsSending="State.IsSending"
+                         ShowEmojiPicker="State.ShowEmojiPicker"
+                         ShowMentionSuggestions="State.ShowMentionSuggestions"
+                         ShowReactionPickerForMessageId="@State.ShowReactionPickerForMessageId"
+                         QuickReactions="State.QuickReactions"
+                         MentionSuggestions="MentionSuggestions"
+                         PendingFiles="State.PendingFiles"
+                         PendingFilePreviewUrls="State.PendingFilePreviewUrls"
+                         ReplyingToMessage="State.ReplyingToMessage"
+                         OnTypingInput="EventCallback.Factory.Create(this, HandleTypingInput)"
+                         OnSendMessage="EventCallback.Factory.Create(this, SendMessage)"
+                         OnToggleEmojiPicker="EventCallback.Factory.Create(this, ToggleEmojiPicker)"
+                         OnInsertEmoji="EventCallback.Factory.Create<string>(this, InsertEmoji)"
+                         OnMentionInput="EventCallback.Factory.Create(this, HandleMentionInput)"
+                         OnInsertMention="EventCallback.Factory.Create<string>(this, InsertMention)"
+                         OnHideReactionPicker="EventCallback.Factory.Create(this, HideReactionPicker)"
+                         OnAddReaction="EventCallback.Factory.Create<(string, string)>(this, AddReaction)"
+                         OnFileSelected="EventCallback.Factory.Create<InputFileChangeEventArgs>(this, HandleFileSelected)"
+                         OnRemovePendingFile="EventCallback.Factory.Create<string>(this, async (id) => await RemovePendingFile(id))"
+                         OnCancelReply="EventCallback.Factory.Create(this, CancelReply)"
+                         GetUserColor="GetUserColor"
+                         GetUserInitial="GetUserInitial" />
+            </div>
+        </div>
+    }
+
+    <div class="version-footer">
+        <span>Version @AppVersion</span>
+    </div>
+</div>

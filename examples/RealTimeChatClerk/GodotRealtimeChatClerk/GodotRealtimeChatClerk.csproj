@@ -1,0 +1,37 @@
+<Project Sdk="Godot.NET.Sdk/4.5.0">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Convex.Client\Convex.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Extensions.Clerk\Convex.Client.Extensions.Clerk.csproj" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Extensions.Clerk.Godot\Convex.Client.Extensions.Clerk.Godot.csproj" />
+    <ProjectReference Include="..\RealtimeChatClerk.Shared\RealtimeChatClerk.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- Include source generator and analyzers when using ProjectReference -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Analyzer.CodeFixes\Convex.Client.Analyzer.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!-- Add api.d.ts for type-safe function constants generation -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\backend\convex\_generated\api.d.ts" />
+  </ItemGroup>
+</Project>

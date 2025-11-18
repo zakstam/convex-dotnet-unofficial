@@ -1,0 +1,89 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.tmp
+*.temp
+*.TMP
+*.dll
+*.exe
+*.pdb
+*.deps.json
+
+# NuGet
+*.nupkg
+*.snupkg
+nuget.config
+packages/
+nupkg/
+
+# IDE
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+.claude/
+.godot/
+.rider/
+*.DotSettings.user
+*.userosettings.xml
+*.json.rpc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test Results
+TestResults/
+*.trx
+*.xml
+
+# Coverage
+coverage/
+*.coverage
+
+# Node.js (for test-oracle)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+artifacts/
+publish/
+dist/
+tmpDist*
+*.map
+**/exports/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Sensitive configs
+appsettings.Production.json
+**/appsettings.*.json
+!**/appsettings.Development.json
+# Exclude appsettings.json files (use appsettings.example.json as template)
+**/appsettings.json
+!**/appsettings.example.json
+
+# Convex
+convex/_generated/
+
+# Auto-generated C# files
+**/Scripts/Generated/
+
+# Testing infrastructure (new structure)
+testing/oracle/node_modules/
+testing/demo/node_modules/
+testing/demo/.env.local
+testing/demo/convex/_generated/
+
+# Migration artifacts (can be deleted after migration)
+*.backup

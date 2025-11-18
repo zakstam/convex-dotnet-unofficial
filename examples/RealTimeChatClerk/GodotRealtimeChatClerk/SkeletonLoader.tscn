@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://skeleton_loader_scene"]
+
+[node name="SkeletonLoader" type="VBoxContainer"]
+unique_name_in_owner = true
+visible = false
+
+[node name="Skeleton1" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="AvatarPlaceholder1" type="Panel" parent="Skeleton1"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="TextContainer1" type="VBoxContainer" parent="Skeleton1"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UsernamePlaceholder1" type="Panel" parent="Skeleton1/TextContainer1"]
+custom_minimum_size = Vector2(100, 14)
+layout_mode = 2
+
+[node name="MessagePlaceholder1" type="Panel" parent="Skeleton1/TextContainer1"]
+custom_minimum_size = Vector2(250, 16)
+layout_mode = 2
+
+[node name="Skeleton2" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="AvatarPlaceholder2" type="Panel" parent="Skeleton2"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="TextContainer2" type="VBoxContainer" parent="Skeleton2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UsernamePlaceholder2" type="Panel" parent="Skeleton2/TextContainer2"]
+custom_minimum_size = Vector2(100, 14)
+layout_mode = 2
+
+[node name="MessagePlaceholder2" type="Panel" parent="Skeleton2/TextContainer2"]
+custom_minimum_size = Vector2(250, 16)
+layout_mode = 2
+
+[node name="Skeleton3" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="AvatarPlaceholder3" type="Panel" parent="Skeleton3"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="TextContainer3" type="VBoxContainer" parent="Skeleton3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UsernamePlaceholder3" type="Panel" parent="Skeleton3/TextContainer3"]
+custom_minimum_size = Vector2(100, 14)
+layout_mode = 2
+
+[node name="MessagePlaceholder3" type="Panel" parent="Skeleton3/TextContainer3"]
+custom_minimum_size = Vector2(250, 16)
+layout_mode = 2

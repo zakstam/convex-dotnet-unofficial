@@ -1,0 +1,132 @@
+@using Microsoft.AspNetCore.Components
+@using Convex.Client.Extensions.Clerk.Blazor
+@inject BlazorClerkTokenService ClerkTokenService
+@implements IDisposable
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-icon"><i class="bi bi-chat-dots-fill"></i></div>
+        <h1>Welcome to Realtime Chat</h1>
+        <p class="login-subtitle">Connect and chat in real-time with Clerk authentication</p>
+        @if (IsLoading)
+        {
+            <div class="login-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Initializing authentication...</p>
+            </div>
+        }
+        else if (!IsAuthenticated)
+        {
+            <div class="login-form">
+                <button type="button"
+                        @onclick="HandleSignIn"
+                        class="login-btn clerk-btn">
+                    <span>Sign In with Clerk</span>
+                    <span class="btn-arrow"><i class="bi bi-arrow-right"></i></span>
+                </button>
+                <p class="login-hint">Click the button above to sign in and start chatting</p>
+            </div>
+        }
+        else
+        {
+            <div class="login-loading">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Authenticated! Loading chat...</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnAuthenticated { get; set; }
+
+    private bool IsLoading { get; set; } = true;
+    private bool IsAuthenticated { get; set; } = false;
+    private DotNetObjectReference<ClerkAuth>? _objRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeClerkAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            
+            // Set up listener for auth state changes
+            try
+            {
+                await ClerkTokenService.SetupAuthStateListenerAsync(_objRef, nameof(OnClerkAuthStateChanged));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error setting up Clerk listener: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task InitializeClerkAsync()
+    {
+        try
+        {
+            await ClerkTokenService.InitializeAsync();
+            IsAuthenticated = ClerkTokenService.IsAuthenticated;
+            
+            if (IsAuthenticated && OnAuthenticated.HasDelegate)
+            {
+                await OnAuthenticated.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing Clerk: {ex.Message}");
+            IsAuthenticated = false;
+        }
+        finally
+        {
+            IsLoading = ClerkTokenService.IsLoading;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSignIn()
+    {
+        try
+        {
+            await ClerkTokenService.OpenSignInAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error opening sign-in: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnClerkAuthStateChanged(bool isAuthenticated)
+    {
+        await InvokeAsync(async () =>
+        {
+            IsAuthenticated = isAuthenticated;
+            await ClerkTokenService.UpdateAuthStateAsync();
+            
+            if (isAuthenticated && OnAuthenticated.HasDelegate)
+            {
+                await OnAuthenticated.InvokeAsync();
+            }
+            
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _objRef?.Dispose();
+    }
+}
+

@@ -1,0 +1,487 @@
+/* MessageItemMinimalistCompact Styles */
+
+.message-minimalist {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 3px 8px;
+    margin: 1px 0;
+    transition: background 0.15s ease;
+    position: relative;
+}
+
+.message-minimalist:hover {
+    background: #f5f5f5;
+    padding: 4px 8px;
+    margin: 0;
+    border-radius: 4px;
+}
+
+.message-minimalist.own {
+    flex-direction: row-reverse;
+}
+
+/* Header */
+.minimalist-header {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 12px;
+    flex-wrap: wrap;
+    flex: 1;
+    margin-bottom: 2px;
+}
+
+.author-badge {
+    display: none;
+    flex-shrink: 0;
+}
+
+.message-minimalist:hover .author-badge {
+    display: block;
+}
+
+.author-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: 11px;
+}
+
+.meta-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.author-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 12px;
+}
+
+.message-time {
+    color: #999;
+    font-size: 11px;
+}
+
+.separator {
+    color: #ddd;
+    margin: 0 2px;
+}
+
+.edited-badge {
+    color: #999;
+    font-size: 10px;
+    font-style: italic;
+}
+
+/* Reply Context (Compact) */
+.minimalist-reply-context {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background: #f9f9f9;
+    border-left: 2px solid #667eea;
+    border-radius: 2px;
+    font-size: 11px;
+    cursor: pointer;
+    margin: 2px 0;
+    transition: all 0.2s ease;
+    max-width: 100%;
+}
+
+.minimalist-reply-context:hover {
+    background: #f5f5f5;
+    border-left-color: #5568d3;
+}
+
+.minimalist-reply-context i {
+    color: #667eea;
+    font-size: 11px;
+}
+
+.reply-to-name {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.reply-to-text {
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+/* Content */
+.minimalist-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.message-text {
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
+/* Attachments (Minimal) */
+.minimalist-attachments {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.minimalist-attachments.image-attachments {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 4px;
+}
+
+.minimalist-attachments.image-attachments.multiple {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.attachment-image {
+    max-width: 200px;
+    height: auto;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.attachment-image:hover {
+    transform: scale(1.02);
+}
+
+.file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background: #f5f5f5;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #667eea;
+    font-size: 12px;
+    transition: background 0.15s ease;
+    border: 1px solid #e0e0e0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-link:hover {
+    background: #efefef;
+    border-color: #667eea;
+}
+
+.file-link i {
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+/* Reactions (Inline Compact) */
+.minimalist-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.reaction-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.reaction-pill:hover {
+    background: #efefef;
+    border-color: #d0d0d0;
+}
+
+.reaction-pill.reacted {
+    background: #e8eef8;
+    border-color: #667eea;
+}
+
+.reaction-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #999;
+    font-size: 11px;
+}
+
+.reaction-add:hover {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+/* Action Buttons (Floating) */
+.minimalist-actions {
+    position: absolute;
+    right: -80px;
+    top: 0;
+    display: flex;
+    gap: 3px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.message-minimalist.own .minimalist-actions {
+    right: auto;
+    left: -80px;
+}
+
+.quick-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #666;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.quick-action:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.quick-action.delete:hover {
+    background: #fef5f5;
+    color: #ff6b6b;
+}
+
+.quick-action .badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ff6b6b;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+/* Read Receipt (Minimal) */
+.read-receipt-indicator {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.message-minimalist:hover .read-receipt-indicator {
+    opacity: 1;
+}
+
+.read-receipt-indicator.read {
+    color: #667eea;
+}
+
+.read-receipt-indicator.sent {
+    color: #999;
+}
+
+.message-minimalist.own .read-receipt-indicator {
+    right: auto;
+    left: 0;
+}
+
+/* Replies (Compact) */
+.minimalist-replies-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 4px;
+    padding-left: 8px;
+    border-left: 2px solid #e0e0e0;
+}
+
+.reply-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.reply-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 9px;
+    flex-shrink: 0;
+}
+
+.reply-bubble {
+    flex: 1;
+    min-width: 0;
+}
+
+.reply-user {
+    font-weight: 600;
+    font-size: 11px;
+    color: #1a1a1a;
+}
+
+.reply-text {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.3;
+    word-break: break-word;
+    margin-top: 1px;
+}
+
+.reply-time {
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Image Lightbox */
+.image-lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    z-index: 1001;
+}
+
+.lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-image {
+    max-width: 90%;
+    max-height: 85vh;
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .message-minimalist {
+        padding: 2px 4px;
+    }
+
+    .minimalist-actions {
+        position: static;
+        right: auto;
+        left: auto;
+        margin-left: 4px;
+        border: none;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .message-minimalist.own .minimalist-actions {
+        margin-left: 0;
+        margin-right: 4px;
+    }
+
+    .quick-action {
+        width: 20px;
+        height: 20px;
+        font-size: 11px;
+    }
+
+    .minimalist-attachments.image-attachments {
+        grid-template-columns: 1fr;
+    }
+
+    .attachment-image {
+        max-width: 150px;
+    }
+
+    .minimalist-reply-context {
+        max-width: 150px;
+    }
+
+    .reply-to-text {
+        max-width: 120px;
+    }
+}

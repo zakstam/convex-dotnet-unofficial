@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- Not packable - bundled into Convex.Client package -->
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;NU5128;NU5017</NoWarn>
+    <Deterministic>true</Deterministic>
+    <BasePackageId>Convex.FunctionGenerator</BasePackageId>
+    <Product>Convex .NET Function Generator</Product>
+    <Description>Roslyn source generator that creates type-safe constants for Convex function names from your TypeScript backend.</Description>
+    <PackageTags>convex;source-generator;roslyn;codegen;netstandard20</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Pack the generator dll in the analyzers/dotnet/cs folder -->
+  <!-- Use ItemGroup at project level (like Convex.Client does) so it's always evaluated -->
+  <ItemGroup>
+    <!-- Pack the DLL - use same pattern as Convex.Client -->
+    <None Include="bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+    <!-- Always include README and icon -->
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>

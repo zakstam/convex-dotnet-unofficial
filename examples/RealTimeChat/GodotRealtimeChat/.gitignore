@@ -1,0 +1,37 @@
+# Godot-specific ignores
+.godot/
+*.json.rpc
+.vs
+.vscode
+*.sln
+.DS_Store
+
+# C# specific ignores
+bin/
+obj/
+*.csproj.user
+*.sln
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.project
+.cproject
+.c9/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# User-specific files (if any)
+appsettings.local.json
