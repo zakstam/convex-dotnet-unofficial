@@ -30,6 +30,15 @@ internal sealed class ConvexWebSocketClient(
     ReconnectionPolicy? reconnectionPolicy = null,
     ILogger? logger = null) : IDisposable
 {
+    /// <summary>
+    /// Tracks subscription metadata needed for reconnection.
+    /// </summary>
+    private sealed class SubscriptionInfo
+    {
+        public required Channel<object> Channel { get; init; }
+        public required string FunctionName { get; init; }
+        public object? Args { get; init; }
+    }
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -40,7 +49,7 @@ internal sealed class ConvexWebSocketClient(
 
     private readonly string _deploymentUrl = deploymentUrl;
     private ClientWebSocket _webSocket = new ClientWebSocket();
-    private readonly ConcurrentDictionary<string, Channel<object>> _subscriptions = new ConcurrentDictionary<string, Channel<object>>();
+    private readonly ConcurrentDictionary<string, SubscriptionInfo> _subscriptions = new ConcurrentDictionary<string, SubscriptionInfo>();
     private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
     private readonly ReconnectionPolicy _reconnectionPolicy = reconnectionPolicy ?? ReconnectionPolicy.Default();
     private readonly SyncContextCapture _syncContext = syncContext ?? new SyncContextCapture();
@@ -106,6 +115,11 @@ internal sealed class ConvexWebSocketClient(
             // Increment connection count
             _connectionCount++;
 
+            // Reset query set version on reconnection (server will sync its state)
+            // This ensures protocol version synchronization after reconnection
+            // Must be done BEFORE sending Connect message so it uses the correct baseVersion
+            _querySetVersion = 0;
+
             // Send Connect handshake message
             // See: convex-js/src/browser/sync/client.ts:395-403
             await SendConnectMessageAsync();
@@ -125,6 +139,9 @@ internal sealed class ConvexWebSocketClient(
 
             // Update last close reason for next reconnection
             _lastCloseReason = null;
+
+            // Re-establish all active subscriptions after reconnection
+            await ResubscribeAllAsync();
 
         }
         catch (Exception ex)
@@ -171,12 +188,15 @@ internal sealed class ConvexWebSocketClient(
         {
             UpdateConnectionState(ConnectionState.Disconnected);
 
-            // Complete all active subscription channels
-            foreach (var channel in _subscriptions.Values)
+            // Mark channels as completed but preserve subscription metadata for reconnection
+            // This allows us to re-establish subscriptions when reconnecting
+            foreach (var subscription in _subscriptions.Values)
             {
-                channel.Writer.Complete();
+                // Complete the old channel - consumers will need to handle this
+                subscription.Channel.Writer.Complete();
             }
-            _subscriptions.Clear();
+            // Note: We don't clear _subscriptions here - metadata is preserved for reconnection
+            // Channels will be recreated in ResubscribeAllAsync when reconnecting
         }
     }
 
@@ -195,7 +215,13 @@ internal sealed class ConvexWebSocketClient(
 
         // Create channel for this subscription
         var channel = Channel.CreateUnbounded<object>();
-        _subscriptions[subscriptionId] = channel;
+        var subscriptionInfo = new SubscriptionInfo
+        {
+            Channel = channel,
+            FunctionName = functionName,
+            Args = null
+        };
+        _subscriptions[subscriptionId] = subscriptionInfo;
 
         try
         {
@@ -203,7 +229,7 @@ internal sealed class ConvexWebSocketClient(
             await SendSubscriptionRequestAsync(subscriptionId, functionName, null);
 
             // Yield values as they arrive
-            await foreach (var value in channel.Reader.ReadAllAsync())
+            await foreach (var value in subscriptionInfo.Channel.Reader.ReadAllAsync())
             {
                 // Deserialize from raw JSON string to type T
                 if (value is string json)
@@ -238,13 +264,19 @@ internal sealed class ConvexWebSocketClient(
 
         var subscriptionId = Interlocked.Increment(ref _nextSubscriptionId).ToString();
         var channel = Channel.CreateUnbounded<object>();
-        _subscriptions[subscriptionId] = channel;
+        var subscriptionInfo = new SubscriptionInfo
+        {
+            Channel = channel,
+            FunctionName = functionName,
+            Args = args
+        };
+        _subscriptions[subscriptionId] = subscriptionInfo;
 
         try
         {
             await SendSubscriptionRequestAsync(subscriptionId, functionName, args);
 
-            await foreach (var value in channel.Reader.ReadAllAsync())
+            await foreach (var value in subscriptionInfo.Channel.Reader.ReadAllAsync())
             {
                 // Deserialize from raw JSON string to type T
                 if (value is string json)
@@ -560,6 +592,60 @@ internal sealed class ConvexWebSocketClient(
     }
 
     /// <summary>
+    /// Re-establishes all active subscriptions after reconnection.
+    /// This ensures subscriptions continue to work after network interruptions.
+    /// </summary>
+    private async Task ResubscribeAllAsync()
+    {
+        if (_subscriptions.IsEmpty)
+        {
+            return; // No subscriptions to re-establish
+        }
+
+        _logger?.LogInformation("Re-establishing {Count} subscription(s) after reconnection", _subscriptions.Count);
+
+        // Create a snapshot of subscriptions to avoid modification during iteration
+        var subscriptionsToResubscribe = _subscriptions.ToArray();
+
+        foreach (var kvp in subscriptionsToResubscribe)
+        {
+            var subscriptionId = kvp.Key;
+            var subscriptionInfo = kvp.Value;
+
+            try
+            {
+                // Recreate the channel if it was completed during disconnection
+                // Check if channel is completed by trying to write (this is a best-effort check)
+                var needsNewChannel = subscriptionInfo.Channel.Reader.Completion.IsCompleted;
+
+                if (needsNewChannel)
+                {
+                    // Create a new channel to replace the completed one
+                    var newChannel = Channel.CreateUnbounded<object>();
+                    var updatedInfo = new SubscriptionInfo
+                    {
+                        Channel = newChannel,
+                        FunctionName = subscriptionInfo.FunctionName,
+                        Args = subscriptionInfo.Args
+                    };
+                    _subscriptions[subscriptionId] = updatedInfo;
+                    subscriptionInfo = updatedInfo;
+                }
+
+                // Re-send subscription request to server
+                await SendSubscriptionRequestAsync(subscriptionId, subscriptionInfo.FunctionName, subscriptionInfo.Args);
+                _logger?.LogDebug("Re-established subscription {SubscriptionId} for function {FunctionName}", subscriptionId, subscriptionInfo.FunctionName);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to re-establish subscription {SubscriptionId} for function {FunctionName}: {Message}",
+                    subscriptionId, subscriptionInfo.FunctionName, ex.Message);
+                // Continue with other subscriptions even if one fails
+            }
+        }
+    }
+
+    /// <summary>
     /// Attempts to reconnect with exponential backoff according to the reconnection policy.
     /// </summary>
     private async Task TryReconnectAsync(CancellationToken cancellationToken)
@@ -661,14 +747,14 @@ internal sealed class ConvexWebSocketClient(
                                 System.Diagnostics.Debug.WriteLine($"[WebSocket] Transition modification for queryId: {queryId}");
                                 System.Console.WriteLine($"[WebSocket] Transition modification for queryId: {queryId}");
 
-                                if (_subscriptions.TryGetValue(queryId, out var channel))
+                                if (_subscriptions.TryGetValue(queryId, out var subscriptionInfo))
                                 {
                                     // Store the raw JSON string so LiveQuery can deserialize it to the correct type T
                                     var rawJson = valueElement.GetRawText();
                                     _logger?.LogDebug("[WebSocket] Writing to channel for queryId: {QueryId}", queryId);
                                     System.Diagnostics.Debug.WriteLine($"[WebSocket] Writing to channel for queryId: {queryId}");
                                     System.Console.WriteLine($"[WebSocket] Writing to channel for queryId: {queryId}");
-                                    await channel.Writer.WriteAsync(rawJson);
+                                    await subscriptionInfo.Channel.Writer.WriteAsync(rawJson);
                                 }
                                 else
                                 {
@@ -711,9 +797,9 @@ internal sealed class ConvexWebSocketClient(
                         System.Console.WriteLine($"[WebSocket] {messageType}: {errorMessage}\n{guidance}");
 
                         // Complete all subscription channels with error
-                        foreach (var channel in _subscriptions.Values)
+                        foreach (var subscriptionInfo in _subscriptions.Values)
                         {
-                            channel.Writer.Complete(new InvalidOperationException($"{messageType}: {errorMessage}"));
+                            subscriptionInfo.Channel.Writer.Complete(new InvalidOperationException($"{messageType}: {errorMessage}"));
                         }
                         _subscriptions.Clear();
 
@@ -867,9 +953,9 @@ internal sealed class ConvexWebSocketClient(
         _webSocket.Dispose();
 
         // Complete all subscription channels
-        foreach (var channel in _subscriptions.Values)
+        foreach (var subscriptionInfo in _subscriptions.Values)
         {
-            channel.Writer.Complete();
+            subscriptionInfo.Channel.Writer.Complete();
         }
         _subscriptions.Clear();
 
