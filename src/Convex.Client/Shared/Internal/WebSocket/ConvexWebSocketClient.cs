@@ -157,7 +157,7 @@ internal sealed class ConvexWebSocketClient(
     /// </summary>
     public async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
-        if (_webSocket.State != WebSocketState.Open && _webSocket.State != WebSocketState.CloseReceived)
+        if (_webSocket.State is not WebSocketState.Open and not WebSocketState.CloseReceived)
         {
             UpdateConnectionState(ConnectionState.Disconnected);
             return; // Already disconnected
@@ -188,12 +188,21 @@ internal sealed class ConvexWebSocketClient(
         {
             UpdateConnectionState(ConnectionState.Disconnected);
 
-            // Mark channels as completed but preserve subscription metadata for reconnection
-            // This allows us to re-establish subscriptions when reconnecting
+            // Complete channels with an exception to signal disconnection (not normal completion)
+            // This allows consumers to distinguish between normal completion and disconnection
+            // Channels will be recreated in ResubscribeAllAsync when reconnecting
+            var disconnectException = new InvalidOperationException("WebSocket connection lost. Subscription will be re-established on reconnection.");
             foreach (var subscription in _subscriptions.Values)
             {
-                // Complete the old channel - consumers will need to handle this
-                subscription.Channel.Writer.Complete();
+                try
+                {
+                    // Complete with exception so consumers know it's a disconnection
+                    subscription.Channel.Writer.Complete(disconnectException);
+                }
+                catch
+                {
+                    // Channel may already be completed - ignore
+                }
             }
             // Note: We don't clear _subscriptions here - metadata is preserved for reconnection
             // Channels will be recreated in ResubscribeAllAsync when reconnecting
@@ -226,7 +235,20 @@ internal sealed class ConvexWebSocketClient(
         try
         {
             // Send subscription request to server
-            await SendSubscriptionRequestAsync(subscriptionId, functionName, null);
+            // Wrap in try-catch to handle send failures and clean up subscription
+            try
+            {
+                await SendSubscriptionRequestAsync(subscriptionId, functionName, null);
+            }
+            catch (Exception ex)
+            {
+                // Failed to send subscription request - clean up and rethrow
+                _logger?.LogError(ex, "Failed to send subscription request for {FunctionName} (subscriptionId: {SubscriptionId}): {Message}",
+                    functionName, subscriptionId, ex.Message);
+                _ = _subscriptions.TryRemove(subscriptionId, out _);
+                subscriptionInfo.Channel.Writer.Complete(ex);
+                throw;
+            }
 
             // Yield values as they arrive
             await foreach (var value in subscriptionInfo.Channel.Reader.ReadAllAsync())
@@ -246,7 +268,16 @@ internal sealed class ConvexWebSocketClient(
         {
             // Cleanup subscription
             _ = _subscriptions.TryRemove(subscriptionId, out _);
-            await SendUnsubscribeRequestAsync(subscriptionId);
+            try
+            {
+                await SendUnsubscribeRequestAsync(subscriptionId);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't throw - we're cleaning up anyway
+                _logger?.LogWarning(ex, "Failed to send unsubscribe request for subscriptionId {SubscriptionId}: {Message}",
+                    subscriptionId, ex.Message);
+            }
         }
     }
 
@@ -274,7 +305,21 @@ internal sealed class ConvexWebSocketClient(
 
         try
         {
-            await SendSubscriptionRequestAsync(subscriptionId, functionName, args);
+            // Send subscription request to server
+            // Wrap in try-catch to handle send failures and clean up subscription
+            try
+            {
+                await SendSubscriptionRequestAsync(subscriptionId, functionName, args);
+            }
+            catch (Exception ex)
+            {
+                // Failed to send subscription request - clean up and rethrow
+                _logger?.LogError(ex, "Failed to send subscription request for {FunctionName} with args (subscriptionId: {SubscriptionId}): {Message}",
+                    functionName, subscriptionId, ex.Message);
+                _ = _subscriptions.TryRemove(subscriptionId, out _);
+                subscriptionInfo.Channel.Writer.Complete(ex);
+                throw;
+            }
 
             await foreach (var value in subscriptionInfo.Channel.Reader.ReadAllAsync())
             {
@@ -292,7 +337,16 @@ internal sealed class ConvexWebSocketClient(
         finally
         {
             _ = _subscriptions.TryRemove(subscriptionId, out _);
-            await SendUnsubscribeRequestAsync(subscriptionId);
+            try
+            {
+                await SendUnsubscribeRequestAsync(subscriptionId);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't throw - we're cleaning up anyway
+                _logger?.LogWarning(ex, "Failed to send unsubscribe request for subscriptionId {SubscriptionId}: {Message}",
+                    subscriptionId, ex.Message);
+            }
         }
     }
 
@@ -617,23 +671,18 @@ internal sealed class ConvexWebSocketClient(
 
             try
             {
-                // Recreate the channel if it was completed during disconnection
-                // Check if channel is completed by trying to write (this is a best-effort check)
-                var needsNewChannel = subscriptionInfo.Channel.Reader.Completion.IsCompleted;
-
-                if (needsNewChannel)
+                // Always recreate the channel - it was completed during disconnection
+                // The old channel's async enumerable has exited, so we need a new channel
+                // for the re-established subscription to write to
+                var newChannel = Channel.CreateUnbounded<object>();
+                var updatedInfo = new SubscriptionInfo
                 {
-                    // Create a new channel to replace the completed one
-                    var newChannel = Channel.CreateUnbounded<object>();
-                    var updatedInfo = new SubscriptionInfo
-                    {
-                        Channel = newChannel,
-                        FunctionName = subscriptionInfo.FunctionName,
-                        Args = subscriptionInfo.Args
-                    };
-                    _subscriptions[subscriptionId] = updatedInfo;
-                    subscriptionInfo = updatedInfo;
-                }
+                    Channel = newChannel,
+                    FunctionName = subscriptionInfo.FunctionName,
+                    Args = subscriptionInfo.Args
+                };
+                _subscriptions[subscriptionId] = updatedInfo;
+                subscriptionInfo = updatedInfo;
 
                 // Re-send subscription request to server
                 await SendSubscriptionRequestAsync(subscriptionId, subscriptionInfo.FunctionName, subscriptionInfo.Args);
@@ -643,6 +692,17 @@ internal sealed class ConvexWebSocketClient(
             {
                 _logger?.LogWarning(ex, "Failed to re-establish subscription {SubscriptionId} for function {FunctionName}: {Message}",
                     subscriptionId, subscriptionInfo.FunctionName, ex.Message);
+
+                // Complete the channel with error so consumers know the resubscription failed
+                try
+                {
+                    subscriptionInfo.Channel.Writer.Complete(ex);
+                }
+                catch
+                {
+                    // Channel may already be completed - ignore
+                }
+
                 // Continue with other subscriptions even if one fails
             }
         }
