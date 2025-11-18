@@ -41,7 +41,9 @@ This project is actively maintained by the community and provides protocol compa
 
 </div>
 
-[📹 Watch Demo Video](demo.gif)
+### Demo
+
+![Demo](demo.gif)
 
 ---
 
