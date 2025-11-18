@@ -282,11 +282,18 @@ internal sealed class BatchQueryBuilder(
             }
 
             // Use function name as key (handle duplicates by appending index if needed)
-            var key = item.FunctionName;
+            var baseKey = item.FunctionName;
+            var key = baseKey;
+
+            // If the key already exists, keep trying with indexed versions until we find a unique key
             if (dictionary.ContainsKey(key))
             {
-                // If duplicate function names exist, append index to make unique
-                key = $"{item.FunctionName}[{i}]";
+                var index = 1;
+                do
+                {
+                    key = $"{baseKey}[{index}]";
+                    index++;
+                } while (dictionary.ContainsKey(key));
             }
 
             dictionary[key] = result;
