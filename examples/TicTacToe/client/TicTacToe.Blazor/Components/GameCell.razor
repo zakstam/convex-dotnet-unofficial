@@ -1,0 +1,38 @@
+@* Game Cell Component - Individual cell on the tic-tac-toe board *@
+
+<button class="cell @CellClass"
+        @onclick="HandleClick"
+        disabled="@IsDisabled">
+    <span class="cell-value">@DisplayValue</span>
+</button>
+
+@code {
+    [Parameter]
+    public int Position { get; set; }
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public EventCallback OnCellClick { get; set; }
+
+    private string CellClass => $"{(string.IsNullOrEmpty(Value) ? "empty" : Value.ToLower())} {(IsDisabled ? "disabled" : "")}";
+
+    private string DisplayValue => Value switch
+    {
+        "X" => "❌",
+        "O" => "⭕",
+        _ => ""
+    };
+
+    private async Task HandleClick()
+    {
+        if (!IsDisabled && string.IsNullOrEmpty(Value))
+        {
+            await OnCellClick.InvokeAsync();
+        }
+    }
+}

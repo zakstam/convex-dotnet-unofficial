@@ -1,0 +1,126 @@
+@* Game Board Component - Shows the active game and board *@
+
+<div class="game-board-container">
+    <div class="game-info-panel">
+        <div class="players">
+            <div class="player @(Game.PlayerX == Username ? "current-user" : "")">
+                <span class="symbol">❌</span>
+                <span class="name">@Game.PlayerX</span>
+                @if (Game.CurrentTurn == "X" && Game.Status == "playing")
+                {
+                    <span class="turn-indicator">← Your turn</span>
+                }
+            </div>
+            <div class="vs">VS</div>
+            <div class="player @(Game.PlayerO == Username ? "current-user" : "")">
+                <span class="symbol">⭕</span>
+                <span class="name">@(Game.PlayerO ?? "Waiting...")</span>
+                @if (Game.CurrentTurn == "O" && Game.Status == "playing")
+                {
+                    <span class="turn-indicator">← Your turn</span>
+                }
+            </div>
+        </div>
+
+        @if (Game.Status == "waiting")
+        {
+            <div class="game-status waiting">
+                <p>⏳ Waiting for opponent to join...</p>
+            </div>
+        }
+        else if (Game.Status == "finished")
+        {
+            <div class="game-status finished">
+                @if (Game.Winner == "draw")
+                {
+                    <p class="result">🤝 It's a draw!</p>
+                }
+                else if (Game.Winner == "X")
+                {
+                    <p class="result">@(Game.PlayerX == Username ? "🎉 You won!" : $"❌ {Game.PlayerX} wins!")</p>
+                }
+                else if (Game.Winner == "O")
+                {
+                    <p class="result">@(Game.PlayerO == Username ? "🎉 You won!" : $"⭕ {Game.PlayerO} wins!")</p>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Tic-Tac-Toe Board -->
+    <div class="board">
+        @for (int i = 0; i < 9; i++)
+        {
+            int position = i;
+            <GameCell Position="@position"
+                     Value="@Game.Board[position]"
+                     IsDisabled="@IsPositionDisabled(position)"
+                     OnCellClick="() => OnMakeMove.InvokeAsync(position)" />
+        }
+    </div>
+
+    <!-- Game Controls -->
+    <div class="game-controls">
+        @if (Game.Status == "finished")
+        {
+            <button @onclick="() => OnNewGame.InvokeAsync()"
+                    class="btn-primary">
+                New Game
+            </button>
+        }
+        else if (Game.Status == "playing")
+        {
+            <button @onclick="() => OnForfeit.InvokeAsync()"
+                    class="btn-danger">
+                Forfeit Game
+            </button>
+        }
+        <button @onclick="() => OnNewGame.InvokeAsync()"
+                class="btn-secondary">
+            Back to Lobby
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Game Game { get; set; } = new();
+
+    [Parameter]
+    public string Username { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<int> OnMakeMove { get; set; }
+
+    [Parameter]
+    public EventCallback OnForfeit { get; set; }
+
+    [Parameter]
+    public EventCallback OnNewGame { get; set; }
+
+    private bool IsPositionDisabled(int position)
+    {
+        // Disable if game not playing
+        if (Game.Status != "playing")
+            return true;
+
+        // Disable if position already taken
+        if (!string.IsNullOrEmpty(Game.Board[position]))
+            return true;
+
+        // Disable if not current player's turn
+        var isPlayerX = Game.PlayerX == Username;
+        var isPlayerO = Game.PlayerO == Username;
+
+        if (isPlayerX && Game.CurrentTurn != "X")
+            return true;
+        if (isPlayerO && Game.CurrentTurn != "O")
+            return true;
+
+        // If not a player in this game, disable
+        if (!isPlayerX && !isPlayerO)
+            return true;
+
+        return false;
+    }
+}

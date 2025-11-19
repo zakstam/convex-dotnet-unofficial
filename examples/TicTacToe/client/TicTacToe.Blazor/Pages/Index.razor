@@ -1,0 +1,414 @@
+@page "/"
+@using Microsoft.JSInterop
+@inject TicTacToeService GameService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>Tic-Tac-Toe</PageTitle>
+
+<div class="tic-tac-toe-app">
+    @if (string.IsNullOrEmpty(username))
+    {
+        <!-- Login Screen -->
+        <div class="login-container">
+            <h1>🎮 Tic-Tac-Toe</h1>
+            <p>Enter your name to start playing</p>
+            <div class="login-form">
+                <input type="text"
+                       @bind="usernameInput"
+                       @onkeydown="HandleLoginKeyDown"
+                       placeholder="Your name"
+                       class="username-input" />
+                <button @onclick="Login" class="btn-primary">Start Playing</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Game Interface -->
+        <div class="game-container">
+            <div class="game-header">
+                <h1>🎮 Tic-Tac-Toe</h1>
+                <div class="player-info">
+                    <span>Playing as: <strong>@username</strong></span>
+                    <button @onclick="Logout" class="btn-secondary btn-sm">Logout</button>
+                </div>
+            </div>
+
+            @if (currentGameId == null)
+            {
+                <!-- Game Lobby -->
+                <GameLobby Username="@username"
+                          AvailableGames="@availableGames"
+                          IsCreatingGame="@isCreatingGame"
+                          OnCreateGame="CreateNewGame"
+                          OnJoinGame="JoinGame" />
+            }
+            else if (currentGame != null)
+            {
+                <!-- Active Game -->
+                <GameBoard Game="@currentGame"
+                          Username="@username"
+                          OnMakeMove="MakeMove"
+                          OnForfeit="ForfeitGame"
+                          OnNewGame="ReturnToLobby" />
+            }
+            else
+            {
+                <div class="loading">Loading game...</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string? username;
+    private string usernameInput = "";
+    private string? currentGameId;
+    private Game? currentGame;
+    private List<Game> availableGames = new();
+    private bool isCreatingGame = false;
+    private System.Threading.Timer? presenceHeartbeatTimer;
+    private DateTime lastActivityTime = DateTime.UtcNow;
+    private DotNetObjectReference<Index>? dotNetReference;
+    private bool isConnectionLossHandled = false;
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to service events
+        GameService.GameUpdated += OnGameUpdated;
+        GameService.GamesListUpdated += OnGamesListUpdated;
+        GameService.ErrorOccurred += OnError;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Initialize browser lifecycle event handlers via JSInterop
+            try
+            {
+                dotNetReference = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("presenceManager.initialize", dotNetReference);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to initialize presence manager: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called by JavaScript when connection loss is detected (tab close, visibility change).
+    /// </summary>
+    [JSInvokable]
+    public async Task OnConnectionLost()
+    {
+        // Prevent multiple calls during the same disconnect event
+        if (isConnectionLossHandled)
+            return;
+
+        isConnectionLossHandled = true;
+
+        try
+        {
+            Console.WriteLine("Connection loss detected - cleaning up");
+
+            // If user is in a game, forfeit it immediately
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(currentGameId))
+            {
+                try
+                {
+                    // Update presence to offline
+                    await GameService.UpdatePresenceAsync(username, "offline");
+
+                    // Forfeit the game if it's not already finished
+                    if (currentGame?.Status != "finished")
+                    {
+                        await GameService.ForfeitGameAsync(currentGameId, username);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error during connection loss cleanup: {ex.Message}");
+                }
+            }
+            else if (!string.IsNullOrEmpty(username))
+            {
+                // Not in a game, just update presence
+                try
+                {
+                    await GameService.UpdatePresenceAsync(username, "offline");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error updating presence on disconnect: {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            // Reset flag after a delay to allow reconnection scenarios
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                isConnectionLossHandled = false;
+            });
+        }
+    }
+
+    private async Task HandleLoginKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Login();
+        }
+    }
+
+    private async Task Login()
+    {
+        if (string.IsNullOrWhiteSpace(usernameInput))
+            return;
+
+        username = usernameInput.Trim();
+
+        // Update presence to online
+        await GameService.UpdatePresenceAsync(username, "online");
+
+        // Start presence heartbeat (every 60 seconds)
+        StartPresenceHeartbeat();
+
+        // Subscribe to joinable games list
+        GameService.SubscribeToJoinableGames();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Logout()
+    {
+        // Stop heartbeat timer
+        StopPresenceHeartbeat();
+
+        if (!string.IsNullOrEmpty(username))
+        {
+            // Update presence to offline
+            await GameService.UpdatePresenceAsync(username, "offline");
+        }
+
+        username = null;
+        usernameInput = "";
+        currentGameId = null;
+        currentGame = null;
+        availableGames.Clear();
+
+        GameService.UnsubscribeFromGame();
+        GameService.UnsubscribeFromGamesList();
+
+        StateHasChanged();
+    }
+
+    private async Task CreateNewGame()
+    {
+        if (string.IsNullOrEmpty(username))
+            return;
+
+        try
+        {
+            isCreatingGame = true;
+            StateHasChanged();
+
+            var gameId = await GameService.CreateGameAsync(username);
+            currentGameId = gameId;
+
+            // Update presence to in_game
+            await GameService.UpdatePresenceAsync(username, "in_game", gameId);
+
+            // Subscribe to the new game
+            GameService.SubscribeToGame(gameId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating game: {ex.Message}");
+        }
+        finally
+        {
+            isCreatingGame = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task JoinGame(string gameId)
+    {
+        if (string.IsNullOrEmpty(username))
+            return;
+
+        try
+        {
+            await GameService.JoinGameAsync(gameId, username);
+            currentGameId = gameId;
+
+            // Update presence to in_game
+            await GameService.UpdatePresenceAsync(username, "in_game", gameId);
+
+            // Subscribe to the game
+            GameService.SubscribeToGame(gameId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error joining game: {ex.Message}");
+        }
+    }
+
+    private async Task MakeMove(int position)
+    {
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(currentGameId))
+            return;
+
+        try
+        {
+            await GameService.MakeMoveAsync(currentGameId, username, position);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error making move: {ex.Message}");
+        }
+    }
+
+    private async Task ForfeitGame()
+    {
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(currentGameId))
+            return;
+
+        try
+        {
+            await GameService.ForfeitGameAsync(currentGameId, username);
+            await ReturnToLobby();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error forfeiting game: {ex.Message}");
+        }
+    }
+
+    private async Task ReturnToLobby()
+    {
+        // If leaving any game (waiting or playing), forfeit it
+        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(currentGameId) && currentGame != null)
+        {
+            // Only forfeit if game is not already finished
+            if (currentGame.Status != "finished")
+            {
+                try
+                {
+                    await GameService.ForfeitGameAsync(currentGameId, username);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error forfeiting game: {ex.Message}");
+                }
+            }
+        }
+
+        // Clean up and return to lobby
+        if (!string.IsNullOrEmpty(username))
+        {
+            await GameService.UpdatePresenceAsync(username, "online");
+        }
+
+        currentGameId = null;
+        currentGame = null;
+        GameService.UnsubscribeFromGame();
+        GameService.SubscribeToJoinableGames();
+        StateHasChanged();
+    }
+
+    private void OnGameUpdated(object? sender, Game game)
+    {
+        currentGame = game;
+
+        // If we're in a game and it gets forfeited/finished, return to lobby automatically
+        if (!string.IsNullOrEmpty(username) &&
+            !string.IsNullOrEmpty(currentGameId) &&
+            game.Id == currentGameId &&
+            game.Status == "finished")
+        {
+            // Game ended - return to lobby after a brief delay to show result
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(3000); // Show result for 3 seconds
+                await InvokeAsync(async () =>
+                {
+                    await ReturnToLobby();
+                });
+            });
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnGamesListUpdated(object? sender, List<Game> games)
+    {
+        availableGames = games;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnError(object? sender, string error)
+    {
+        Console.WriteLine($"Error: {error}");
+    }
+
+    #region Presence Management
+
+    private void StartPresenceHeartbeat()
+    {
+        // Send heartbeat every 60 seconds to keep presence fresh
+        presenceHeartbeatTimer = new System.Threading.Timer(async _ =>
+        {
+            if (!string.IsNullOrEmpty(username))
+            {
+                try
+                {
+                    var status = string.IsNullOrEmpty(currentGameId) ? "online" : "in_game";
+                    await GameService.UpdatePresenceAsync(username, status, currentGameId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Heartbeat failed: {ex.Message}");
+                }
+            }
+        }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    private void StopPresenceHeartbeat()
+    {
+        presenceHeartbeatTimer?.Dispose();
+        presenceHeartbeatTimer = null;
+    }
+
+    #endregion
+
+    public void Dispose()
+    {
+        StopPresenceHeartbeat();
+
+        GameService.GameUpdated -= OnGameUpdated;
+        GameService.GamesListUpdated -= OnGamesListUpdated;
+        GameService.ErrorOccurred -= OnError;
+
+        // Cleanup JavaScript presence manager
+        if (dotNetReference != null)
+        {
+            try
+            {
+                JS.InvokeVoidAsync("presenceManager.dispose");
+            }
+            catch
+            {
+                // Ignore errors during disposal
+            }
+
+            dotNetReference?.Dispose();
+            dotNetReference = null;
+        }
+    }
+}

@@ -1,0 +1,79 @@
+@* Game Lobby Component - Shows available games and option to create new game *@
+
+<div class="game-lobby">
+    <div class="lobby-header">
+        <h2>Game Lobby</h2>
+        <button @onclick="OnCreateGame"
+                disabled="@IsCreatingGame"
+                class="btn-primary">
+            @(IsCreatingGame ? "Creating..." : "Create New Game")
+        </button>
+    </div>
+
+    @if (AvailableGames.Any())
+    {
+        <div class="available-games">
+            <h3>Available Games</h3>
+            <div class="games-list">
+                @foreach (var game in AvailableGames)
+                {
+                    <div class="game-card">
+                        <div class="game-info">
+                            <div class="game-details">
+                                <span class="player-name">🎮 @game.PlayerX</span>
+                                <span class="status-badge waiting">Waiting for opponent</span>
+                            </div>
+                            <div class="game-time">
+                                @FormatGameTime(game.CreatedAt)
+                            </div>
+                        </div>
+                        <button @onclick="() => OnJoinGame.InvokeAsync(game.Id)"
+                                class="btn-success">
+                            Join Game
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="no-games">
+            <p>🎲 No games available</p>
+            <p class="hint">Create a new game to start playing!</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Username { get; set; } = string.Empty;
+
+    [Parameter]
+    public List<Game> AvailableGames { get; set; } = new();
+
+    [Parameter]
+    public bool IsCreatingGame { get; set; }
+
+    [Parameter]
+    public EventCallback OnCreateGame { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnJoinGame { get; set; }
+
+    private string FormatGameTime(double timestamp)
+    {
+        var dateTime = DateTimeOffset.FromUnixTimeMilliseconds((long)timestamp);
+        var now = DateTimeOffset.UtcNow;
+        var diff = now - dateTime;
+
+        if (diff.TotalMinutes < 1)
+            return "Just now";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}h ago";
+
+        return dateTime.ToLocalTime().ToString("g");
+    }
+}
