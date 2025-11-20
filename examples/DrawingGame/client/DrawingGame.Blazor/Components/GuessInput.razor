@@ -1,0 +1,102 @@
+@inject DrawingGameService GameService
+@implements IDisposable
+
+<div class="guess-input">
+    <div class="guesses-list">
+        @foreach (var guess in guesses)
+        {
+            <div class="guess-item @(guess.IsCorrect ? "correct" : "")">
+                <strong>@guess.Username:</strong>
+                <span>@guess.GuessText</span>
+                @if (guess.IsCorrect)
+                {
+                    <span class="points">+@guess.PointsAwarded pts</span>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!IsDrawer)
+    {
+        <div class="input-area">
+            <input
+                type="text"
+                placeholder="Type your guess..."
+                @bind="currentGuess"
+                @bind:event="oninput"
+                @onkeydown="HandleKeyDown"
+                disabled="@isSubmitting" />
+            <button class="btn" @onclick="SubmitGuess" disabled="@(string.IsNullOrWhiteSpace(currentGuess) || isSubmitting)">
+                Send
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="drawer-message">
+            You are drawing - no guessing allowed!
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string RoomId { get; set; } = "";
+    [Parameter, EditorRequired] public double Round { get; set; }
+    [Parameter, EditorRequired] public string CurrentUsername { get; set; } = "";
+    [Parameter] public bool IsDrawer { get; set; }
+
+    private List<Guess> guesses = new();
+    private string currentGuess = "";
+    private bool isSubmitting = false;
+
+    protected override void OnParametersSet()
+    {
+        if (Round > 0)
+        {
+            GameService.GuessesUpdated -= OnGuessesUpdated;
+            GameService.SubscribeToGuesses(RoomId, Round);
+            GameService.GuessesUpdated += OnGuessesUpdated;
+        }
+    }
+
+    private void OnGuessesUpdated(object? sender, List<Guess> newGuesses)
+    {
+        guesses = newGuesses;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(currentGuess))
+        {
+            await SubmitGuess();
+        }
+    }
+
+    private async Task SubmitGuess()
+    {
+        if (string.IsNullOrWhiteSpace(currentGuess) || isSubmitting) return;
+
+        isSubmitting = true;
+        var guess = currentGuess;
+        currentGuess = "";
+
+        try
+        {
+            await GameService.SubmitGuessAsync(RoomId, CurrentUsername, guess);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error submitting guess: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        GameService.GuessesUpdated -= OnGuessesUpdated;
+    }
+}

@@ -1,0 +1,71 @@
+@page "/"
+@inject DrawingGameService GameService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>Drawing Game</PageTitle>
+
+<div class="game-container">
+    @if (currentRoom == null)
+    {
+        <RoomLobby OnRoomJoined="HandleRoomJoined" />
+    }
+    else if (currentRoom.Status == "waiting")
+    {
+        <WaitingRoom Room="currentRoom" CurrentUsername="@currentUsername" OnGameStart="HandleGameStart" />
+    }
+    else if (currentRoom.Status == "playing")
+    {
+        <GameView Room="currentRoom" CurrentUsername="@currentUsername" />
+    }
+    else if (currentRoom.Status == "finished")
+    {
+        <GameResults Room="currentRoom" OnPlayAgain="HandlePlayAgain" />
+    }
+</div>
+
+@code {
+    private Room? currentRoom;
+    private string currentUsername = "";
+    private string? currentRoomId;
+
+    protected override void OnInitialized()
+    {
+        GameService.RoomUpdated += OnRoomUpdated;
+    }
+
+    private void HandleRoomJoined((string roomId, string username) args)
+    {
+        currentRoomId = args.roomId;
+        currentUsername = args.username;
+        GameService.SubscribeToRoom(args.roomId);
+    }
+
+    private async Task HandleGameStart()
+    {
+        if (currentRoomId != null && currentUsername != null)
+        {
+            await GameService.StartGameAsync(currentRoomId, currentUsername);
+        }
+    }
+
+    private void HandlePlayAgain()
+    {
+        currentRoom = null;
+        currentRoomId = null;
+        currentUsername = "";
+        StateHasChanged();
+    }
+
+    private void OnRoomUpdated(object? sender, Room? room)
+    {
+        currentRoom = room;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        GameService.RoomUpdated -= OnRoomUpdated;
+        GameService.Dispose();
+    }
+}

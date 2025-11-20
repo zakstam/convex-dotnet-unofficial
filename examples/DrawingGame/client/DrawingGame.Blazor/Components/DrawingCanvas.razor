@@ -1,0 +1,225 @@
+@inject DrawingGameService GameService
+@inject IJSRuntime JS
+@implements IDisposable
+@using DrawingGame.Shared.Helpers
+@using DrawingGame.Shared.Models
+@using Convex.Client.Extensions.Batching.TimeBasedBatching
+
+<div class="drawing-canvas-container">
+    @if (IsDrawer)
+    {
+        <div class="drawing-tools">
+            <div class="tool-group">
+                <button class="tool-btn @(currentTool == "pencil" ? "active" : "")"
+                        @onclick='() => SetTool("pencil")'>
+                    ✏️ Pencil
+                </button>
+                <button class="tool-btn @(currentTool == "eraser" ? "active" : "")"
+                        @onclick='() => SetTool("eraser")'>
+                    🧹 Eraser
+                </button>
+            </div>
+
+            <div class="tool-group">
+                <label>Color:</label>
+                <div class="color-palette">
+                    @foreach (var color in colors)
+                    {
+                        <button class="color-btn @(currentColor == color ? "active" : "")"
+                                style="background-color: @color"
+                                @onclick="() => SetColor(color)">
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <label>Size:</label>
+                <select @bind="currentThickness" @bind:after="UpdateThickness">
+                    <option value="2">Thin</option>
+                    <option value="5">Medium</option>
+                    <option value="10">Thick</option>
+                </select>
+            </div>
+
+            <div class="tool-group">
+                <button class="btn btn-secondary" @onclick="ClearCanvas">Clear</button>
+            </div>
+        </div>
+    }
+
+    <div class="canvas-wrapper">
+        <canvas @ref="canvasElement"
+                id="drawing-canvas"
+                width="800"
+                height="600">
+        </canvas>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string RoomId { get; set; } = "";
+    [Parameter, EditorRequired] public double Round { get; set; }
+    [Parameter] public bool IsDrawer { get; set; }
+    [Parameter, EditorRequired] public string CurrentUsername { get; set; } = "";
+
+    private ElementReference canvasElement;
+    private DotNetObjectReference<DrawingCanvas>? dotNetRef;
+
+    private string currentTool = "pencil";
+    private string currentColor = "#000000";
+    private double currentThickness = 5;
+
+    private List<string> colors = new()
+    {
+        "#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF", "#FFFF00",
+        "#FF00FF", "#00FFFF", "#FFA500", "#800080", "#FFC0CB", "#A52A2A",
+        "#808080", "#008000", "#000080", "#FF6347"
+    };
+
+    private StrokeBatcher? strokeBatcher;
+    private IDisposable? batchesSubscription;
+    private bool isInitialized = false;
+    private double _lastRound = -1;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            
+            var client = GameService.Client;
+            
+            // Create batcher for sending strokes (if drawer)
+            if (IsDrawer)
+            {
+                strokeBatcher = new StrokeBatcher(client, RoomId, Round, CurrentUsername);
+            }
+
+            await JS.InvokeVoidAsync("CanvasInterop.initialize", canvasElement, dotNetRef, IsDrawer);
+
+            // Subscribe to batches
+            await SetupBatchSubscription();
+
+            _lastRound = Round;
+            isInitialized = true;
+        }
+        else if (Round != _lastRound)
+        {
+            // Round changed - cleanup and resubscribe
+            batchesSubscription?.Dispose();
+            
+            // Clear canvas and reset tracking
+            await JS.InvokeVoidAsync("CanvasInterop.clearCanvas");
+            
+            if (IsDrawer)
+            {
+                strokeBatcher?.Dispose();
+                strokeBatcher = new StrokeBatcher(GameService.Client, RoomId, Round, CurrentUsername);
+            }
+
+            await SetupBatchSubscription();
+            _lastRound = Round;
+        }
+    }
+
+    private Task SetupBatchSubscription()
+    {
+        var client = GameService.Client;
+
+        // Build args - only include excludeDrawer if drawer (not null)
+        IObservable<List<StrokeBatch>> batches;
+        if (IsDrawer && !string.IsNullOrEmpty(CurrentUsername))
+        {
+            batches = client.Observe<List<StrokeBatch>, object>(
+                "functions/strokeBatches:list",
+                new { roomId = RoomId, round = Round, excludeDrawer = CurrentUsername }
+            );
+        }
+        else
+        {
+            batches = client.Observe<List<StrokeBatch>, object>(
+                "functions/strokeBatches:list",
+                new { roomId = RoomId, round = Round }
+            );
+        }
+
+        // Subscribe to batch list updates
+        batchesSubscription = batches.Subscribe(batchList =>
+        {
+            // Render all batches at once to ensure proper ordering
+            // The renderBatches function sorts by batchStartTime before rendering
+            if (batchList != null && batchList.Count > 0)
+            {
+                InvokeAsync(async () =>
+                {
+                    try
+                    {
+                        await JS.InvokeVoidAsync("CanvasInterop.renderBatches", batchList);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error calling renderBatches: {ex.Message}");
+                    }
+                });
+            }
+        });
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public void OnDrawPoint(double x, double y)
+    {
+        if (!IsDrawer || strokeBatcher == null) return;
+
+        strokeBatcher.AddPoint(x, y);
+    }
+
+    private async Task SetTool(string tool)
+    {
+        currentTool = tool;
+        if (strokeBatcher != null)
+        {
+            await strokeBatcher.SetStyleAsync(currentColor, currentThickness, tool);
+        }
+        await JS.InvokeVoidAsync("CanvasInterop.setTool", tool);
+    }
+
+    private async Task SetColor(string color)
+    {
+        currentColor = color;
+        if (strokeBatcher != null)
+        {
+            await strokeBatcher.SetStyleAsync(color, currentThickness, currentTool);
+        }
+        await JS.InvokeVoidAsync("CanvasInterop.setColor", color);
+    }
+
+    private async Task UpdateThickness()
+    {
+        if (strokeBatcher != null)
+        {
+            await strokeBatcher.SetStyleAsync(currentColor, currentThickness, currentTool);
+        }
+        await JS.InvokeVoidAsync("CanvasInterop.setThickness", currentThickness);
+    }
+
+    private async Task ClearCanvas()
+    {
+        await GameService.ClearCanvasAsync(RoomId, CurrentUsername);
+        await JS.InvokeVoidAsync("CanvasInterop.clearCanvas");
+    }
+
+    public void Dispose()
+    {
+        batchesSubscription?.Dispose();
+        strokeBatcher?.Dispose();
+        dotNetRef?.Dispose();
+
+        if (isInitialized)
+        {
+            JS.InvokeVoidAsync("CanvasInterop.dispose");
+        }
+    }
+}

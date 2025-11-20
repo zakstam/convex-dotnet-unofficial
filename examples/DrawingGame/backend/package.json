@@ -1,0 +1,1 @@
+{"name":"drawing-game-backend","version":"1.0.0","description":"Drawing Game Convex Backend","scripts":{"dev":"convex dev","deploy":"convex deploy"},"dependencies":{"convex":"^1.16.0"}}

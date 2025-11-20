@@ -1,0 +1,213 @@
+@inject DrawingGameService GameService
+@implements IDisposable
+
+<div class="room-lobby">
+    <h1>Drawing Game</h1>
+    <p class="subtitle">Draw and guess with friends in real-time!</p>
+
+    @if (!showCreateForm && !showJoinForm)
+    {
+        <div class="lobby-options">
+            <button class="btn btn-primary" @onclick="ShowCreateForm">Create Room</button>
+            <button class="btn btn-secondary" @onclick="ShowJoinForm">Join Room</button>
+        </div>
+
+        @if (availableRooms != null && availableRooms.Count > 0)
+        {
+            <div class="available-rooms">
+                <h3>Available Rooms</h3>
+                <div class="rooms-list">
+                    @foreach (var room in availableRooms)
+                    {
+                        <div class="room-card">
+                            <div class="room-info">
+                                <strong>@room.Name</strong>
+                                <span class="room-code">Code: @room.Code</span>
+                                <span class="player-count">@room.Players.Count / @room.MaxPlayers players</span>
+                            </div>
+                            <button class="btn btn-small" @onclick="() => QuickJoin(room.Code)">Join</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else if (showCreateForm)
+    {
+        <div class="room-form">
+            <h3>Create Room</h3>
+            <input type="text" placeholder="Room Name" @bind="roomName" />
+            <input type="text" placeholder="Your Username" @bind="username" />
+            <div class="form-row">
+                <label>Max Players:</label>
+                <select @bind="maxPlayers">
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Round Duration:</label>
+                <select @bind="roundDuration">
+                    <option value="60">60s</option>
+                    <option value="75">75s</option>
+                    <option value="90">90s</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Difficulty:</label>
+                <select @bind="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error">@errorMessage</div>
+            }
+            <div class="form-actions">
+                <button class="btn btn-primary" @onclick="CreateRoom" disabled="@isLoading">
+                    @(isLoading ? "Creating..." : "Create")
+                </button>
+                <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    }
+    else if (showJoinForm)
+    {
+        <div class="room-form">
+            <h3>Join Room</h3>
+            <input type="text" placeholder="Room Code" @bind="roomCode" />
+            <input type="text" placeholder="Your Username" @bind="username" />
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error">@errorMessage</div>
+            }
+            <div class="form-actions">
+                <button class="btn btn-primary" @onclick="JoinRoom" disabled="@isLoading">
+                    @(isLoading ? "Joining..." : "Join")
+                </button>
+                <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<(string roomId, string username)> OnRoomJoined { get; set; }
+
+    private List<Room>? availableRooms;
+    private bool showCreateForm = false;
+    private bool showJoinForm = false;
+    private bool isLoading = false;
+
+    // Form fields
+    private string roomName = "";
+    private string username = "";
+    private string roomCode = "";
+    private double maxPlayers = 6;
+    private double roundDuration = 90;
+    private string difficulty = "mixed";
+    private string errorMessage = "";
+
+    protected override void OnInitialized()
+    {
+        GameService.RoomsListUpdated += OnRoomsListUpdated;
+        GameService.SubscribeToRoomsList();
+    }
+
+    private void OnRoomsListUpdated(object? sender, List<Room> rooms)
+    {
+        availableRooms = rooms;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ShowCreateForm()
+    {
+        showCreateForm = true;
+        showJoinForm = false;
+        errorMessage = "";
+    }
+
+    private void ShowJoinForm()
+    {
+        showJoinForm = true;
+        showCreateForm = false;
+        errorMessage = "";
+    }
+
+    private void Cancel()
+    {
+        showCreateForm = false;
+        showJoinForm = false;
+        errorMessage = "";
+    }
+
+    private async Task CreateRoom()
+    {
+        if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(username))
+        {
+            errorMessage = "Please fill in all fields";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = "";
+
+        try
+        {
+            var result = await GameService.CreateRoomAsync(roomName, username, maxPlayers, roundDuration, difficulty);
+            await OnRoomJoined.InvokeAsync((result.RoomId, username));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to create room: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task JoinRoom()
+    {
+        if (string.IsNullOrWhiteSpace(roomCode) || string.IsNullOrWhiteSpace(username))
+        {
+            errorMessage = "Please fill in all fields";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = "";
+
+        try
+        {
+            var roomId = await GameService.JoinRoomAsync(roomCode.ToUpper(), username);
+            await OnRoomJoined.InvokeAsync((roomId, username));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to join room: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task QuickJoin(string code)
+    {
+        roomCode = code;
+        showJoinForm = true;
+    }
+
+    public void Dispose()
+    {
+        GameService.RoomsListUpdated -= OnRoomsListUpdated;
+    }
+}

@@ -1,0 +1,57 @@
+@inject DrawingGameService GameService
+
+<div class="waiting-room">
+    <h2>@Room.Name</h2>
+    <div class="room-code-display">
+        <span>Room Code:</span>
+        <strong>@Room.Code</strong>
+    </div>
+
+    <div class="players-waiting">
+        <h3>Players (@Room.Players.Count / @Room.MaxPlayers)</h3>
+        <div class="players-list">
+            @foreach (var player in Room.Players)
+            {
+                <div class="player-item @(player.Username == Room.HostUsername ? "host" : "")">
+                    <span>@player.Username</span>
+                    @if (player.Username == Room.HostUsername)
+                    {
+                        <span class="badge">Host</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Room.HostUsername == GetCurrentUsername())
+    {
+        @if (Room.Players.Count >= 2)
+        {
+            <button class="btn btn-primary btn-large" @onclick="StartGame">Start Game</button>
+        }
+        else
+        {
+            <p class="info">Waiting for at least 2 players to start...</p>
+        }
+    }
+    else
+    {
+        <p class="info">Waiting for host to start the game...</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Room Room { get; set; } = null!;
+    [Parameter, EditorRequired] public string CurrentUsername { get; set; } = "";
+    [Parameter] public EventCallback OnGameStart { get; set; }
+
+    private string GetCurrentUsername()
+    {
+        return CurrentUsername;
+    }
+
+    private async Task StartGame()
+    {
+        await OnGameStart.InvokeAsync();
+    }
+}

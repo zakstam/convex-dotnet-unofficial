@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.Client\Convex.Client.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions.DependencyInjection\Convex.Client.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions.Blazor\Convex.Client.Extensions.Blazor.csproj" />
+    <ProjectReference Include="..\DrawingGame.Shared\DrawingGame.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- Include source generator and analyzers when using ProjectReference -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer.CodeFixes\Convex.Client.Analyzer.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!-- Add api.d.ts for type-safe function constants generation -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\backend\convex\_generated\api.d.ts" />
+  </ItemGroup>
+
+</Project>

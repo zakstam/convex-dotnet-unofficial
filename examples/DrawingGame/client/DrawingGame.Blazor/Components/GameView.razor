@@ -1,0 +1,112 @@
+@inject DrawingGameService GameService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="game-view">
+    <div class="game-header">
+        <h2>Round @Room.CurrentRound / @Room.TotalRounds</h2>
+        @if (Room.RoundStartTime != null)
+        {
+            <div class="timer">⏱️ @GetRemainingTime()s</div>
+        }
+    </div>
+
+    <div class="game-content">
+        <div class="canvas-area">
+            @if (Room.WordOptions != null && Room.CurrentDrawer == CurrentUsername)
+            {
+                <WordSelection WordOptions="Room.WordOptions" OnWordSelected="SelectWord" />
+            }
+            else if (Room.CurrentWord != null)
+            {
+                <div class="word-display">
+                    @if (Room.CurrentDrawer == CurrentUsername)
+                    {
+                        <strong>Your word: @Room.CurrentWord</strong>
+                    }
+                    else
+                    {
+                        <strong>@GetHintedWord()</strong>
+                    }
+                </div>
+
+                <DrawingCanvas
+                    RoomId="@Room.Id"
+                    Round="@Room.CurrentRound"
+                    IsDrawer="@(Room.CurrentDrawer == CurrentUsername)"
+                    CurrentUsername="@CurrentUsername" />
+            }
+            else
+            {
+                <div class="waiting">Waiting for drawer to select a word...</div>
+            }
+        </div>
+
+        <div class="sidebar">
+            <PlayerList Players="Room.Players" CurrentDrawer="Room.CurrentDrawer" />
+            <GuessInput
+                RoomId="@Room.Id"
+                Round="@Room.CurrentRound"
+                CurrentUsername="@CurrentUsername"
+                IsDrawer="@(Room.CurrentDrawer == CurrentUsername)" />
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Room Room { get; set; } = null!;
+    [Parameter, EditorRequired] public string CurrentUsername { get; set; } = "";
+
+    private Timer? countdownTimer;
+    private int remainingSeconds;
+
+    protected override void OnParametersSet()
+    {
+        UpdateTimer();
+    }
+
+    private void UpdateTimer()
+    {
+        if (Room.RoundStartTime != null)
+        {
+            var elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - Room.RoundStartTime.Value;
+            remainingSeconds = (int)Room.RoundDuration - (int)(elapsed / 1000);
+
+            countdownTimer?.Dispose();
+            countdownTimer = new Timer(_ =>
+            {
+                remainingSeconds--;
+                InvokeAsync(StateHasChanged);
+            }, null, 1000, 1000);
+        }
+    }
+
+    private int GetRemainingTime()
+    {
+        return Math.Max(0, remainingSeconds);
+    }
+
+    private string GetHintedWord()
+    {
+        if (Room.CurrentWord == null) return "";
+
+        var player = Room.Players.FirstOrDefault(p => p.Username == CurrentUsername);
+        if (player?.HasGuessedCorrectly == true)
+        {
+            return Room.CurrentWord;
+        }
+
+        // Show word length with underscores
+        return new string('_', Room.CurrentWord.Length);
+    }
+
+    private async Task SelectWord(string word)
+    {
+        await GameService.SelectWordAsync(Room.Id, CurrentUsername, word);
+    }
+
+    public void Dispose()
+    {
+        countdownTimer?.Dispose();
+    }
+}

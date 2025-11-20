@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CA1716</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.Client\Convex.Client.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
+  </ItemGroup>
+
+  <!-- Include source generator and analyzers when using ProjectReference -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer.CodeFixes\Convex.Client.Analyzer.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+</Project>

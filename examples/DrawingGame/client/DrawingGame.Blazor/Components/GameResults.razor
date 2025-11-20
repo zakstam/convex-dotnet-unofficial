@@ -1,0 +1,35 @@
+<div class="game-results">
+    <h1>Game Over!</h1>
+
+    <div class="final-scores">
+        <h2>Final Scores</h2>
+        <div class="scores-list">
+            @foreach (var (player, index) in Room.Players.OrderByDescending(p => p.Score).Select((p, i) => (p, i)))
+            {
+                <div class="score-item rank-@(index + 1)">
+                    <span class="rank">#{index + 1}</span>
+                    <span class="player-name">
+                        @player.Username
+                        @if (index == 0)
+                        {
+                            <span class="trophy">🏆</span>
+                        }
+                    </span>
+                    <span class="score">@player.Score pts</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-large" @onclick="PlayAgain">Play Again</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Room Room { get; set; } = null!;
+    [Parameter] public EventCallback OnPlayAgain { get; set; }
+
+    private async Task PlayAgain()
+    {
+        await OnPlayAgain.InvokeAsync();
+    }
+}

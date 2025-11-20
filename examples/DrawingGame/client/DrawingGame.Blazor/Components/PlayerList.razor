@@ -1,0 +1,27 @@
+<div class="player-list">
+    <h3>Players</h3>
+    <div class="players">
+        @foreach (var player in Players.OrderByDescending(p => p.Score))
+        {
+            <div class="player @(player.Username == CurrentDrawer ? "drawing" : "") @(player.HasGuessedCorrectly ? "guessed" : "")">
+                <span class="player-name">
+                    @player.Username
+                    @if (player.Username == CurrentDrawer)
+                    {
+                        <span class="badge">🎨</span>
+                    }
+                    @if (player.HasGuessedCorrectly)
+                    {
+                        <span class="badge">✓</span>
+                    }
+                </span>
+                <span class="player-score">@player.Score</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<Player> Players { get; set; } = null!;
+    [Parameter] public string? CurrentDrawer { get; set; }
+}

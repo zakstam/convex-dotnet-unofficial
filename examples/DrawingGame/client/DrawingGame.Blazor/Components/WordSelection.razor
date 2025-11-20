@@ -1,0 +1,21 @@
+<div class="word-selection">
+    <h3>Choose a word to draw:</h3>
+    <div class="word-options">
+        @foreach (var word in WordOptions)
+        {
+            <button class="btn btn-word" @onclick="() => SelectWord(word)">
+                @word
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<string> WordOptions { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnWordSelected { get; set; }
+
+    private async Task SelectWord(string word)
+    {
+        await OnWordSelected.InvokeAsync(word);
+    }
+}
