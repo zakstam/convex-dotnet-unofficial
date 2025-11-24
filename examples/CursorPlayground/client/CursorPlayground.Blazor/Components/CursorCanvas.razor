@@ -1,0 +1,410 @@
+@inject IJSRuntime JS
+@inject CursorService CursorService
+@implements IAsyncDisposable
+
+<div class="cursor-playground">
+    <!-- Constellation canvas for connecting lines -->
+    <canvas id="constellation-canvas" class="constellation-canvas" width="@WindowWidth" height="@WindowHeight"></canvas>
+
+    <!-- Main content -->
+    <div class="playground-content">
+        <!-- Header -->
+        <div class="playground-header">
+            <h1 class="playground-title">🎨 Cursor Playground</h1>
+            <p class="playground-subtitle">Move your cursor and watch the magic!</p>
+        </div>
+
+        <!-- User count -->
+        <div class="user-count">
+            👥 Online: <span class="user-count-number">@ActiveUsers.Count</span>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <p><strong>Move</strong> your cursor to see others</p>
+            <p><strong>Click</strong> for particle burst • <strong>Double-click</strong> for ripple</p>
+            <p>Cursors connect when nearby!</p>
+        </div>
+
+        <!-- Keyboard Shortcuts -->
+        <div class="shortcuts-help">
+            <div class="shortcut-item">
+                <span class="shortcut-key">R</span>
+                <span>Reactions</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key">T</span>
+                <span>Toggle Trails</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key">C</span>
+                <span>Toggle Constellations</span>
+            </div>
+            <div class="shortcut-item">
+                <span class="shortcut-key">Right-Click</span>
+                <span>Reaction Picker</span>
+            </div>
+        </div>
+
+        <!-- Stats panel (optional) -->
+        @if (ShowStats)
+        {
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <span class="stat-label">FPS:</span>
+                    <span class="stat-value">@Fps</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Cursors:</span>
+                    <span class="stat-value">@RemoteCursors.Count</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Batches/s:</span>
+                    <span class="stat-value">@BatchesPerSecond</span>
+                </div>
+            </div>
+        }
+
+        <!-- Batching Settings Panel -->
+        <div class="settings-panel">
+            <div class="settings-header" @onclick="ToggleSettings">
+                <span>⚙️ Batching Settings</span>
+                <span class="toggle-icon">@(ShowSettings ? "▼" : "▶")</span>
+            </div>
+
+            @if (ShowSettings)
+            {
+                <div class="settings-content">
+                    <!-- Sample Interval Slider -->
+                    <div class="setting-item">
+                        <label>
+                            <span class="setting-label">Sample Rate:</span>
+                            <span class="setting-value">@SamplingIntervalMs ms (~@((int)(1000.0 / SamplingIntervalMs))fps)</span>
+                        </label>
+                        <input type="range"
+                               min="8"
+                               max="33"
+                               step="1"
+                               @bind="SamplingIntervalMs"
+                               @bind:after="OnBatchingSettingsChanged"
+                               class="setting-slider" />
+                        <div class="setting-hint">Capture rate: 8ms (125fps) to 33ms (30fps)</div>
+                    </div>
+
+                    <!-- Batch Interval Slider -->
+                    <div class="setting-item">
+                        <label>
+                            <span class="setting-label">Batch Interval:</span>
+                            <span class="setting-value">@BatchIntervalMs ms</span>
+                        </label>
+                        <input type="range"
+                               min="50"
+                               max="500"
+                               step="50"
+                               @bind="BatchIntervalMs"
+                               @bind:after="OnBatchingSettingsChanged"
+                               class="setting-slider" />
+                        <div class="setting-hint">Send rate: 50ms (20/sec) to 500ms (2/sec)</div>
+                    </div>
+
+                    <!-- Min Distance Slider -->
+                    <div class="setting-item">
+                        <label>
+                            <span class="setting-label">Min Distance:</span>
+                            <span class="setting-value">@MinEventDistance.ToString("F1") px</span>
+                        </label>
+                        <input type="range"
+                               min="0"
+                               max="20"
+                               step="0.5"
+                               @bind="MinEventDistance"
+                               @bind:after="OnBatchingSettingsChanged"
+                               class="setting-slider" />
+                        <div class="setting-hint">Minimum cursor movement to capture</div>
+                    </div>
+
+                    <!-- Reset Button -->
+                    <button class="reset-button" @onclick="ResetBatchingSettings">
+                        Reset to Defaults
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string UserId { get; set; } = string.Empty;
+    [Parameter] public string UserName { get; set; } = string.Empty;
+    [Parameter] public string UserEmoji { get; set; } = "👤";
+    [Parameter] public string UserColor { get; set; } = "#64C8FF";
+    [Parameter] public bool ShowStats { get; set; } = true;
+
+    private DotNetObjectReference<CursorCanvas>? dotNetRef;
+    private CursorBatcher? cursorBatcher;
+    private System.Timers.Timer? heartbeatTimer;
+    private System.Timers.Timer? fpsTimer;
+
+    private List<User> ActiveUsers = new();
+    private Dictionary<string, CursorBatch> RemoteCursors = new();
+
+    private int WindowWidth = 1920;
+    private int WindowHeight = 1080;
+    private int Fps = 60;
+    private int BatchesPerSecond = 0;
+    private int batchCount = 0;
+
+    // Batching settings state
+    private bool ShowSettings = false;
+    private int SamplingIntervalMs = 16;  // Default: ~60fps
+    private int BatchIntervalMs = 200;    // Default: 200ms
+    private double MinEventDistance = 5.0; // Default: 5px
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+
+            // Initialize JavaScript interop with user info
+            await JS.InvokeVoidAsync("CursorInterop.initialize", dotNetRef, UserColor, UserName, UserEmoji);
+
+            // Create cursor batcher with custom settings
+            CreateCursorBatcher();
+
+            // Subscribe to updates
+            CursorService.ActiveUsersUpdated += OnActiveUsersUpdated;
+            CursorService.CursorBatchesUpdated += OnCursorBatchesUpdated;
+            CursorService.ReactionsUpdated += OnReactionsUpdated;
+            CursorService.ClickEffectsUpdated += OnClickEffectsUpdated;
+
+            CursorService.SubscribeToActiveUsers();
+            CursorService.SubscribeToCursorBatches();
+            CursorService.SubscribeToReactions();
+            CursorService.SubscribeToClickEffects();
+
+            // Start heartbeat timer (every 3 seconds)
+            heartbeatTimer = new System.Timers.Timer(3000);
+            heartbeatTimer.Elapsed += async (s, e) => await SendHeartbeat();
+            heartbeatTimer.Start();
+
+            // Start FPS counter
+            fpsTimer = new System.Timers.Timer(1000);
+            fpsTimer.Elapsed += (s, e) =>
+            {
+                BatchesPerSecond = batchCount;
+                batchCount = 0;
+                InvokeAsync(StateHasChanged);
+            };
+            fpsTimer.Start();
+
+            // Start constellation rendering
+            await JS.InvokeVoidAsync("CursorInterop.drawConstellations", "constellation-canvas");
+        }
+    }
+
+    [JSInvokable]
+    public void OnCursorMove(double x, double y, double velocity)
+    {
+        cursorBatcher?.AddPosition(x, y, velocity);
+        batchCount++;
+    }
+
+    [JSInvokable]
+    public async Task OnClick(double x, double y)
+    {
+        // Send click effect to backend so other users can see the particle burst
+        await CursorService.CreateClickEffectAsync(UserId, x, y, UserColor);
+    }
+
+    [JSInvokable]
+    public async Task OnDoubleClick(double x, double y)
+    {
+        // Create ripple (handled by JS automatically)
+        await Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task OnReaction(string emoji, double x, double y)
+    {
+        // Send reaction to backend
+        await CursorService.CreateReactionAsync(UserId, emoji, x, y);
+    }
+
+    private async void OnReactionsUpdated(object? sender, List<Reaction> reactions)
+    {
+        // Render recent reactions (from last 5 seconds)
+        var recentReactions = reactions.Where(r =>
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - r.Timestamp < 5000
+        ).ToList();
+
+        foreach (var reaction in recentReactions)
+        {
+            // Skip own reactions (already rendered locally)
+            if (reaction.UserId == UserId) continue;
+
+            // Render remote user's reaction
+            await JS.InvokeVoidAsync(
+                "CursorInterop.renderRemoteReaction",
+                reaction.Emoji,
+                reaction.X,
+                reaction.Y
+            );
+        }
+    }
+
+    private async void OnClickEffectsUpdated(object? sender, List<ClickEffect> effects)
+    {
+        // Render recent click effects (from last 2 seconds)
+        var recentEffects = effects.Where(e =>
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - e.Timestamp < 2000
+        ).ToList();
+
+        foreach (var effect in recentEffects)
+        {
+            // Skip own clicks (already rendered locally)
+            if (effect.UserId == UserId) continue;
+
+            // Render remote user's click effect (particle burst)
+            await JS.InvokeVoidAsync(
+                "CursorInterop.renderRemoteClickEffect",
+                effect.X,
+                effect.Y,
+                effect.Color
+            );
+        }
+    }
+
+    private void OnActiveUsersUpdated(object? sender, List<User> users)
+    {
+        ActiveUsers = users;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnCursorBatchesUpdated(object? sender, List<CursorBatch> batches)
+    {
+        foreach (var batch in batches)
+        {
+            if (batch.UserId == UserId) continue; // Skip own cursor
+
+            RemoteCursors[batch.UserId] = batch;
+
+            // Send all positions from batch for smooth interpolation
+            if (batch.Events.Count > 0)
+            {
+                var user = ActiveUsers.FirstOrDefault(u => u.Id == batch.UserId);
+
+                if (user != null)
+                {
+                    // Extract all positions from the batch
+                    var positions = batch.Events.Select(e => new
+                    {
+                        x = e.EventData.X,
+                        y = e.EventData.Y
+                    }).ToArray();
+
+                    // Update remote cursor with all positions for smooth playback
+                    await JS.InvokeVoidAsync(
+                        "CursorInterop.updateRemoteCursorBatch",
+                        batch.UserId,
+                        positions,
+                        user.Name,
+                        user.Emoji,
+                        user.Color
+                    );
+                }
+            }
+        }
+
+        // Remove cursors that are no longer in the list
+        var currentUserIds = batches.Select(b => b.UserId).ToHashSet();
+        var removedUserIds = RemoteCursors.Keys.Where(id => !currentUserIds.Contains(id)).ToList();
+
+        foreach (var userId in removedUserIds)
+        {
+            RemoteCursors.Remove(userId);
+            await JS.InvokeVoidAsync("CursorInterop.removeRemoteCursor", userId);
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SendHeartbeat()
+    {
+        try
+        {
+            await CursorService.HeartbeatAsync(UserId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Heartbeat error: {ex.Message}");
+        }
+    }
+
+    // Batching settings methods
+    private void ToggleSettings()
+    {
+        ShowSettings = !ShowSettings;
+    }
+
+    private void CreateCursorBatcher()
+    {
+        // Create options with current settings
+        var options = new Convex.Client.Extensions.Batching.TimeBasedBatching.BatchingOptions
+        {
+            SamplingIntervalMs = SamplingIntervalMs,
+            BatchIntervalMs = BatchIntervalMs,
+            MinEventDistance = MinEventDistance,
+            EnableSampling = true,
+            ResetBatchStartTimeOnFlush = true,
+            MaxBatchSize = 100
+        };
+
+        // Store old batcher reference
+        var oldBatcher = cursorBatcher;
+
+        // Create new batcher with custom options BEFORE disposing old one
+        cursorBatcher = new CursorBatcher(CursorService.Client, UserId, options);
+
+        // Now dispose the old batcher
+        oldBatcher?.Dispose();
+    }
+
+    private void OnBatchingSettingsChanged()
+    {
+        // Recreate batcher with new settings
+        CreateCursorBatcher();
+        StateHasChanged();
+    }
+
+    private void ResetBatchingSettings()
+    {
+        // Reset to ForCursorTracking() defaults
+        SamplingIntervalMs = 16;
+        BatchIntervalMs = 200;
+        MinEventDistance = 5.0;
+        OnBatchingSettingsChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        heartbeatTimer?.Stop();
+        heartbeatTimer?.Dispose();
+        fpsTimer?.Stop();
+        fpsTimer?.Dispose();
+
+        cursorBatcher?.Dispose();
+        dotNetRef?.Dispose();
+
+        CursorService.ActiveUsersUpdated -= OnActiveUsersUpdated;
+        CursorService.CursorBatchesUpdated -= OnCursorBatchesUpdated;
+        CursorService.ReactionsUpdated -= OnReactionsUpdated;
+        CursorService.ClickEffectsUpdated -= OnClickEffectsUpdated;
+
+        try
+        {
+            await JS.InvokeVoidAsync("CursorInterop.dispose");
+        }
+        catch { }
+    }
+}

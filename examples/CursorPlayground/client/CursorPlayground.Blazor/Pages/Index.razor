@@ -1,0 +1,37 @@
+@page "/"
+@using CursorPlayground.Blazor.Components
+
+<PageTitle>Cursor Playground - Real-Time Cursor Tracking</PageTitle>
+
+@if (!hasJoined)
+{
+    <UserSetup IsVisible="true" OnJoined="HandleUserJoined" />
+}
+else
+{
+    <CursorCanvas
+        UserId="@userId"
+        UserName="@userName"
+        UserEmoji="@userEmoji"
+        UserColor="@userColor"
+        ShowStats="true" />
+}
+
+@code {
+    private bool hasJoined = false;
+    private string userId = "";
+    private string userName = "";
+    private string userEmoji = "";
+    private string userColor = "";
+
+    private void HandleUserJoined((string UserId, string Name, string Emoji, string Color) userData)
+    {
+        userId = userData.UserId;
+        userName = userData.Name;
+        userEmoji = userData.Emoji;
+        userColor = userData.Color;
+        hasJoined = true;
+
+        Console.WriteLine($"User joined: {userName} ({userId})");
+    }
+}

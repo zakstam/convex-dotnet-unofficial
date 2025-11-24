@@ -1,0 +1,158 @@
+@inject CursorService CursorService
+
+<div class="setup-modal @(IsVisible ? "visible" : "")">
+    <div class="setup-content">
+        <h1 class="setup-title">🎨 Welcome to Cursor Playground!</h1>
+        <p class="setup-subtitle">Let's set up your profile</p>
+
+        <div class="setup-form">
+            <!-- Name Input -->
+            <div class="form-group">
+                <label for="username">Your Name</label>
+                <input
+                    id="username"
+                    type="text"
+                    @bind="userName"
+                    @bind:event="oninput"
+                    placeholder="Enter your name"
+                    maxlength="20"
+                    class="form-input" />
+            </div>
+
+            <!-- Emoji Selection -->
+            <div class="form-group">
+                <label>Choose Your Emoji</label>
+                <div class="emoji-grid">
+                    @foreach (var emoji in AvailableEmojis)
+                    {
+                        <button
+                            class="emoji-button @(selectedEmoji == emoji ? "selected" : "")"
+                            @onclick="() => SelectEmoji(emoji)">
+                            @emoji
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Color Selection -->
+            <div class="form-group">
+                <label>Choose Your Color</label>
+                <div class="color-grid">
+                    @foreach (var color in AvailableColors)
+                    {
+                        <button
+                            class="color-button @(selectedColor == color.Value ? "selected" : "")"
+                            style="background-color: @color.Value"
+                            @onclick="() => SelectColor(color.Value)">
+                            @if (selectedColor == color.Value)
+                            {
+                                <span class="checkmark">✓</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-section">
+                <div class="preview-label">Preview:</div>
+                <div class="user-preview">
+                    <span class="preview-emoji">@selectedEmoji</span>
+                    <span class="preview-name" style="color: @selectedColor">@(string.IsNullOrWhiteSpace(userName) ? "Your Name" : userName)</span>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+                class="submit-button"
+                @onclick="JoinPlayground"
+                disabled="@(!IsValid)">
+                @if (isJoining)
+                {
+                    <span>Joining...</span>
+                }
+                else
+                {
+                    <span>Enter Playground →</span>
+                }
+            </button>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">@errorMessage</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<(string UserId, string Name, string Emoji, string Color)> OnJoined { get; set; }
+    [Parameter] public bool IsVisible { get; set; } = true;
+
+    private string userName = "";
+    private string selectedEmoji = "😊";
+    private string selectedColor = "#64C8FF";
+    private bool isJoining = false;
+    private string errorMessage = "";
+
+    private readonly string[] AvailableEmojis = new[]
+    {
+        "😊", "😎", "🤖", "👽", "🦄", "🐱", "🐶", "🐼",
+        "🦊", "🐸", "🦁", "🐯", "🐨", "🐮", "🐷", "🐵",
+        "🌟", "⭐", "✨", "💫", "🔥", "💎", "👑", "🎨"
+    };
+
+    private readonly (string Name, string Value)[] AvailableColors = new[]
+    {
+        ("Blue", "#64C8FF"),
+        ("Purple", "#B794F6"),
+        ("Pink", "#F687B3"),
+        ("Red", "#FC8181"),
+        ("Orange", "#F6AD55"),
+        ("Yellow", "#F6E05E"),
+        ("Green", "#68D391"),
+        ("Teal", "#4FD1C5"),
+        ("Cyan", "#63B3ED"),
+        ("Indigo", "#7C3AED")
+    };
+
+    private bool IsValid => !string.IsNullOrWhiteSpace(userName) && userName.Length >= 2;
+
+    private void SelectEmoji(string emoji)
+    {
+        selectedEmoji = emoji;
+        errorMessage = "";
+    }
+
+    private void SelectColor(string color)
+    {
+        selectedColor = color;
+        errorMessage = "";
+    }
+
+    private async Task JoinPlayground()
+    {
+        if (!IsValid) return;
+
+        try
+        {
+            isJoining = true;
+            errorMessage = "";
+
+            // Join the playground
+            var userId = await CursorService.JoinAsync(userName.Trim(), selectedEmoji, selectedColor);
+
+            // Notify parent component
+            await OnJoined.InvokeAsync((userId, userName.Trim(), selectedEmoji, selectedColor));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to join: {ex.Message}";
+            Console.WriteLine($"Join error: {ex}");
+        }
+        finally
+        {
+            isJoining = false;
+        }
+    }
+}
