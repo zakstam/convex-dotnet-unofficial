@@ -63,6 +63,10 @@ public sealed class ConvexClient : IConvexClient
         get => _timeout;
         set
         {
+            if (value <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(value), "Timeout must be greater than zero.");
+            if (value > TimeSpan.FromHours(24))
+                throw new ArgumentOutOfRangeException(nameof(value), "Timeout cannot exceed 24 hours.");
             _timeout = value;
             _httpClient.Timeout = value;
         }
