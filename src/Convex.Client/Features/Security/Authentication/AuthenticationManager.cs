@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Convex.Client.Infrastructure.Common;
 using Convex.Client.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
@@ -67,13 +66,7 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
 
     public async Task SetAuthTokenProviderAsync(IAuthTokenProvider provider, CancellationToken cancellationToken = default)
     {
-        if (provider == null)
-            throw new ArgumentNullException(nameof(provider));
-
-        // DIAGNOSTIC: Use both Debug.WriteLine and Console.WriteLine for maximum visibility
-        var startMsg = $"[AuthenticationManager] SetAuthTokenProviderAsync - Type: {provider.GetType().Name}";
-        Debug.WriteLine(startMsg);
-        Console.WriteLine(startMsg);
+        ArgumentNullException.ThrowIfNull(provider);
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
@@ -88,10 +81,6 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
             _adminAuth = null;
 
             UpdateAuthenticationState(AuthenticationState.Authenticated);
-
-            var completeMsg = $"[AuthenticationManager] Provider registered! Auth state: {_authenticationState}";
-            Debug.WriteLine(completeMsg);
-            Console.WriteLine(completeMsg);
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
@@ -123,11 +112,6 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
 
     public async Task<string?> GetAuthTokenAsync(CancellationToken cancellationToken = default)
     {
-        // DIAGNOSTIC: Use both Debug.WriteLine and Console.WriteLine for maximum visibility
-        var msg = $"[AuthenticationManager] GetAuthTokenAsync - Token:{_authToken != null} Admin:{_adminAuth != null} Provider:{_authTokenProvider != null}";
-        Debug.WriteLine(msg);
-        Console.WriteLine(msg);
-
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("GetAuthTokenAsync called - HasToken: {HasToken}, HasAdmin: {HasAdmin}, HasProvider: {HasProvider}",
@@ -208,25 +192,12 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
 
     public async Task<Dictionary<string, string>> GetAuthHeadersAsync(CancellationToken cancellationToken = default)
     {
-        var msg = "[AuthenticationManager] GetAuthHeadersAsync called";
-        Debug.WriteLine(msg);
-        Console.WriteLine(msg);
-
         var headers = new Dictionary<string, string>();
         var token = await GetAuthTokenAsync(cancellationToken);
 
         if (token != null)
         {
             headers["Authorization"] = $"Bearer {token}";
-            var successMsg = $"[AuthenticationManager] Added Authorization header with token (length: {token.Length})";
-            Debug.WriteLine(successMsg);
-            Console.WriteLine(successMsg);
-        }
-        else
-        {
-            var noTokenMsg = "[AuthenticationManager] No token available, returning empty headers";
-            Debug.WriteLine(noTokenMsg);
-            Console.WriteLine(noTokenMsg);
         }
 
         return headers;

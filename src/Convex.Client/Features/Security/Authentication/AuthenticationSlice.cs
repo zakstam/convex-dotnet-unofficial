@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Convex.Client.Infrastructure.Common;
 using Microsoft.Extensions.Logging;
 
@@ -30,14 +29,7 @@ public class AuthenticationSlice(ILogger? logger = null, bool enableDebugLogging
 
     public Task SetAuthTokenProviderAsync(IAuthTokenProvider provider, CancellationToken cancellationToken = default)
     {
-        var providerType = provider?.GetType().Name ?? "null";
-        var msg = $"[AuthenticationSlice] SetAuthTokenProviderAsync called with {providerType}";
-        Debug.WriteLine(msg);
-        Console.WriteLine(msg);
-
-        if (provider == null)
-            throw new ArgumentNullException(nameof(provider));
-
+        ArgumentNullException.ThrowIfNull(provider);
         return _implementation.SetAuthTokenProviderAsync(provider, cancellationToken);
     }
 
