@@ -5,6 +5,27 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.4.0-alpha...v1.0.0-alpha) (2025-11-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* SchemaValidationException now inherits from ConvexException instead of Exception. Code that catches ConvexException will now also catch SchemaValidationException.
+
+### fix\
+
+* change SchemaValidationException to inherit from ConvexException ([9df52ca](https://github.com/zakstam/convex-dotnet-unofficial/commit/9df52cac1ed861ada168b405c143cef18e8161b7))
+
+
+### Bug Fixes
+
+* add locking mechanism around observable subscription to ensure thread safety in ObservableConvexList ([e6a59d4](https://github.com/zakstam/convex-dotnet-unofficial/commit/e6a59d4ed50867221ec7c1037cd08497e9340f20))
+* add validation for timeout property in ConvexClient to ensure it is greater than zero and does not exceed 24 hours ([0b4770b](https://github.com/zakstam/convex-dotnet-unofficial/commit/0b4770bfe9a44f44e43d4fd3b57753f151881270))
+* implement lock timeout in AuthenticationManager to prevent indefinite waiting during authentication ([0254a64](https://github.com/zakstam/convex-dotnet-unofficial/commit/0254a64394d7fcb385ae522827c70e48555ec604))
+* remove diagnostic logging from AuthenticationManager, AuthenticationSlice, and DefaultHttpClientProvider ([0435a2a](https://github.com/zakstam/convex-dotnet-unofficial/commit/0435a2af3d73c0a2e7a02c8039c611bab1173510))
+* replace ArgumentNullException.ThrowIfNull with explicit null check in AuthenticationManager and AuthenticationSlice (for .net 2) ([4b592cc](https://github.com/zakstam/convex-dotnet-unofficial/commit/4b592cce60d2a12fcf984b5878d303e3810cf907))
+* replace Dictionary with ConcurrentDictionary for cached values in ConvexClient to improve thread safety ([4e8a188](https://github.com/zakstam/convex-dotnet-unofficial/commit/4e8a1885287fb8a84ce68cc9e282fb7b91b6784b))
+
 ## [0.4.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.3.0-alpha...v0.4.0-alpha) (2025-11-26)
 
 
