@@ -1,3 +1,5 @@
+using Convex.Client.Infrastructure.ErrorHandling;
+
 namespace Convex.Client.Infrastructure.Validation;
 
 /// <summary>
@@ -10,7 +12,7 @@ public sealed class SchemaValidationException(
     string functionName,
     string expectedType,
     string actualType,
-    IReadOnlyList<string> validationErrors) : Exception($"Schema validation failed for '{functionName}': Expected {expectedType}, got {actualType}")
+    IReadOnlyList<string> validationErrors) : ConvexException($"Schema validation failed for '{functionName}': Expected {expectedType}, got {actualType}")
 {
     /// <summary>
     /// Gets the function name that failed validation.
