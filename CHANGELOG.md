@@ -5,6 +5,13 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.4.0-alpha...v0.4.1-alpha) (2025-11-26)
+
+
+### Bug Fixes
+
+* add validation for timeout property in ConvexClient to ensure it is greater than zero and does not exceed 24 hours ([9d2f991](https://github.com/zakstam/convex-dotnet-unofficial/commit/9d2f9912378560ba3f65ddecbded7db93ee9967d))
+
 ## [0.4.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.3.0-alpha...v0.4.0-alpha) (2025-11-26)
 
 
