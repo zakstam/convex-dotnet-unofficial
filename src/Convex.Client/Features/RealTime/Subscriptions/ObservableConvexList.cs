@@ -332,16 +332,19 @@ public sealed class ObservableConvexList<T>(SynchronizationContext? synchronizat
             throw new ArgumentNullException(nameof(observable));
         }
 
-        ThrowIfDisposed();
+        lock (_lock)
+        {
+            ThrowIfDisposed();
 
-        // Unbind any existing observable
-        _subscriptionBinding?.Dispose();
+            // Unbind any existing observable
+            _subscriptionBinding?.Dispose();
 
-        // Bind to the new observable
-        _subscriptionBinding = observable.Subscribe(
-            onNext: items => ReplaceAll(items),
-            onError: ex => { /* Error can be handled by the caller using Rx operators */ }
-        );
+            // Bind to the new observable
+            _subscriptionBinding = observable.Subscribe(
+                onNext: items => ReplaceAll(items),
+                onError: ex => { /* Error can be handled by the caller using Rx operators */ }
+            );
+        }
 
         return new SubscriptionBinding(this);
     }
