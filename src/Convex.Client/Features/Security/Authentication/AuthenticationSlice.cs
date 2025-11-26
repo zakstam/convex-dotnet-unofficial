@@ -29,7 +29,8 @@ public class AuthenticationSlice(ILogger? logger = null, bool enableDebugLogging
 
     public Task SetAuthTokenProviderAsync(IAuthTokenProvider provider, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(provider);
+        if (provider == null)
+            throw new ArgumentNullException(nameof(provider));
         return _implementation.SetAuthTokenProviderAsync(provider, cancellationToken);
     }
 
