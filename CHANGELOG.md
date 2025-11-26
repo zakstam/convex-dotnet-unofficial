@@ -5,6 +5,17 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.3.0-alpha...v0.4.0-alpha) (2025-11-26)
+
+
+### Features
+
+* add Cursor Playground example with real-time cursor tracking, user presence, and interactive features using Blazor and Convex backend ([a02940b](https://github.com/zakstam/convex-dotnet-unofficial/commit/a02940b29ff0f36efcd100028fb5593fe5f0edd9))
+* add new projects for TicTacToe and Cursor Playground examples in the solution file, including shared and Blazor components ([30e0976](https://github.com/zakstam/convex-dotnet-unofficial/commit/30e097662e32354f1968f91f127dce4945af1c22))
+* add time-based batching extension for high-frequency event streams with sampling, batching, and replay capabilities ([251c31f](https://github.com/zakstam/convex-dotnet-unofficial/commit/251c31f4bc6efbca15dbdbf8474aeccc5077db5e))
+* implement real-time multiplayer drawing game with Blazor and Convex backend, including game mechanics, stroke batching, and player interactions ([54cb3ef](https://github.com/zakstam/convex-dotnet-unofficial/commit/54cb3ef47b704049ed69e1232a5dee8d3b08b8b0))
+* introduce new features and enhancements across Convex.Client, including data access actions, caching, observability diagnostics, and improved error handling in middleware ([544253f](https://github.com/zakstam/convex-dotnet-unofficial/commit/544253fef61edc11a973a6e5c0f662cacc957030))
+
 ## [0.3.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.2.0-alpha...v0.3.0-alpha) (2025-11-18)
 
 
