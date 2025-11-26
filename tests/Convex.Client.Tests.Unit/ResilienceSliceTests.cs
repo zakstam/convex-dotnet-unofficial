@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Convex.Client.Shared.Resilience;
-using Convex.Client.Slices.Resilience;
+using Convex.Client.Infrastructure.Resilience;
+using Convex.Client.Features.Observability.Resilience;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Moq;

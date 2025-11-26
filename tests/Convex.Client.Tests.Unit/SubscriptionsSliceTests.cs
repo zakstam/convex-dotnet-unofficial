@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Convex.Client.Slices.Subscriptions;
+using Convex.Client.Features.RealTime.Subscriptions;
 using Xunit;
 
 namespace Convex.Client.Tests.Unit;

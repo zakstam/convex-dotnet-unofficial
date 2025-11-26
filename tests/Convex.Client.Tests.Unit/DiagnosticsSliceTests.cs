@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.Json;
-using Convex.Client.Slices.Diagnostics;
+using Convex.Client.Features.Observability.Diagnostics;
 using Xunit;
 
 namespace Convex.Client.Tests.Unit;

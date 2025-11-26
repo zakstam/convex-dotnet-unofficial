@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Convex.Client.Shared.Connection;
-using Convex.Client.Shared.ErrorHandling;
-using Convex.Client.Slices.Health;
+using Convex.Client.Infrastructure.Connection;
+using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Client.Features.Observability.Health;
 using Xunit;
 
 namespace Convex.Client.Tests.Unit;

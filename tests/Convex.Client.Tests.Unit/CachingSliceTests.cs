@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Convex.Client.Slices.Caching;
+using Convex.Client.Features.DataAccess.Caching;
 using Xunit;
 
 namespace Convex.Client.Tests.Unit;

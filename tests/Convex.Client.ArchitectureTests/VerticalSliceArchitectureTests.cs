@@ -8,11 +8,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Convex.Client.ArchitectureTests;
 
 /// <summary>
-/// Architecture tests to enforce vertical slice architecture rules.
+/// Architecture tests to enforce vertical slice architecture rules with module-based organization.
 /// These tests ensure:
-/// 1. Slices do not depend on other slices
-/// 2. Shared does not depend on slices
-/// 3. Proper dependency direction (Slices → Shared → Nothing)
+/// 1. Features do not depend on other features (strict isolation, even within same module)
+/// 2. Infrastructure does not depend on features
+/// 3. Proper dependency direction (Features → Infrastructure → .NET BCL)
+/// 4. Module-based structure is maintained (Features/[Module]/[Feature]/)
 /// </summary>
 [TestClass]
 public class VerticalSliceArchitectureTests
@@ -29,42 +30,43 @@ public class VerticalSliceArchitectureTests
 
     [TestMethod]
     [TestCategory("Architecture")]
-    [TestCategory("SliceIsolation")]
-    public void Slices_Should_Not_Reference_Other_Slices()
+    [TestCategory("FeatureIsolation")]
+    public void Features_Should_Not_Reference_Other_Features()
     {
         // Arrange
         var assembly = _convexClientAssembly!;
-        var sliceTypes = assembly.GetTypes()
-            .Where(t => t.Namespace != null && t.Namespace.Contains(".Slices."))
+        var featureTypes = assembly.GetTypes()
+            .Where(t => t.Namespace != null && t.Namespace.Contains(".Features."))
             .ToList();
 
-        if (!sliceTypes.Any())
+        if (!featureTypes.Any())
         {
-            Assert.Inconclusive("No slice types found yet. This is expected during initial migration.");
+            Assert.Inconclusive("No feature types found yet. This is expected during initial migration.");
             return;
         }
 
         var violations = new List<string>();
 
         // Act
-        foreach (var sliceType in sliceTypes)
+        foreach (var featureType in featureTypes)
         {
-            var sliceName = GetSliceName(sliceType.Namespace!);
-            var referencedTypes = GetReferencedTypes(sliceType);
+            var featureName = GetFeatureName(featureType.Namespace!);
+            var referencedTypes = GetReferencedTypes(featureType);
 
             foreach (var referencedType in referencedTypes)
             {
                 if (referencedType.Namespace != null &&
-                    referencedType.Namespace.Contains(".Slices."))
+                    referencedType.Namespace.Contains(".Features."))
                 {
-                    var referencedSliceName = GetSliceName(referencedType.Namespace);
+                    var referencedFeatureName = GetFeatureName(referencedType.Namespace);
 
-                    // It's OK for a type to reference types in its own slice
-                    if (sliceName != referencedSliceName)
+                    // STRICT ISOLATION: Features cannot reference ANY other feature,
+                    // even within the same module
+                    if (featureName != referencedFeatureName)
                     {
                         violations.Add(
-                            $"{sliceType.FullName} (in {sliceName} slice) " +
-                            $"references {referencedType.FullName} (in {referencedSliceName} slice)");
+                            $"{featureType.FullName} (in {featureName} feature) " +
+                            $"references {referencedType.FullName} (in {referencedFeatureName} feature)");
                     }
                 }
             }
@@ -73,9 +75,9 @@ public class VerticalSliceArchitectureTests
         // Assert
         if (violations.Any())
         {
-            var message = "Slice-to-slice dependencies detected (FORBIDDEN):\n\n" +
+            var message = "Feature-to-feature dependencies detected (FORBIDDEN):\n\n" +
                          string.Join("\n", violations) +
-                         "\n\nRule: Slices must ONLY depend on Shared infrastructure, never other slices. " +
+                         "\n\nRule: Features must ONLY depend on Infrastructure, never other features. " +
                          "Coordinate through ConvexClient facade instead.";
             Assert.Fail(message);
         }
@@ -83,36 +85,36 @@ public class VerticalSliceArchitectureTests
 
     [TestMethod]
     [TestCategory("Architecture")]
-    [TestCategory("SharedIsolation")]
-    public void Shared_Should_Not_Reference_Slices()
+    [TestCategory("InfrastructureIsolation")]
+    public void Infrastructure_Should_Not_Reference_Features()
     {
         // Arrange
         var assembly = _convexClientAssembly!;
-        var sharedTypes = assembly.GetTypes()
-            .Where(t => t.Namespace != null && t.Namespace.Contains(".Shared."))
+        var infrastructureTypes = assembly.GetTypes()
+            .Where(t => t.Namespace != null && t.Namespace.Contains(".Infrastructure."))
             .ToList();
 
-        if (!sharedTypes.Any())
+        if (!infrastructureTypes.Any())
         {
-            Assert.Inconclusive("No shared types found yet. This is expected during initial migration.");
+            Assert.Inconclusive("No infrastructure types found yet. This is expected during initial migration.");
             return;
         }
 
         var violations = new List<string>();
 
         // Act
-        foreach (var sharedType in sharedTypes)
+        foreach (var infrastructureType in infrastructureTypes)
         {
-            var referencedTypes = GetReferencedTypes(sharedType);
+            var referencedTypes = GetReferencedTypes(infrastructureType);
 
             foreach (var referencedType in referencedTypes)
             {
                 if (referencedType.Namespace != null &&
-                    referencedType.Namespace.Contains(".Slices."))
+                    referencedType.Namespace.Contains(".Features."))
                 {
                     violations.Add(
-                        $"{sharedType.FullName} (in Shared) " +
-                        $"references {referencedType.FullName} (in Slices)");
+                        $"{infrastructureType.FullName} (in Infrastructure) " +
+                        $"references {referencedType.FullName} (in Features)");
                 }
             }
         }
@@ -120,38 +122,38 @@ public class VerticalSliceArchitectureTests
         // Assert
         if (violations.Any())
         {
-            var message = "Shared infrastructure referencing slices detected (FORBIDDEN):\n\n" +
+            var message = "Infrastructure referencing features detected (FORBIDDEN):\n\n" +
                          string.Join("\n", violations) +
-                         "\n\nRule: Shared infrastructure must not depend on slices. " +
-                         "Shared is for cross-cutting technical infrastructure only.";
+                         "\n\nRule: Infrastructure must not depend on features. " +
+                         "Infrastructure is for cross-cutting technical infrastructure only.";
             Assert.Fail(message);
         }
     }
 
     [TestMethod]
     [TestCategory("Architecture")]
-    [TestCategory("SliceStructure")]
-    public void Slices_Should_Only_Depend_On_Shared_Or_SystemTypes()
+    [TestCategory("FeatureStructure")]
+    public void Features_Should_Only_Depend_On_Infrastructure_Or_SystemTypes()
     {
         // Arrange
         var assembly = _convexClientAssembly!;
-        var sliceTypes = assembly.GetTypes()
-            .Where(t => t.Namespace != null && t.Namespace.Contains(".Slices."))
+        var featureTypes = assembly.GetTypes()
+            .Where(t => t.Namespace != null && t.Namespace.Contains(".Features."))
             .ToList();
 
-        if (!sliceTypes.Any())
+        if (!featureTypes.Any())
         {
-            Assert.Inconclusive("No slice types found yet. This is expected during initial migration.");
+            Assert.Inconclusive("No feature types found yet. This is expected during initial migration.");
             return;
         }
 
         var violations = new List<string>();
 
         // Act
-        foreach (var sliceType in sliceTypes)
+        foreach (var featureType in featureTypes)
         {
-            var sliceName = GetSliceName(sliceType.Namespace!);
-            var referencedTypes = GetReferencedTypes(sliceType);
+            var featureName = GetFeatureName(featureType.Namespace!);
+            var referencedTypes = GetReferencedTypes(featureType);
 
             foreach (var referencedType in referencedTypes)
             {
@@ -163,14 +165,14 @@ public class VerticalSliceArchitectureTests
                 // Check if referencing non-allowed Convex.Client namespaces
 
                 if (referencedType.Namespace.StartsWith("Convex.Client") &&
-                    !referencedType.Namespace.Contains(".Shared.") &&
-                    !referencedType.Namespace.Contains($".Slices.{sliceName}") &&
+                    !referencedType.Namespace.Contains(".Infrastructure.") &&
+                    !referencedType.Namespace.Contains($".Features.{GetModuleName(featureType.Namespace!)}.{featureName}") &&
                     referencedType.FullName != "Convex.Client.ConvexClient" && // Facade is OK
                     referencedType.FullName != "Convex.Client.IConvexClient")  // Interface is OK
                 {
                     violations.Add(
-                        $"{sliceType.FullName} references {referencedType.FullName} " +
-                        $"(should only reference Shared infrastructure)");
+                        $"{featureType.FullName} references {referencedType.FullName} " +
+                        $"(should only reference Infrastructure)");
                 }
             }
         }
@@ -178,12 +180,12 @@ public class VerticalSliceArchitectureTests
         // Assert
         if (violations.Any())
         {
-            var message = "Slices referencing non-Shared Convex.Client types (FORBIDDEN):\n\n" +
+            var message = "Features referencing non-Infrastructure Convex.Client types (FORBIDDEN):\n\n" +
                          string.Join("\n", violations) +
-                         "\n\nRule: Slices should only depend on:\n" +
-                         "  1. Shared/* infrastructure\n" +
+                         "\n\nRule: Features should only depend on:\n" +
+                         "  1. Infrastructure/* infrastructure\n" +
                          "  2. System types (.NET BCL)\n" +
-                         "  3. Types within their own slice\n" +
+                         "  3. Types within their own feature\n" +
                          "  4. ConvexClient facade (for registration)";
             Assert.Fail(message);
         }
@@ -192,57 +194,58 @@ public class VerticalSliceArchitectureTests
     [TestMethod]
     [TestCategory("Architecture")]
     [TestCategory("NamingConventions")]
-    public void Slice_Entry_Points_Should_Be_Named_Correctly()
+    public void Feature_Entry_Points_Should_Be_Named_Correctly()
     {
         // Arrange
         var assembly = _convexClientAssembly!;
-        var sliceTypes = assembly.GetTypes()
+        var featureTypes = assembly.GetTypes()
             .Where(t => t.Namespace != null &&
-                       t.Namespace.Contains(".Slices.") &&
+                       t.Namespace.Contains(".Features.") &&
                        t.IsClass &&
                        !t.IsNested &&
                        t.IsPublic)
             .ToList();
 
-        if (!sliceTypes.Any())
+        if (!featureTypes.Any())
         {
-            Assert.Inconclusive("No slice types found yet. This is expected during initial migration.");
+            Assert.Inconclusive("No feature types found yet. This is expected during initial migration.");
             return;
         }
 
         var violations = new List<string>();
 
         // Act - Check for entry point naming convention
-        var sliceNamespaces = sliceTypes
+        // Each feature namespace should have at least one public class ending in "Slice"
+        var featureNamespaces = featureTypes
             .Select(t => t.Namespace!)
             .Distinct()
-            .Where(ns => ns.Split('.').Length == 4) // Convex.Client.Slices.SliceName
+            .Where(ns => ns.Split('.').Length == 5) // Convex.Client.Features.Module.Feature
             .ToList();
 
-        foreach (var sliceNamespace in sliceNamespaces)
+        foreach (var featureNamespace in featureNamespaces)
         {
-            var sliceName = sliceNamespace.Split('.').Last();
-            var expectedEntryPointName = $"{sliceName}Slice";
+            var featureName = featureNamespace.Split('.').Last();
 
-            var hasEntryPoint = sliceTypes.Any(t =>
-                t.Namespace == sliceNamespace &&
-                t.Name == expectedEntryPointName);
+            // Check for any public class ending in "Slice"
+            var hasSliceEntryPoint = featureTypes.Any(t =>
+                t.Namespace == featureNamespace &&
+                t.Name.EndsWith("Slice"));
 
-            if (!hasEntryPoint)
+            if (!hasSliceEntryPoint)
             {
                 violations.Add(
-                    $"Slice '{sliceName}' missing entry point class '{expectedEntryPointName}' " +
-                    $"in namespace {sliceNamespace}");
+                    $"Feature '{featureName}' (namespace {featureNamespace}) " +
+                    $"missing entry point class ending in 'Slice'");
             }
         }
 
         // Assert
         if (violations.Any())
         {
-            var message = "Slice naming convention violations detected:\n\n" +
+            var message = "Feature naming convention violations detected:\n\n" +
                          string.Join("\n", violations) +
-                         "\n\nRule: Each slice must have an entry point class named [SliceName]Slice.cs\n" +
-                         "Example: Slices/Queries/QueriesSlice.cs";
+                         "\n\nRule: Each feature must have a public entry point class ending in 'Slice'\n" +
+                         "Example: Features/DataAccess/Queries/QueriesSlice.cs or FileStorageSlice.cs";
             Assert.Fail(message);
         }
     }
@@ -284,49 +287,58 @@ public class VerticalSliceArchitectureTests
     [TestMethod]
     [TestCategory("Architecture")]
     [TestCategory("Documentation")]
-    public void Each_Slice_Should_Have_README()
+    public void Each_Feature_Should_Have_README()
     {
-        // This test verifies that each slice directory has a README.md file
+        // This test verifies that each feature directory has a README.md file
         // Note: This is a file system test, not a reflection test
 
-        var slicesPath = Path.Combine(GetSolutionRoot(), "src", "Convex.Client", "Slices");
+        var featuresPath = Path.Combine(GetSolutionRoot(), "src", "Convex.Client", "Features");
 
-        if (!Directory.Exists(slicesPath))
+        if (!Directory.Exists(featuresPath))
         {
-            Assert.Inconclusive("Slices directory does not exist yet. This is expected during initial migration.");
-            return;
-        }
-
-        var sliceDirectories = Directory.GetDirectories(slicesPath);
-
-        if (sliceDirectories.Length == 0)
-        {
-            Assert.Inconclusive("No slice directories found yet. This is expected during initial migration.");
+            Assert.Inconclusive("Features directory does not exist yet. This is expected during initial migration.");
             return;
         }
 
         var violations = new List<string>();
 
-        foreach (var sliceDir in sliceDirectories)
-        {
-            var sliceName = Path.GetFileName(sliceDir);
-            var readmePath = Path.Combine(sliceDir, "README.md");
+        // Check each module directory (DataAccess, RealTime, etc.)
+        var moduleDirectories = Directory.GetDirectories(featuresPath);
 
-            if (!File.Exists(readmePath))
+        if (moduleDirectories.Length == 0)
+        {
+            Assert.Inconclusive("No module directories found yet. This is expected during initial migration.");
+            return;
+        }
+
+        foreach (var moduleDir in moduleDirectories)
+        {
+            var moduleName = Path.GetFileName(moduleDir);
+
+            // Get feature directories within this module
+            var featureDirectories = Directory.GetDirectories(moduleDir);
+
+            foreach (var featureDir in featureDirectories)
             {
-                violations.Add($"Slice '{sliceName}' missing README.md");
+                var featureName = Path.GetFileName(featureDir);
+                var readmePath = Path.Combine(featureDir, "README.md");
+
+                if (!File.Exists(readmePath))
+                {
+                    violations.Add($"Feature '{moduleName}/{featureName}' missing README.md");
+                }
             }
         }
 
         if (violations.Any())
         {
-            var message = "Slices missing documentation:\n\n" +
+            var message = "Features missing documentation:\n\n" +
                          string.Join("\n", violations) +
-                         "\n\nRule: Each slice must have a README.md documenting:\n" +
+                         "\n\nRule: Each feature must have a README.md documenting:\n" +
                          "  - Purpose and responsibilities\n" +
-                         "  - Owner name and contact\n" +
+                         "  - Module classification\n" +
                          "  - Public API surface\n" +
-                         "  - Shared dependencies used\n" +
+                         "  - Infrastructure dependencies used\n" +
                          "  - Testing guidance";
             Assert.Fail(message);
         }
@@ -335,15 +347,31 @@ public class VerticalSliceArchitectureTests
     #region Helper Methods
 
     /// <summary>
-    /// Extracts the slice name from a namespace.
-    /// Example: "Convex.Client.Slices.Queries.Internal" → "Queries"
+    /// Extracts the feature name from a namespace.
+    /// Example: "Convex.Client.Features.DataAccess.Queries.Internal" → "Queries"
     /// </summary>
-    private static string GetSliceName(string namespaceName)
+    private static string GetFeatureName(string namespaceName)
     {
         var parts = namespaceName.Split('.');
-        var slicesIndex = Array.IndexOf(parts, "Slices");
+        var featuresIndex = Array.IndexOf(parts, "Features");
 
-        return slicesIndex >= 0 && slicesIndex < parts.Length - 1 ? parts[slicesIndex + 1] : namespaceName;
+        // Namespace structure: Convex.Client.Features.Module.Feature[.SubNamespace]
+        // featuresIndex + 2 gives us the feature name
+        return featuresIndex >= 0 && featuresIndex < parts.Length - 2 ? parts[featuresIndex + 2] : namespaceName;
+    }
+
+    /// <summary>
+    /// Extracts the module name from a namespace.
+    /// Example: "Convex.Client.Features.DataAccess.Queries" → "DataAccess"
+    /// </summary>
+    private static string GetModuleName(string namespaceName)
+    {
+        var parts = namespaceName.Split('.');
+        var featuresIndex = Array.IndexOf(parts, "Features");
+
+        // Namespace structure: Convex.Client.Features.Module.Feature
+        // featuresIndex + 1 gives us the module name
+        return featuresIndex >= 0 && featuresIndex < parts.Length - 1 ? parts[featuresIndex + 1] : namespaceName;
     }
 
     /// <summary>
