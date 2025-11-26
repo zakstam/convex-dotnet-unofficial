@@ -1,7 +1,7 @@
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
-using Convex.Client.Shared.ErrorHandling;
-using Convex.Client.Slices.Pagination;
+using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Client.Features.RealTime.Pagination;
 using RealtimeChat.Shared.Models;
 
 namespace RealtimeChat.Shared.Services;

@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Convex.Client.Shared.Connection;
+using Convex.Client.Infrastructure.Connection;
 using RealtimeChat.Shared.Models;
 using RealtimeChat.Shared.Services;
 

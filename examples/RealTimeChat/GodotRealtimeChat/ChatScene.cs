@@ -1,5 +1,5 @@
 using Godot;
-using Convex.Client.Shared.Connection;
+using Convex.Client.Infrastructure.Connection;
 using Convex.Generated;
 using RealtimeChat.Shared.Models;
 using RealtimeChat.Shared.Services;

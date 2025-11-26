@@ -1,6 +1,6 @@
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 using System.Text.Json;
 using RealtimeChat.Shared.Models;
 using Microsoft.Extensions.Logging;
@@ -42,7 +42,7 @@ public class ReadReceiptService : IReadReceiptService, IDisposable
         try
         {
             _logger?.LogDebug("MarkMessageAsReadAsync: Marking message {MessageId} as read by {Username}", messageId, username);
-            
+
             await _convexClient.Mutate<object>(_markMessageReadFunctionName)
                 .WithArgs(new MarkMessageReadArgs
                 {

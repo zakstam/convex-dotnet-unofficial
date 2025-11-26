@@ -1,5 +1,5 @@
 using System.Reflection;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 using RealtimeChat.Shared.Configuration;
 using RealtimeChat.Shared.Models;
 
