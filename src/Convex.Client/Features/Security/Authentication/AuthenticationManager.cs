@@ -10,6 +10,7 @@ namespace Convex.Client.Features.Security.Authentication;
 /// </summary>
 internal sealed class AuthenticationManager(ILogger? logger = null, bool enableDebugLogging = false)
 {
+    private static readonly TimeSpan LockTimeout = TimeSpan.FromSeconds(30);
     private readonly SemaphoreSlim _authLock = new(1, 1);
     private readonly ILogger? _logger = logger;
     private readonly bool _enableDebugLogging = enableDebugLogging;
@@ -29,7 +30,9 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
         if (string.IsNullOrWhiteSpace(token))
             throw new ArgumentNullException(nameof(token));
 
-        await _authLock.WaitAsync(cancellationToken);
+        if (!await _authLock.WaitAsync(LockTimeout, cancellationToken))
+            throw new TimeoutException("Timed out waiting for authentication lock.");
+
         try
         {
             _authToken = token;
@@ -49,7 +52,9 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
         if (string.IsNullOrWhiteSpace(adminKey))
             throw new ArgumentNullException(nameof(adminKey));
 
-        await _authLock.WaitAsync(cancellationToken);
+        if (!await _authLock.WaitAsync(LockTimeout, cancellationToken))
+            throw new TimeoutException("Timed out waiting for authentication lock.");
+
         try
         {
             _adminAuth = adminKey;
@@ -74,7 +79,9 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
             _logger!.LogDebug("SetAuthTokenProviderAsync called with provider type: {ProviderType}", provider.GetType().Name);
         }
 
-        await _authLock.WaitAsync(cancellationToken);
+        if (!await _authLock.WaitAsync(LockTimeout, cancellationToken))
+            throw new TimeoutException("Timed out waiting for authentication lock.");
+
         try
         {
             _authTokenProvider = provider;
@@ -96,7 +103,9 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
 
     public async Task ClearAuthAsync(CancellationToken cancellationToken = default)
     {
-        await _authLock.WaitAsync(cancellationToken);
+        if (!await _authLock.WaitAsync(LockTimeout, cancellationToken))
+            throw new TimeoutException("Timed out waiting for authentication lock.");
+
         try
         {
             _authToken = null;
@@ -119,7 +128,9 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
                 _authToken != null, _adminAuth != null, _authTokenProvider != null);
         }
 
-        await _authLock.WaitAsync(cancellationToken);
+        if (!await _authLock.WaitAsync(LockTimeout, cancellationToken))
+            throw new TimeoutException("Timed out waiting for authentication lock.");
+
         try
         {
             // Return existing token if available
