@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Convex.Client.Infrastructure.Caching;
@@ -35,7 +36,7 @@ public sealed class ConvexClient : IConvexClient
     private readonly ActionsSlice _actions;
     private TimeSpan _timeout;
     private readonly Features.RealTime.Pagination.PaginationSlice _pagination;
-    private readonly Dictionary<string, object?> _cachedValues;
+    private readonly ConcurrentDictionary<string, object?> _cachedValues = new();
     private readonly object _connectionStateLock = new();
     private readonly QueryDependencyRegistry _dependencyRegistry;
     private readonly MiddlewarePipeline _middlewarePipeline = new();
@@ -162,7 +163,6 @@ public sealed class ConvexClient : IConvexClient
         options?.Validate();
 
         DeploymentUrl = deploymentUrl;
-        _cachedValues = [];
         QualityMonitor = new ConnectionQualityMonitor();
         CachingSlice = new Features.DataAccess.Caching.CachingSlice();
         HealthSlice = new Features.Observability.Health.HealthSlice();
