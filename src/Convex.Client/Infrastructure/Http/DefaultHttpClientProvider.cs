@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Convex.Client.Infrastructure.Http;
 
 /// <summary>
@@ -47,26 +45,12 @@ public class DefaultHttpClientProvider : IHttpClientProvider
         // Add authentication headers if provider is configured
         if (_authHeadersProvider != null)
         {
-            var msg = "[DefaultHttpClientProvider] Getting auth headers...";
-            Debug.WriteLine(msg);
-            Console.WriteLine(msg);
-
             var authHeaders = await _authHeadersProvider(cancellationToken).ConfigureAwait(false);
 
             foreach (var header in authHeaders)
             {
                 _ = request.Headers.TryAddWithoutValidation(header.Key, header.Value);
-
-                var headerMsg = $"[DefaultHttpClientProvider] Added header: {header.Key}";
-                Debug.WriteLine(headerMsg);
-                Console.WriteLine(headerMsg);
             }
-        }
-        else
-        {
-            var noAuthMsg = "[DefaultHttpClientProvider] No auth headers provider configured";
-            Debug.WriteLine(noAuthMsg);
-            Console.WriteLine(noAuthMsg);
         }
 
         return await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
