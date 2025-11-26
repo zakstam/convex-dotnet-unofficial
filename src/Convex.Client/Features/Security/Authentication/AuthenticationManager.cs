@@ -66,7 +66,8 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
 
     public async Task SetAuthTokenProviderAsync(IAuthTokenProvider provider, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(provider);
+        if (provider == null)
+            throw new ArgumentNullException(nameof(provider));
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
