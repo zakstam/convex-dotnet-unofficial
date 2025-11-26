@@ -1,7 +1,7 @@
-using Convex.Client.Shared.Builders;
-using Convex.Client.Shared.Connection;
-using Convex.Client.Slices.Pagination;
-using Convex.Client.Slices.Queries;
+using Convex.Client.Infrastructure.Builders;
+using Convex.Client.Infrastructure.Connection;
+using Convex.Client.Features.RealTime.Pagination;
+using Convex.Client.Features.DataAccess.Queries;
 
 namespace Convex.Client;
 
@@ -42,7 +42,7 @@ public interface IConvexClient : IDisposable
     /// Quality is assessed periodically based on latency, errors, reconnections, and stability.
     /// Provides insights into network performance for adaptive UI and diagnostics.
     /// </summary>
-    IObservable<Convex.Client.Shared.Quality.ConnectionQuality> ConnectionQualityChanges { get; }
+    IObservable<Convex.Client.Infrastructure.Quality.ConnectionQuality> ConnectionQualityChanges { get; }
 
     #endregion
 

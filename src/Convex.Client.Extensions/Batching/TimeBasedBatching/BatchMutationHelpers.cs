@@ -1,5 +1,5 @@
 using Convex.Client;
-using Convex.Client.Shared.Builders;
+using Convex.Client.Infrastructure.Builders;
 
 namespace Convex.Client.Extensions.Batching.TimeBasedBatching;
 

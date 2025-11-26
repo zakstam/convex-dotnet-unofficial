@@ -1,20 +1,20 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Convex.Client.Shared.Caching;
-using Convex.Client.Shared.ConsistentQueries;
-using Convex.Client.Shared.Internal.Connection;
-using Convex.Client.Shared.Internal.Threading;
-using Convex.Client.Shared.Internal.WebSocket;
-using Convex.Client.Shared.Middleware;
-using Convex.Client.Shared.Quality;
-using Convex.Client.Shared.Extensions;
-using Convex.Client.Shared.Connection;
-using Convex.Client.Shared.Http;
-using Convex.Client.Shared.Serialization;
-using Convex.Client.Shared.Builders;
-using Convex.Client.Slices.Actions;
-using Convex.Client.Slices.Mutations;
-using Convex.Client.Slices.Queries;
+using Convex.Client.Infrastructure.Caching;
+using Convex.Client.Infrastructure.ConsistentQueries;
+using Convex.Client.Infrastructure.Internal.Connection;
+using Convex.Client.Infrastructure.Internal.Threading;
+using Convex.Client.Infrastructure.Internal.WebSocket;
+using Convex.Client.Infrastructure.Middleware;
+using Convex.Client.Infrastructure.Quality;
+using Convex.Client.Infrastructure.Extensions;
+using Convex.Client.Infrastructure.Connection;
+using Convex.Client.Infrastructure.Http;
+using Convex.Client.Infrastructure.Serialization;
+using Convex.Client.Infrastructure.Builders;
+using Convex.Client.Features.DataAccess.Actions;
+using Convex.Client.Features.DataAccess.Mutations;
+using Convex.Client.Features.DataAccess.Queries;
 
 namespace Convex.Client;
 
@@ -34,7 +34,7 @@ public sealed class ConvexClient : IConvexClient
     private readonly MutationsSlice _mutations;
     private readonly ActionsSlice _actions;
     private TimeSpan _timeout;
-    private readonly Slices.Pagination.PaginationSlice _pagination;
+    private readonly Features.RealTime.Pagination.PaginationSlice _pagination;
     private readonly Dictionary<string, object?> _cachedValues;
     private readonly object _connectionStateLock = new();
     private readonly QueryDependencyRegistry _dependencyRegistry;
@@ -52,7 +52,7 @@ public sealed class ConvexClient : IConvexClient
     // Reactive subjects for observable streams
     private readonly Subject<ConnectionState> _connectionStateSubject = new();
     private readonly Subject<ConnectionQuality> _connectionQualitySubject = new();
-    private readonly Subject<Slices.Authentication.AuthenticationState> _authenticationStateSubject = new();
+    private readonly Subject<Features.Security.Authentication.AuthenticationState> _authenticationStateSubject = new();
 
     /// <inheritdoc/>
     public string DeploymentUrl { get; }
@@ -89,7 +89,7 @@ public sealed class ConvexClient : IConvexClient
     public IObservable<ConnectionQuality> ConnectionQualityChanges => _connectionQualitySubject.AsObservable();
 
     /// <inheritdoc/>
-    public IObservable<Slices.Authentication.AuthenticationState> AuthenticationStateChanges => _authenticationStateSubject.AsObservable();
+    public IObservable<Features.Security.Authentication.AuthenticationState> AuthenticationStateChanges => _authenticationStateSubject.AsObservable();
 
     /// <summary>
     /// Gets the error that occurred during PreConnect, if any.
@@ -160,9 +160,9 @@ public sealed class ConvexClient : IConvexClient
         DeploymentUrl = deploymentUrl;
         _cachedValues = [];
         QualityMonitor = new ConnectionQualityMonitor();
-        CachingSlice = new Slices.Caching.CachingSlice();
-        HealthSlice = new Slices.Health.HealthSlice();
-        DiagnosticsSlice = new Slices.Diagnostics.DiagnosticsSlice();
+        CachingSlice = new Features.DataAccess.Caching.CachingSlice();
+        HealthSlice = new Features.Observability.Health.HealthSlice();
+        DiagnosticsSlice = new Features.Observability.Diagnostics.DiagnosticsSlice();
         _dependencyRegistry = new QueryDependencyRegistry();
 
         // Capture SynchronizationContext for automatic UI thread marshalling
@@ -182,19 +182,19 @@ public sealed class ConvexClient : IConvexClient
         _serializer = new DefaultConvexSerializer();
         var logger = options?.Logger;
         var enableDebugLogging = options?.EnableDebugLogging ?? false;
-        ResilienceSlice = new Slices.Resilience.ResilienceSlice(logger, enableDebugLogging);
+        ResilienceSlice = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
         _queries = new QueriesSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         _mutations = new MutationsSlice(_httpProvider, _serializer, CachingSlice, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
         _actions = new ActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         TimestampManager = new TimestampManager(httpClient, deploymentUrl);
-        FileStorageSlice = new Slices.FileStorage.FileStorageSlice(_httpProvider, _serializer, httpClient, logger, enableDebugLogging);
-        VectorSearchSlice = new Slices.VectorSearch.VectorSearchSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        HttpActionsSlice = new Slices.HttpActions.HttpActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        SchedulingSlice = new Slices.Scheduling.SchedulingSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        _pagination = new Slices.Pagination.PaginationSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        FileStorageSlice = new Features.Storage.Files.FileStorageSlice(_httpProvider, _serializer, httpClient, logger, enableDebugLogging);
+        VectorSearchSlice = new Features.Storage.VectorSearch.VectorSearchSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        HttpActionsSlice = new Features.Operational.HttpActions.HttpActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        SchedulingSlice = new Features.Operational.Scheduling.SchedulingSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        _pagination = new Features.RealTime.Pagination.PaginationSlice(_httpProvider, _serializer, logger, enableDebugLogging);
 
         // Initialize authentication slice with logger and debug logging
-        AuthenticationSlice = new Slices.Authentication.AuthenticationSlice(logger, enableDebugLogging);
+        AuthenticationSlice = new Features.Security.Authentication.AuthenticationSlice(logger, enableDebugLogging);
 
         // Wire up authentication to HTTP provider (slice coordination through facade)
         if (_httpProvider is DefaultHttpClientProvider defaultProvider)
@@ -368,55 +368,55 @@ public sealed class ConvexClient : IConvexClient
     /// <summary>
     /// Gets the FileStorage slice for file upload and download operations.
     /// </summary>
-    public Slices.FileStorage.FileStorageSlice FileStorageSlice { get; }
+    public Features.Storage.Files.FileStorageSlice FileStorageSlice { get; }
 
     /// <summary>
     /// Gets the VectorSearch slice for vector similarity search operations.
     /// </summary>
-    public Slices.VectorSearch.VectorSearchSlice VectorSearchSlice { get; }
+    public Features.Storage.VectorSearch.VectorSearchSlice VectorSearchSlice { get; }
 
     /// <summary>
     /// Gets the HTTP actions slice (migrated to vertical slice architecture).
     /// </summary>
-    public Slices.HttpActions.HttpActionsSlice HttpActionsSlice { get; }
+    public Features.Operational.HttpActions.HttpActionsSlice HttpActionsSlice { get; }
 
     /// <summary>
     /// Gets the scheduling slice (migrated to vertical slice architecture).
     /// </summary>
-    public Slices.Scheduling.SchedulingSlice SchedulingSlice { get; }
+    public Features.Operational.Scheduling.SchedulingSlice SchedulingSlice { get; }
 
     /// <summary>
     /// Gets the new pagination slice (migrated to vertical slice architecture).
     /// Provides cursor-based pagination for Convex queries.
     /// </summary>
-    public Slices.Pagination.IConvexPagination PaginationSlice => _pagination;
+    public Features.RealTime.Pagination.IConvexPagination PaginationSlice => _pagination;
 
     /// <summary>
     /// Gets the new caching slice (migrated to vertical slice architecture).
     /// Provides in-memory caching with optimistic updates and pattern-based invalidation.
     /// Note: The QueryCache property above is kept for backward compatibility.
     /// </summary>
-    public Slices.Caching.CachingSlice CachingSlice { get; }
+    public Features.DataAccess.Caching.CachingSlice CachingSlice { get; }
 
     /// <summary>
     /// Gets the Authentication slice for managing authentication state and tokens.
     /// </summary>
-    public Slices.Authentication.AuthenticationSlice AuthenticationSlice { get; }
+    public Features.Security.Authentication.AuthenticationSlice AuthenticationSlice { get; }
 
     /// <summary>
     /// Gets the Health slice for monitoring connection health and metrics.
     /// </summary>
-    public Slices.Health.HealthSlice HealthSlice { get; }
+    public Features.Observability.Health.HealthSlice HealthSlice { get; }
 
     /// <summary>
     /// Gets the Diagnostics slice for performance tracking and disconnection monitoring.
     /// </summary>
-    public Slices.Diagnostics.DiagnosticsSlice DiagnosticsSlice { get; }
+    public Features.Observability.Diagnostics.DiagnosticsSlice DiagnosticsSlice { get; }
 
     /// <summary>
     /// Gets the Resilience slice for retry and circuit breaker patterns.
     /// </summary>
-    public Slices.Resilience.ResilienceSlice ResilienceSlice { get; }
+    public Features.Observability.Resilience.ResilienceSlice ResilienceSlice { get; }
 
     /// <inheritdoc/>
     public TimestampManager TimestampManager { get; }
@@ -484,7 +484,7 @@ public sealed class ConvexClient : IConvexClient
     /// Gets the current health status of the Convex client connection.
     /// </summary>
     /// <returns>A health check result with connection metrics and status.</returns>
-    public Task<Slices.Health.ConvexHealthCheck> GetHealthAsync()
+    public Task<Features.Observability.Health.ConvexHealthCheck> GetHealthAsync()
     {
         // Get current connection state
         var connectionState = ConnectionState;

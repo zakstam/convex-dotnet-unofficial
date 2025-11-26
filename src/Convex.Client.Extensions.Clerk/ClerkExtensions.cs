@@ -1,4 +1,4 @@
-using Convex.Client.Shared.Common;
+using Convex.Client.Infrastructure.Common;
 
 namespace Convex.Client.Extensions.Clerk;
 

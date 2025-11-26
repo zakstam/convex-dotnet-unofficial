@@ -51,7 +51,7 @@ class TestClass
             TestCode = @"
 using System;
 using Convex.Client;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 
 class TestClass
 {

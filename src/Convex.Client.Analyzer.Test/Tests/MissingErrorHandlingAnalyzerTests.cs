@@ -17,7 +17,7 @@ public class MissingErrorHandlingAnalyzerTests
 using System;
 using System.Threading.Tasks;
 using Convex.Client;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 
 class TestClass
 {

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Convex.Client.Shared.Builders;
+using Convex.Client.Infrastructure.Builders;
 
 namespace Convex.Client.DeveloperTools;
 

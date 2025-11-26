@@ -1,4 +1,4 @@
-using Convex.Client.Shared.Internal.Connection;
+using Convex.Client.Infrastructure.Internal.Connection;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.Client;

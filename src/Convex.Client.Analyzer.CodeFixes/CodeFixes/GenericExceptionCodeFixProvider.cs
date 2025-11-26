@@ -87,7 +87,7 @@ public class GenericExceptionCodeFixProvider : CodeFixProvider
         if (newRoot is CompilationUnitSyntax compilationUnit)
         {
             var hasUsingDirective = compilationUnit.Usings.Any(u =>
-                u.Name?.ToString() == "Convex.Client.Shared.ErrorHandling");
+                u.Name?.ToString() == "Convex.Client.Infrastructure.ErrorHandling");
 
             if (!hasUsingDirective)
             {
@@ -146,7 +146,7 @@ public class GenericExceptionCodeFixProvider : CodeFixProvider
             if (newRoot is CompilationUnitSyntax compilationUnit)
             {
                 var hasUsingDirective = compilationUnit.Usings.Any(u =>
-                    u.Name?.ToString() == "Convex.Client.Shared.ErrorHandling");
+                    u.Name?.ToString() == "Convex.Client.Infrastructure.ErrorHandling");
 
                 if (!hasUsingDirective)
                 {

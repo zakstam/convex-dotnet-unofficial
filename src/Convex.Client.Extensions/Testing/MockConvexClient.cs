@@ -1,15 +1,15 @@
 using Convex.Client;
-using Convex.Client.Shared.ErrorHandling;
-using Convex.Client.Shared.Connection;
+using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Client.Infrastructure.Connection;
 using Convex.Client.Authentication.Contracts;
 using Convex.Client.FileStorage.Contracts;
 using Convex.Client.VectorSearch.Contracts;
 using Convex.Client.HttpActions.Contracts;
 using Convex.Client.Scheduling.Contracts;
-using Convex.Client.Shared.ConsistentQueries;
-using Convex.Client.Shared.Builders;
-using Convex.Client.Shared.Results;
-using Convex.Client.Slices.Pagination;
+using Convex.Client.Infrastructure.ConsistentQueries;
+using Convex.Client.Infrastructure.Builders;
+using Convex.Client.Infrastructure.Results;
+using Convex.Client.Features.RealTime.Pagination;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 
@@ -67,7 +67,7 @@ public class MockConvexClient : IConvexClient
 
     public IObservable<ConnectionState> ConnectionStateChanges => Observable.Empty<ConnectionState>();
 
-    public IObservable<Convex.Client.Shared.Quality.ConnectionQuality> ConnectionQualityChanges => Observable.Empty<Convex.Client.Shared.Quality.ConnectionQuality>();
+    public IObservable<Convex.Client.Infrastructure.Quality.ConnectionQuality> ConnectionQualityChanges => Observable.Empty<Convex.Client.Infrastructure.Quality.ConnectionQuality>();
 
     private readonly Dictionary<string, object?> _cachedValues = new();
 
@@ -496,8 +496,8 @@ internal class MockQueryBuilder<TResult> : IQueryBuilder<TResult>
     public IQueryBuilder<TResult> UseConsistency(long timestamp) => this;
     public IQueryBuilder<TResult> Cached(TimeSpan cacheDuration) => this;
     public IQueryBuilder<TResult> OnError(Action<Exception> onError) => this;
-    public IQueryBuilder<TResult> WithRetry(Action<Convex.Client.Shared.Resilience.RetryPolicyBuilder> configure) => this;
-    public IQueryBuilder<TResult> WithRetry(Convex.Client.Shared.Resilience.RetryPolicy policy) => this;
+    public IQueryBuilder<TResult> WithRetry(Action<Convex.Client.Infrastructure.Resilience.RetryPolicyBuilder> configure) => this;
+    public IQueryBuilder<TResult> WithRetry(Convex.Client.Infrastructure.Resilience.RetryPolicy policy) => this;
 
     public Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
@@ -556,9 +556,9 @@ internal class MockMutationBuilder<TResult> : IMutationBuilder<TResult>
     public IMutationBuilder<TResult> OnError(Action<Exception> onError) => this;
     public IMutationBuilder<TResult> RollbackOn<TException>() where TException : Exception => this;
     public IMutationBuilder<TResult> SkipQueue() => this;
-    public IMutationBuilder<TResult> WithRetry(Action<Convex.Client.Shared.Resilience.RetryPolicyBuilder> configure) => this;
-    public IMutationBuilder<TResult> WithRetry(Convex.Client.Shared.Resilience.RetryPolicy policy) => this;
-    public IMutationBuilder<TResult> WithOptimisticUpdate<TArgs>(Action<Convex.Client.Shared.OptimisticUpdates.IOptimisticLocalStore, TArgs> updateFn) where TArgs : notnull => this;
+    public IMutationBuilder<TResult> WithRetry(Action<Convex.Client.Infrastructure.Resilience.RetryPolicyBuilder> configure) => this;
+    public IMutationBuilder<TResult> WithRetry(Convex.Client.Infrastructure.Resilience.RetryPolicy policy) => this;
+    public IMutationBuilder<TResult> WithOptimisticUpdate<TArgs>(Action<Convex.Client.Infrastructure.OptimisticUpdates.IOptimisticLocalStore, TArgs> updateFn) where TArgs : notnull => this;
     public IMutationBuilder<TResult> UpdateCache<TCache>(string queryName, Func<TCache, TCache> updateFn) => this;
     public IMutationBuilder<TResult> TrackPending(ISet<string> tracker, string key) => this;
     public IMutationBuilder<TResult> WithCleanup(Action cleanup) => this;
@@ -614,8 +614,8 @@ internal class MockActionBuilder<TResult> : IActionBuilder<TResult>
     public IActionBuilder<TResult> WithTimeout(TimeSpan timeout) => this;
     public IActionBuilder<TResult> OnSuccess(Action<TResult> onSuccess) => this;
     public IActionBuilder<TResult> OnError(Action<Exception> onError) => this;
-    public IActionBuilder<TResult> WithRetry(Action<Convex.Client.Shared.Resilience.RetryPolicyBuilder> configure) => this;
-    public IActionBuilder<TResult> WithRetry(Convex.Client.Shared.Resilience.RetryPolicy policy) => this;
+    public IActionBuilder<TResult> WithRetry(Action<Convex.Client.Infrastructure.Resilience.RetryPolicyBuilder> configure) => this;
+    public IActionBuilder<TResult> WithRetry(Convex.Client.Infrastructure.Resilience.RetryPolicy policy) => this;
 
     public Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {

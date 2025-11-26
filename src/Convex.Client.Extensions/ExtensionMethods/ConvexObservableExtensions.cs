@@ -1,8 +1,8 @@
 using System.Reactive.Linq;
 using System.Reactive.Disposables;
 using System.Reactive;
-using Convex.Client.Shared.Quality;
-using Convex.Client.Shared.Connection;
+using Convex.Client.Infrastructure.Quality;
+using Convex.Client.Infrastructure.Connection;
 
 namespace Convex.Client.Extensions.ExtensionMethods;
 

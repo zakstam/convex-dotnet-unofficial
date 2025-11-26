@@ -1,4 +1,4 @@
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 
 namespace Convex.Client.Extensions.ResultWrappers;
 

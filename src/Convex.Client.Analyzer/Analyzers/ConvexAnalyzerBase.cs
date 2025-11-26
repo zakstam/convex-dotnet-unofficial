@@ -145,6 +145,42 @@ public static class ConvexDiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "Mutations that modify data should invalidate related queries to ensure cache consistency.");
+
+    /// <summary>
+    /// CVX011: No feature-to-feature dependencies
+    /// </summary>
+    public static readonly DiagnosticDescriptor CVX011_NoFeatureToFeatureDependencies = new(
+        id: "CVX011",
+        title: "Features must be strictly isolated",
+        messageFormat: "Feature '{0}' cannot reference types from feature '{1}'. Features must be strictly isolated and communicate through ConvexClient facade.",
+        category: "Architecture",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Features must be strictly isolated and cannot reference each other, even within the same module. Coordinate through the ConvexClient facade instead.");
+
+    /// <summary>
+    /// CVX012: No infrastructure-to-feature dependencies
+    /// </summary>
+    public static readonly DiagnosticDescriptor CVX012_NoInfrastructureToFeatureDependencies = new(
+        id: "CVX012",
+        title: "Infrastructure cannot reference features",
+        messageFormat: "Infrastructure type '{0}' cannot reference feature type '{1}'. Dependency must flow: Features → Infrastructure → .NET BCL.",
+        category: "Architecture",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Infrastructure layer provides technical capabilities and must not depend on features. Dependency direction must be: Features → Infrastructure → .NET BCL.");
+
+    /// <summary>
+    /// CVX013: Invalid namespace structure
+    /// </summary>
+    public static readonly DiagnosticDescriptor CVX013_InvalidNamespaceStructure = new(
+        id: "CVX013",
+        title: "Namespace does not follow architecture convention",
+        messageFormat: "Namespace '{0}' does not follow architecture convention. Use 'Convex.Client.Features.[Module].[Feature]' or 'Convex.Client.Infrastructure.[Concern]'.",
+        category: "Maintainability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Namespaces must follow the vertical slice architecture convention: Features are organized as Features.[Module].[Feature], Infrastructure as Infrastructure.[Concern].");
 }
 
 /// <summary>
@@ -204,7 +240,7 @@ public static class ConvexAnalyzerHelpers
         }
 
         var namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString();
-        if (namespaceName != "Convex.Client.Shared.ErrorHandling")
+        if (namespaceName != "Convex.Client.Infrastructure.ErrorHandling")
         {
             return false;
         }
@@ -227,7 +263,7 @@ public static class ConvexAnalyzerHelpers
         var namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString();
         
         // Check if it's a builder interface in Shared.Builders namespace
-        if (namespaceName == "Convex.Client.Shared.Builders" &&
+        if (namespaceName == "Convex.Client.Infrastructure.Builders" &&
             typeSymbol.Name is "IQueryBuilder" or "IMutationBuilder" or "IActionBuilder")
         {
             return true;
@@ -265,7 +301,7 @@ public static class ConvexAnalyzerHelpers
             {
                 var interfaceNamespace = interfaceType.ContainingNamespace?.ToDisplayString();
                 if (interfaceNamespace?.StartsWith("Convex.Client.Slices") == true ||
-                    interfaceNamespace?.StartsWith("Convex.Client.Shared.Builders") == true)
+                    interfaceNamespace?.StartsWith("Convex.Client.Infrastructure.Builders") == true)
                 {
                     return true;
                 }
@@ -273,5 +309,67 @@ public static class ConvexAnalyzerHelpers
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Checks if a namespace is a feature namespace.
+    /// </summary>
+    /// <param name="namespaceName">The namespace to check.</param>
+    /// <returns>True if the namespace is a feature namespace.</returns>
+    public static bool IsFeatureNamespace(string? namespaceName)
+    {
+        return namespaceName?.Contains(".Features.") == true;
+    }
+
+    /// <summary>
+    /// Checks if a namespace is an infrastructure namespace.
+    /// </summary>
+    /// <param name="namespaceName">The namespace to check.</param>
+    /// <returns>True if the namespace is an infrastructure namespace.</returns>
+    public static bool IsInfrastructureNamespace(string? namespaceName)
+    {
+        return namespaceName?.Contains(".Infrastructure.") == true;
+    }
+
+    /// <summary>
+    /// Parses a feature namespace to extract the module and feature names.
+    /// </summary>
+    /// <param name="namespaceName">The namespace to parse (e.g., "Convex.Client.Features.DataAccess.Queries").</param>
+    /// <returns>A tuple containing the module name and feature name, or (null, null) if not a valid feature namespace.</returns>
+    public static (string? module, string? feature) ParseFeatureNamespace(string? namespaceName)
+    {
+        if (string.IsNullOrEmpty(namespaceName))
+        {
+            return (null, null);
+        }
+
+        var parts = namespaceName!.Split('.');
+        var featuresIndex = System.Array.IndexOf(parts, "Features");
+
+        // Namespace structure: Convex.Client.Features.Module.Feature[.SubNamespace]
+        if (featuresIndex >= 0 && featuresIndex < parts.Length - 2)
+        {
+            var module = parts[featuresIndex + 1];
+            var feature = parts[featuresIndex + 2];
+            return (module, feature);
+        }
+
+        return (null, null);
+    }
+
+    /// <summary>
+    /// Checks if a type symbol is the ConvexClient facade.
+    /// </summary>
+    /// <param name="typeSymbol">The type symbol to check.</param>
+    /// <returns>True if the type is ConvexClient or IConvexClient.</returns>
+    public static bool IsConvexFacade(INamedTypeSymbol? typeSymbol)
+    {
+        if (typeSymbol == null)
+        {
+            return false;
+        }
+
+        var namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString();
+        return namespaceName == "Convex.Client" && typeSymbol.Name is "ConvexClient" or "IConvexClient";
     }
 }

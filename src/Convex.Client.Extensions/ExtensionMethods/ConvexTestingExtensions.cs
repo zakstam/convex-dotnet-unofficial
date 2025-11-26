@@ -1,10 +1,10 @@
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using Convex.Client.Shared.ErrorHandling;
-using Convex.Client.Shared.Connection;
-using Convex.Client.Shared.Builders;
-using Convex.Client.Shared.Quality;
-using Convex.Client.Slices.Queries;
+using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Client.Infrastructure.Connection;
+using Convex.Client.Infrastructure.Builders;
+using Convex.Client.Infrastructure.Quality;
+using Convex.Client.Features.DataAccess.Queries;
 
 namespace Convex.Client.Extensions.ExtensionMethods;
 
@@ -424,7 +424,7 @@ internal class MockConvexClient(
     public void DefineQueryDependency(string mutationName, params string[] invalidates) { }
     public Task InvalidateQueryAsync(string queryName) => Task.CompletedTask;
     public Task InvalidateQueriesAsync(string pattern) => Task.CompletedTask;
-    public Convex.Client.Slices.Pagination.IConvexPagination PaginationSlice => throw new NotImplementedException("Pagination is not implemented in MockConvexClient");
+    public Convex.Client.Features.RealTime.Pagination.IConvexPagination PaginationSlice => throw new NotImplementedException("Pagination is not implemented in MockConvexClient");
     public void Dispose() { }
 
     // Features not implemented in mock
@@ -471,9 +471,9 @@ internal class MockQueryBuilder<TResult>(MockConvexClient client, string functio
 
     public IQueryBuilder<TResult> OnError(Action<Exception> errorHandler) => this;
 
-    public IQueryBuilder<TResult> WithRetry(Action<Shared.Resilience.RetryPolicyBuilder> _) => this;
+    public IQueryBuilder<TResult> WithRetry(Action<Infrastructure.Resilience.RetryPolicyBuilder> _) => this;
 
-    public IQueryBuilder<TResult> WithRetry(Shared.Resilience.RetryPolicy _) => this;
+    public IQueryBuilder<TResult> WithRetry(Infrastructure.Resilience.RetryPolicy _) => this;
 
     public async Task<ConvexResult<TResult>> ExecuteWithResultAsync(CancellationToken cancellationToken = default)
     {
@@ -536,9 +536,9 @@ internal class MockMutationBuilder<TResult>(MockConvexClient client, string func
     public IMutationBuilder<TResult> OnError(Action<Exception> errorHandler) => this;
     public IMutationBuilder<TResult> RollbackOn<TException>() where TException : Exception => this;
     public IMutationBuilder<TResult> SkipQueue() => this;
-    public IMutationBuilder<TResult> WithRetry(Action<Shared.Resilience.RetryPolicyBuilder> _) => this;
-    public IMutationBuilder<TResult> WithRetry(Shared.Resilience.RetryPolicy _) => this;
-    public IMutationBuilder<TResult> WithOptimisticUpdate<TArgs>(Action<Shared.OptimisticUpdates.IOptimisticLocalStore, TArgs> updateAction) where TArgs : notnull => this;
+    public IMutationBuilder<TResult> WithRetry(Action<Infrastructure.Resilience.RetryPolicyBuilder> _) => this;
+    public IMutationBuilder<TResult> WithRetry(Infrastructure.Resilience.RetryPolicy _) => this;
+    public IMutationBuilder<TResult> WithOptimisticUpdate<TArgs>(Action<Infrastructure.OptimisticUpdates.IOptimisticLocalStore, TArgs> updateAction) where TArgs : notnull => this;
     public IMutationBuilder<TResult> UpdateCache<TCache>(string queryName, Func<TCache, TCache> updateFn) => this;
     public IMutationBuilder<TResult> TrackPending(ISet<string> pendingMutations, string mutationId) => this;
     public IMutationBuilder<TResult> WithCleanup(Action cleanupAction) => this;
@@ -598,8 +598,8 @@ internal class MockActionBuilder<TResult>(MockConvexClient client, string functi
     public IActionBuilder<TResult> WithTimeout(TimeSpan timeout) => this;
     public IActionBuilder<TResult> OnSuccess(Action<TResult> successHandler) => this;
     public IActionBuilder<TResult> OnError(Action<Exception> errorHandler) => this;
-    public IActionBuilder<TResult> WithRetry(Action<Shared.Resilience.RetryPolicyBuilder> _) => this;
-    public IActionBuilder<TResult> WithRetry(Shared.Resilience.RetryPolicy _) => this;
+    public IActionBuilder<TResult> WithRetry(Action<Infrastructure.Resilience.RetryPolicyBuilder> _) => this;
+    public IActionBuilder<TResult> WithRetry(Infrastructure.Resilience.RetryPolicy _) => this;
 
     public async Task<ConvexResult<TResult>> ExecuteWithResultAsync(CancellationToken cancellationToken = default)
     {

@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Convex.Client.Shared.Common;
+using Convex.Client.Infrastructure.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.Client.Extensions.Clerk;

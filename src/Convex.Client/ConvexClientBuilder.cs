@@ -1,6 +1,6 @@
-using Convex.Client.Shared.Internal.Connection;
-using Convex.Client.Shared.Middleware;
-using Convex.Client.Shared.Validation;
+using Convex.Client.Infrastructure.Internal.Connection;
+using Convex.Client.Infrastructure.Middleware;
+using Convex.Client.Infrastructure.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.Client;

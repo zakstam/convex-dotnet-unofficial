@@ -1,4 +1,4 @@
-using Convex.Client.Slices.Pagination;
+using Convex.Client.Features.RealTime.Pagination;
 
 namespace Convex.Client.Extensions.ExtensionMethods;
 

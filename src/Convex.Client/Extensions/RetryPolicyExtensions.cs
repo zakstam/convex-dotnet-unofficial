@@ -1,5 +1,5 @@
-using Convex.Client.Shared.Builders;
-using Convex.Client.Shared.Resilience;
+using Convex.Client.Infrastructure.Builders;
+using Convex.Client.Infrastructure.Resilience;
 
 namespace Convex.Client.Extensions;
 

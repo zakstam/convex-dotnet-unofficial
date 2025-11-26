@@ -1,6 +1,6 @@
 using System.Linq;
 using Convex.Client.Extensions.DependencyInjection;
-using Convex.Client.Shared.Common;
+using Convex.Client.Infrastructure.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
