@@ -109,6 +109,52 @@ The application uses **TimeBasedBatching** with the `ForCursorTracking()` preset
 - **Min distance**: 5px (deduplicate small movements)
 - **Mode**: REPLACE (each user has one current batch)
 
+#### Example: Using Batched Updates
+
+Here's how to use batched updates in your code:
+
+```csharp
+using Convex.Client.Extensions.Batching.TimeBasedBatching;
+
+// Option 1: Use the preset optimized for cursor tracking
+var options = BatchingOptions.ForCursorTracking();
+var batcher = new CursorBatcher(convexClient, userId, options);
+
+// Option 2: Customize batching options
+var customOptions = new BatchingOptions
+{
+    SamplingIntervalMs = 16,        // Sample every 16ms (~60fps)
+    BatchIntervalMs = 200,           // Send batch every 200ms
+    MinEventDistance = 5.0,          // Ignore movements < 5px
+    EnableSampling = true,           // Enable time-based sampling
+    ResetBatchStartTimeOnFlush = true,
+    MaxBatchSize = 100
+};
+var customBatcher = new CursorBatcher(convexClient, userId, customOptions);
+
+// Add cursor positions as they occur (batched automatically)
+batcher.AddPosition(x: 100, y: 200);
+batcher.AddPosition(x: 105, y: 205, velocity: 10.5);
+
+// Manually flush if needed (normally automatic every 200ms)
+await batcher.FlushAsync();
+
+// Clean up when done
+batcher.Dispose();
+```
+
+The `CursorBatcher` wrapper automatically:
+- Creates a `TimeBasedBatcher<CursorPosition>` with the specified options
+- Configures the mutation endpoint (`functions/cursorBatches:store`)
+- Adds user metadata to each batch
+- Transforms cursor positions into `BatchableCursorEvent` objects
+
+Under the hood, the batcher:
+1. Samples events at the specified interval (16ms)
+2. Filters out small movements (< 5px)
+3. Automatically sends batches every 200ms
+4. Uses REPLACE mode (each user has one active batch)
+
 ### Constellation Algorithm
 The constellation visualization connects cursors that are within 200px of each other:
 1. Calculate distance between all cursor pairs
