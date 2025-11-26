@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
 using Convex.Client;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 using TicTacToe.Shared.Models;
 
 namespace TicTacToe.Shared.Services;
