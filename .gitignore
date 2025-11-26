@@ -16,7 +16,6 @@ obj/
 # NuGet
 *.nupkg
 *.snupkg
-nuget.config
 packages/
 nupkg/
 
