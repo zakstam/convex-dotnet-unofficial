@@ -1,5 +1,5 @@
 using RealtimeChatClerk.Shared.Models;
-using Convex.Client.Slices.Pagination;
+using Convex.Client.Features.RealTime.Pagination;
 
 namespace RealtimeChatClerk.Shared.Services;
 

@@ -1,6 +1,6 @@
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.ErrorHandling;
 using RealtimeChatClerk.Shared.Models;
 
 namespace RealtimeChatClerk.Shared.Services;
@@ -197,7 +197,7 @@ public class PresenceService : IPresenceService, IDisposable
                 _lastTypingMutationTime = now;
                 _ = SetTypingAsync(_currentUsername, true);
             }
-            else if (!_lastTypingMutationTime.HasValue || 
+            else if (!_lastTypingMutationTime.HasValue ||
                      (now - _lastTypingMutationTime.Value).TotalMilliseconds >= TYPING_MUTATION_THROTTLE_MS)
             {
                 // Refresh typing indicator periodically (throttled)

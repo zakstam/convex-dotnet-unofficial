@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
-using Convex.Client.Shared.ErrorHandling;
-using Convex.Client.Slices.Pagination;
+using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Client.Features.RealTime.Pagination;
 using RealtimeChatClerk.Shared.Models;
 
 namespace RealtimeChatClerk.Shared.Services;

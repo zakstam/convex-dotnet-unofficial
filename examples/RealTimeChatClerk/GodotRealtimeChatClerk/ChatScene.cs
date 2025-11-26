@@ -1,6 +1,6 @@
 using Godot;
-using Convex.Client.Shared.Connection;
-using Convex.Client.Shared.ErrorHandling;
+using Convex.Client.Infrastructure.Connection;
+using Convex.Client.Infrastructure.ErrorHandling;
 using Convex.Generated;
 using RealtimeChatClerk.Shared.Models;
 using RealtimeChatClerk.Shared.Services;
