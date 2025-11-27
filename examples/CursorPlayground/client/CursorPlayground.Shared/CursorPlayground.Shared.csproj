@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>$(NoWarn);CA1716</NoWarn>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,6 +46,11 @@
 
   <ItemGroup>
     <AdditionalFiles Include="..\..\backend\convex\schema.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\_generated\api.d.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\functions\clickEffects.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\functions\cursorBatches.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\functions\reactions.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\functions\users.ts" />
   </ItemGroup>
 
 </Project>

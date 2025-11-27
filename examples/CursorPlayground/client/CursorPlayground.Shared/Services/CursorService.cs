@@ -1,19 +1,33 @@
 using Convex.Client;
+using Convex.Client.Extensions.ExtensionMethods;
+using Convex.Generated;
 using CursorPlayground.Shared.Generated;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace CursorPlayground.Shared.Services;
+
+#region Argument Types
+
+/// <summary>Arguments for joining the playground.</summary>
+public sealed record JoinArgs(string Name, string Emoji, string Color);
+
+/// <summary>Arguments for user heartbeat.</summary>
+public sealed record HeartbeatArgs(string UserId);
+
+/// <summary>Arguments for creating a reaction.</summary>
+public sealed record CreateReactionArgs(string UserId, string Emoji, double X, double Y);
+
+/// <summary>Arguments for creating a click effect.</summary>
+public sealed record CreateClickEffectArgs(string UserId, double X, double Y, string Color);
+
+#endregion
 
 /// <summary>
 /// Service for interacting with the Cursor Playground backend.
 /// Uses generated types from the Convex schema.
 /// </summary>
-public class CursorService : IDisposable
+public class CursorService(IConvexClient client) : IDisposable
 {
-    private readonly IConvexClient _client;
-    private readonly List<IDisposable> _subscriptions = new();
+    private readonly List<IDisposable> _subscriptions = [];
 
     // Events - using generated types from schema
     public event EventHandler<List<Users>>? ActiveUsersUpdated;
@@ -21,23 +35,18 @@ public class CursorService : IDisposable
     public event EventHandler<List<Reactions>>? ReactionsUpdated;
     public event EventHandler<List<ClickEffects>>? ClickEffectsUpdated;
 
-    public CursorService(IConvexClient client)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-    }
-
     /// <summary>
     /// Gets the Convex client for direct access.
     /// </summary>
-    public IConvexClient Client => _client;
+    public IConvexClient Client { get; } = client ?? throw new ArgumentNullException(nameof(client));
 
     // Subscribe to active users list
     public void SubscribeToActiveUsers()
     {
-        var subscription = _client
-            .Observe<List<Users>>("functions/users:listActive")
+        var subscription = Client
+            .CreateResilientSubscription<List<Users>>(ConvexFunctions.Queries.Users.ListActive)
             .Subscribe(
-                users => ActiveUsersUpdated?.Invoke(this, users ?? new List<Users>()),
+                users => ActiveUsersUpdated?.Invoke(this, users ?? []),
                 error => Console.WriteLine($"Active users subscription error: {error.Message}")
             );
 
@@ -47,10 +56,10 @@ public class CursorService : IDisposable
     // Subscribe to cursor batches
     public void SubscribeToCursorBatches()
     {
-        var subscription = _client
-            .Observe<List<CursorBatches>>("functions/cursorBatches:list")
+        var subscription = Client
+            .CreateResilientSubscription<List<CursorBatches>>(ConvexFunctions.Queries.CursorBatches.List)
             .Subscribe(
-                batches => CursorBatchesUpdated?.Invoke(this, batches ?? new List<CursorBatches>()),
+                batches => CursorBatchesUpdated?.Invoke(this, batches ?? []),
                 error => Console.WriteLine($"Cursor batches subscription error: {error.Message}")
             );
 
@@ -60,10 +69,10 @@ public class CursorService : IDisposable
     // Subscribe to recent reactions
     public void SubscribeToReactions()
     {
-        var subscription = _client
-            .Observe<List<Reactions>>("functions/reactions:listRecent")
+        var subscription = Client
+            .CreateResilientSubscription<List<Reactions>>(ConvexFunctions.Queries.Reactions.ListRecent)
             .Subscribe(
-                reactions => ReactionsUpdated?.Invoke(this, reactions ?? new List<Reactions>()),
+                reactions => ReactionsUpdated?.Invoke(this, reactions ?? []),
                 error => Console.WriteLine($"Reactions subscription error: {error.Message}")
             );
 
@@ -73,10 +82,10 @@ public class CursorService : IDisposable
     // Subscribe to recent click effects
     public void SubscribeToClickEffects()
     {
-        var subscription = _client
-            .Observe<List<ClickEffects>>("functions/clickEffects:listRecent")
+        var subscription = Client
+            .CreateResilientSubscription<List<ClickEffects>>(ConvexFunctions.Queries.ClickEffects.ListRecent)
             .Subscribe(
-                effects => ClickEffectsUpdated?.Invoke(this, effects ?? new List<ClickEffects>()),
+                effects => ClickEffectsUpdated?.Invoke(this, effects ?? []),
                 error => Console.WriteLine($"Click effects subscription error: {error.Message}")
             );
 
@@ -86,9 +95,9 @@ public class CursorService : IDisposable
     // Join the playground
     public async Task<string> JoinAsync(string name, string emoji, string color)
     {
-        var userId = await _client
-            .Mutate<string>("functions/users:join")
-            .WithArgs(new { name, emoji, color })
+        var userId = await Client
+            .Mutate<string>(ConvexFunctions.Mutations.Users.Join)
+            .WithArgs(new JoinArgs(name, emoji, color))
             .ExecuteAsync();
 
         return userId;
@@ -97,27 +106,27 @@ public class CursorService : IDisposable
     // Send heartbeat
     public async Task HeartbeatAsync(string userId)
     {
-        await _client
-            .Mutate<object>("functions/users:heartbeat")
-            .WithArgs(new { userId })
+        _ = await Client
+            .Mutate<object>(ConvexFunctions.Mutations.Users.Heartbeat)
+            .WithArgs(new HeartbeatArgs(userId))
             .ExecuteAsync();
     }
 
     // Create reaction
     public async Task CreateReactionAsync(string userId, string emoji, double x, double y)
     {
-        await _client
-            .Mutate<object>("functions/reactions:create")
-            .WithArgs(new { userId, emoji, x, y })
+        _ = await Client
+            .Mutate<object>(ConvexFunctions.Mutations.Reactions.Create)
+            .WithArgs(new CreateReactionArgs(userId, emoji, x, y))
             .ExecuteAsync();
     }
 
     // Create click effect (particle burst)
     public async Task CreateClickEffectAsync(string userId, double x, double y, string color)
     {
-        await _client
-            .Mutate<object>("functions/clickEffects:create")
-            .WithArgs(new { userId, x, y, color })
+        _ = await Client
+            .Mutate<object>(ConvexFunctions.Mutations.ClickEffects.Create)
+            .WithArgs(new CreateClickEffectArgs(userId, x, y, color))
             .ExecuteAsync();
     }
 
