@@ -26,39 +26,40 @@ namespace Convex.Generated
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Register the attribute that users will use to mark their backend path
+        // Register the attribute unconditionally
         context.RegisterPostInitializationOutput(ctx =>
         {
             ctx.AddSource("ConvexBackendAttribute.g.cs", SourceText.From(AttributeText, Encoding.UTF8));
         });
 
-        // Find all additional text files named "api.d.ts"
-        var apiFiles = context.AdditionalTextsProvider
-            .Where(file => Path.GetFileName(file.Path).Equals("api.d.ts", System.StringComparison.OrdinalIgnoreCase))
-            .Select((file, ct) => file.GetText(ct)?.ToString() ?? string.Empty);
-
-        // Combine all api.d.ts files
-        var combinedFiles = apiFiles.Collect();
+        // Find all TypeScript files (not .d.ts)
+        var tsFiles = context.AdditionalTextsProvider
+            .Where(file => file.Path.EndsWith(".ts", System.StringComparison.OrdinalIgnoreCase) &&
+                          !file.Path.EndsWith(".d.ts", System.StringComparison.OrdinalIgnoreCase))
+            .Select((file, ct) => new FileWithPath(file.Path, file.GetText(ct)?.ToString() ?? string.Empty))
+            .Collect();
 
         // Generate the constants class
-        context.RegisterSourceOutput(combinedFiles, (spc, apiContents) =>
+        context.RegisterSourceOutput(tsFiles, (spc, tsFileList) =>
         {
-            if (apiContents.Length == 0)
-            {
-                return;
-            }
-
-            // Parse all api.d.ts files and combine function names
             var allFunctions = new HashSet<ConvexFunction>();
 
-            foreach (var content in apiContents)
+            // Parse TypeScript function files
+            foreach (var tsFile in tsFileList)
             {
-                if (string.IsNullOrEmpty(content))
+                if (string.IsNullOrEmpty(tsFile.Content))
                 {
                     continue;
                 }
 
-                var functions = ParseApiFile(content);
+                // Extract module path from file path
+                var modulePath = ExtractModulePath(tsFile.Path);
+                if (string.IsNullOrEmpty(modulePath))
+                {
+                    continue;
+                }
+
+                var functions = ParseTypeScriptFile(tsFile.Content, modulePath);
                 foreach (var func in functions)
                 {
                     _ = allFunctions.Add(func);
@@ -76,63 +77,83 @@ namespace Convex.Generated
         });
     }
 
-    private static List<ConvexFunction> ParseApiFile(string content)
+    private static string ExtractModulePath(string filePath)
+    {
+        // Normalize path separators
+        var normalizedPath = filePath.Replace("\\", "/");
+
+        // Look for "convex/" in the path
+        var convexIndex = normalizedPath.LastIndexOf("/convex/", System.StringComparison.OrdinalIgnoreCase);
+        if (convexIndex < 0)
+        {
+            // Try without leading slash
+            convexIndex = normalizedPath.IndexOf("convex/", System.StringComparison.OrdinalIgnoreCase);
+            if (convexIndex < 0)
+            {
+                return string.Empty;
+            }
+
+            // Get relative path from after "convex/"
+            var relativePath = normalizedPath.Substring(convexIndex + 7);
+
+            // Remove .ts extension
+            if (relativePath.EndsWith(".ts", System.StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = relativePath.Substring(0, relativePath.Length - 3);
+            }
+
+            return relativePath;
+        }
+
+        // Get relative path from after "convex/"
+        var relPath = normalizedPath.Substring(convexIndex + 8);
+
+        // Remove .ts extension
+        if (relPath.EndsWith(".ts", System.StringComparison.OrdinalIgnoreCase))
+        {
+            relPath = relPath.Substring(0, relPath.Length - 3);
+        }
+
+        return relPath;
+    }
+
+    private static List<ConvexFunction> ParseTypeScriptFile(string content, string modulePath)
     {
         var functions = new List<ConvexFunction>();
 
-        // Parse the ApiFromModules<{ ... }> block
-        // Looking for patterns like: "functions/deleteMessage": typeof functions_deleteMessage;
-        var pattern = @"""([^""]+)""\s*:\s*typeof\s+([a-zA-Z0-9_]+)";
-        var matches = Regex.Matches(content, pattern);
+        // Parse exported const declarations with query/mutation/action types
+        // Pattern: export const functionName = query|mutation|action({ ... })
+        var pattern = @"export\s+const\s+(\w+)\s*=\s*(query|mutation|action)\s*\(";
+        var matches = Regex.Matches(content, pattern, RegexOptions.IgnoreCase);
 
         foreach (Match match in matches)
         {
             if (match.Groups.Count >= 3)
             {
-                var functionPath = match.Groups[1].Value;
+                var functionName = match.Groups[1].Value;
+                var functionTypeRaw = match.Groups[2].Value.ToLowerInvariant();
 
-                // Skip non-function entries like "storage"
-                if (!functionPath.Contains("/"))
+                var functionType = functionTypeRaw switch
                 {
-                    continue;
-                }
+                    "query" => "Query",
+                    "mutation" => "Mutation",
+                    "action" => "Action",
+                    _ => "Action"
+                };
 
-                // Determine function type from the function file (would need to read actual files)
-                // For now, we'll infer from common naming patterns
-                var functionName = functionPath.Split('/').Last();
-                var functionType = InferFunctionType(functionName);
+                var fullPath = $"{modulePath}:{functionName}";
 
                 functions.Add(new ConvexFunction
                 {
-                    Path = functionPath,
+                    Path = fullPath,
                     Name = ToPascalCase(functionName),
+                    ModulePath = modulePath,
                     Type = functionType
                 });
             }
         }
 
         return functions;
-    }
-
-    private static string InferFunctionType(string functionName)
-    {
-        // Common patterns for inferring function types
-        var lowerName = functionName.ToLowerInvariant();
-
-        if (lowerName.StartsWith("get") || lowerName.Contains("list") || lowerName.Contains("search"))
-        {
-            return "Query";
-        }
-        else if (lowerName.StartsWith("send") || lowerName.StartsWith("create") ||
-                 lowerName.StartsWith("update") || lowerName.StartsWith("delete") ||
-                 lowerName.StartsWith("edit") || lowerName.Contains("toggle") ||
-                 lowerName.Contains("set"))
-        {
-            return "Mutation";
-        }
-
-        // Default to Action if uncertain
-        return "Action";
     }
 
     private static string ToPascalCase(string input)
@@ -159,6 +180,14 @@ namespace Convex.Generated
         }
 
         return result.ToString();
+    }
+
+    private static string ToModuleClassName(string modulePath)
+    {
+        // Convert "functions/clickEffects" to "ClickEffects"
+        var parts = modulePath.Split('/');
+        var lastPart = parts.Last();
+        return ToPascalCase(lastPart);
     }
 
     private static string Pluralize(string word)
@@ -197,22 +226,35 @@ namespace Convex.Generated
         _ = sb.AppendLine("    public static class ConvexFunctions");
         _ = sb.AppendLine("    {");
 
-        // Group by type
+        // Group by type first, then by module
         var grouped = functions.GroupBy(f => f.Type).OrderBy(g => g.Key);
 
-        foreach (var group in grouped)
+        foreach (var typeGroup in grouped)
         {
-            var className = Pluralize(group.Key);
+            var className = Pluralize(typeGroup.Key);
             _ = sb.AppendLine($"        /// <summary>");
-            _ = sb.AppendLine($"        /// {group.Key} functions");
+            _ = sb.AppendLine($"        /// {typeGroup.Key} functions");
             _ = sb.AppendLine($"        /// </summary>");
             _ = sb.AppendLine($"        public static class {className}");
             _ = sb.AppendLine($"        {{");
 
-            foreach (var func in group.OrderBy(f => f.Name))
+            // Group by module within the type
+            var byModule = typeGroup.GroupBy(f => f.ModulePath).OrderBy(g => g.Key);
+
+            foreach (var moduleGroup in byModule)
             {
-                _ = sb.AppendLine($"            /// <summary>{group.Key}: {func.Path}</summary>");
-                _ = sb.AppendLine($"            public const string {func.Name} = \"{func.Path}\";");
+                var moduleClassName = ToModuleClassName(moduleGroup.Key);
+                _ = sb.AppendLine($"            /// <summary>{typeGroup.Key} functions from {moduleGroup.Key}</summary>");
+                _ = sb.AppendLine($"            public static class {moduleClassName}");
+                _ = sb.AppendLine($"            {{");
+
+                foreach (var func in moduleGroup.OrderBy(f => f.Name))
+                {
+                    _ = sb.AppendLine($"                /// <summary>{typeGroup.Key}: {func.Path}</summary>");
+                    _ = sb.AppendLine($"                public const string {func.Name} = \"{func.Path}\";");
+                }
+
+                _ = sb.AppendLine($"            }}");
                 _ = sb.AppendLine();
             }
 
@@ -226,10 +268,23 @@ namespace Convex.Generated
         return sb.ToString();
     }
 
+    private readonly struct FileWithPath
+    {
+        public string Path { get; }
+        public string Content { get; }
+
+        public FileWithPath(string path, string content)
+        {
+            Path = path;
+            Content = content;
+        }
+    }
+
     private class ConvexFunction
     {
         public string Path { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string ModulePath { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
 
         public override bool Equals(object? obj) => obj is ConvexFunction other && Path == other.Path;
