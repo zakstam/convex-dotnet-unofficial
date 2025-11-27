@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 
 namespace Convex.Client.Extensions.Batching.TimeBasedBatching;
 
@@ -34,7 +33,7 @@ public class Batch<TEvent>
     /// <summary>
     /// Gets or sets the list of events with their relative timestamps.
     /// </summary>
-    public List<IBatchableEvent<TEvent>> Events { get; set; } = new();
+    public List<IBatchableEvent<TEvent>> Events { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the absolute timestamp when the batch started (Unix milliseconds).
@@ -114,7 +113,7 @@ public class BatchingOptions
     ///     .Build();
     /// </code>
     /// </example>
-    public static BatchingOptionsBuilder Create() => new BatchingOptionsBuilder();
+    public static BatchingOptionsBuilder Create() => new();
 
     /// <summary>
     /// Creates preset options optimized for drawing applications.
@@ -124,7 +123,7 @@ public class BatchingOptions
     /// - Min distance: 2.0 pixels (removes redundant points)
     /// - Cumulative timestamps: true (for stroke continuity)
     /// </summary>
-    public static BatchingOptions ForDrawing() => new BatchingOptions
+    public static BatchingOptions ForDrawing() => new()
     {
         SamplingIntervalMs = 10,
         BatchIntervalMs = 500,
@@ -142,7 +141,7 @@ public class BatchingOptions
     /// - Min distance: 5.0 pixels (cursor movements are less precise)
     /// - Cumulative timestamps: false (independent position updates)
     /// </summary>
-    public static BatchingOptions ForCursorTracking() => new BatchingOptions
+    public static BatchingOptions ForCursorTracking() => new()
     {
         SamplingIntervalMs = 16,
         BatchIntervalMs = 200,
@@ -160,7 +159,7 @@ public class BatchingOptions
     /// - Min distance: null (not applicable for non-spatial events)
     /// - Cumulative timestamps: false (independent events)
     /// </summary>
-    public static BatchingOptions ForTelemetry() => new BatchingOptions
+    public static BatchingOptions ForTelemetry() => new()
     {
         SamplingIntervalMs = 50,
         BatchIntervalMs = 1000,
@@ -261,5 +260,54 @@ public class BatchingOptionsBuilder
     /// Builds the final BatchingOptions instance.
     /// </summary>
     public BatchingOptions Build() => _options;
+}
+
+/// <summary>
+/// Exception thrown when batch validation fails, including detailed property and type information.
+/// </summary>
+/// <param name="typeName">The name of the type being validated.</param>
+/// <param name="propertyName">The name of the property that failed validation.</param>
+/// <param name="expectedType">The expected type for the property.</param>
+/// <param name="actualType">The actual type provided, or null if the value was null.</param>
+/// <param name="details">Additional details about the validation failure.</param>
+public sealed class BatchValidationException(
+    string typeName,
+    string propertyName,
+    Type expectedType,
+    Type? actualType,
+    string details)
+    : Exception(FormatMessage(typeName, propertyName, expectedType, actualType, details))
+{
+    /// <summary>
+    /// Gets the name of the type that failed validation.
+    /// </summary>
+    public string TypeName { get; } = typeName;
+
+    /// <summary>
+    /// Gets the name of the property that caused the validation failure.
+    /// </summary>
+    public string PropertyName { get; } = propertyName;
+
+    /// <summary>
+    /// Gets the expected type for the property.
+    /// </summary>
+    public Type ExpectedType { get; } = expectedType;
+
+    /// <summary>
+    /// Gets the actual type that was provided, or null if the value was null.
+    /// </summary>
+    public Type? ActualType { get; } = actualType;
+
+    private static string FormatMessage(
+        string typeName,
+        string propertyName,
+        Type expectedType,
+        Type? actualType,
+        string details)
+    {
+        var actualTypeName = actualType?.Name ?? "null";
+        return $"Batch validation failed for {typeName}.{propertyName}: " +
+               $"Expected {expectedType.Name}, got {actualTypeName}. {details}";
+    }
 }
 
