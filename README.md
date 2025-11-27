@@ -147,6 +147,44 @@ namespace Convex.Generated
 
 ### Step 5: Define Your C# Data Models
 
+**Option A: Auto-generate from schema.ts (Recommended)**
+
+Point the schema generator to your `schema.ts` file for type-safe models:
+
+```xml
+<!-- In your .csproj -->
+<ItemGroup>
+  <AdditionalFiles Include="../backend/convex/schema.ts" />
+</ItemGroup>
+```
+
+Build your project - the generator creates C# classes from your schema:
+
+```csharp
+// Auto-generated in obj/Debug/generated/Convex.SchemaGenerator/Todos.g.cs
+namespace Convex.Generated.Models
+{
+    public class Todos
+    {
+        [JsonPropertyName("_id")]
+        public string Id { get; init; } = default!;
+
+        [JsonPropertyName("_creationTime")]
+        public double CreationTime { get; init; }
+
+        [JsonPropertyName("text")]
+        public string Text { get; init; } = default!;
+
+        [JsonPropertyName("isCompleted")]
+        public bool IsCompleted { get; init; }
+    }
+}
+```
+
+See [Schema Generator documentation](src/Convex.SchemaGenerator/README.md) for complete type mapping.
+
+**Option B: Manual model definition**
+
 Create C# models that match your Convex schema:
 
 ```csharp
@@ -1159,6 +1197,7 @@ The Convex .NET SDK consists of several packages:
 | **Convex.Client.Analyzer.CodeFixes**             | Code fixes for analyzers           | Bundled in Convex.Client (also available separately for analyzer-only projects) |
 | **Convex.Client.Attributes**                     | Attributes for code generation     | Included directly in Convex.Client (no separate package needed)                 |
 | **Convex.FunctionGenerator**                     | Source generator                   | Bundled into Convex.Client (no separate package needed)                         |
+| **Convex.SchemaGenerator**                       | Schema type generator              | Generate C# models from `schema.ts` (no separate package needed)                |
 
 **Quick Start:** Most apps only need `Convex.Client`. Add extension packages as needed for your platform.
 
@@ -1204,7 +1243,8 @@ client.DefineQueryDependency("todos:create", "todos:list", "todos:count");
 - 📖 [Getting Started Guide](docs/getting-started.md) - Detailed walkthrough
 - 📘 [API Reference](docs/api-reference.md) - Complete API documentation
 - 🔧 [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
-- ⚙️ [Source Generator](docs/source-generator.md) - Type-safe function constants from TypeScript
+- ⚙️ [Function Generator](src/Convex.FunctionGenerator/README.md) - Type-safe function constants from `api.d.ts`
+- 🗂️ [Schema Generator](src/Convex.SchemaGenerator/README.md) - Type-safe C# models from `schema.ts`
 
 ### Troubleshooting
 
@@ -1220,9 +1260,15 @@ client.DefineQueryDependency("todos:create", "todos:list", "todos:count");
 
 **Source Generator Issues?**
 
-- See [Source Generator documentation](docs/source-generator.md)
+- See [Function Generator documentation](src/Convex.FunctionGenerator/README.md)
 - Constants not generating? Check `api.d.ts` path in `.csproj`
 - Wrong function type? Constant value is still correct, just categorized differently
+
+**Schema Generator Issues?**
+
+- See [Schema Generator documentation](src/Convex.SchemaGenerator/README.md)
+- Models not generating? Check `schema.ts` path in `.csproj`
+- Parse error? Check for syntax errors in `schema.ts` or unsupported TypeScript features
 
 **More help:** See [Troubleshooting Guide](docs/troubleshooting.md)
 
