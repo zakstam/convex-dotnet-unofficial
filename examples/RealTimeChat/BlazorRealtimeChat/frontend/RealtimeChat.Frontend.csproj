@@ -39,9 +39,9 @@
                       OutputItemType="Analyzer" />
   </ItemGroup>
 
-  <!-- Add api.d.ts for type-safe function constants generation -->
+  <!-- Add TypeScript function files for type-safe function constants generation -->
   <ItemGroup>
-    <AdditionalFiles Include="..\..\backend\convex\_generated\api.d.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\functions\*.ts" />
   </ItemGroup>
 
 </Project>

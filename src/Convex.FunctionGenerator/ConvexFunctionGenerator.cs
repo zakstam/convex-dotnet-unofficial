@@ -123,8 +123,8 @@ namespace Convex.Generated
 
         // Parse exported const declarations with query/mutation/action types
         // Pattern: export const functionName = query|mutation|action({ ... })
-        var pattern = @"export\s+const\s+(\w+)\s*=\s*(query|mutation|action)\s*\(";
-        var matches = Regex.Matches(content, pattern, RegexOptions.IgnoreCase);
+        var namedExportPattern = @"export\s+const\s+(\w+)\s*=\s*(query|mutation|action)\s*\(";
+        var matches = Regex.Matches(content, namedExportPattern, RegexOptions.IgnoreCase);
 
         foreach (Match match in matches)
         {
@@ -151,6 +151,39 @@ namespace Convex.Generated
                     Type = functionType
                 });
             }
+        }
+
+        // Also parse export default declarations
+        // Pattern: export default query|mutation|action({ ... })
+        var defaultExportPattern = @"export\s+default\s+(query|mutation|action)\s*\(";
+        var defaultMatch = Regex.Match(content, defaultExportPattern, RegexOptions.IgnoreCase);
+
+        if (defaultMatch.Success && defaultMatch.Groups.Count >= 2)
+        {
+            var functionTypeRaw = defaultMatch.Groups[1].Value.ToLowerInvariant();
+
+            var functionType = functionTypeRaw switch
+            {
+                "query" => "Query",
+                "mutation" => "Mutation",
+                "action" => "Action",
+                _ => "Action"
+            };
+
+            // For default exports, the function name is "default" and the path is just the module path
+            var fullPath = modulePath;
+
+            // Extract function name from module path (e.g., "functions/getMessages" -> "GetMessages")
+            var parts = modulePath.Split('/');
+            var functionName = ToPascalCase(parts.Last());
+
+            functions.Add(new ConvexFunction
+            {
+                Path = fullPath,
+                Name = functionName,
+                ModulePath = modulePath,
+                Type = functionType
+            });
         }
 
         return functions;
@@ -244,18 +277,34 @@ namespace Convex.Generated
             foreach (var moduleGroup in byModule)
             {
                 var moduleClassName = ToModuleClassName(moduleGroup.Key);
-                _ = sb.AppendLine($"            /// <summary>{typeGroup.Key} functions from {moduleGroup.Key}</summary>");
-                _ = sb.AppendLine($"            public static class {moduleClassName}");
-                _ = sb.AppendLine($"            {{");
+                var funcsInModule = moduleGroup.ToList();
 
-                foreach (var func in moduleGroup.OrderBy(f => f.Name))
+                // Check if this module has only one function with the same name as the module
+                // (i.e., a default export where the function name matches the file name)
+                // In this case, emit the constant directly without a nested class
+                if (funcsInModule.Count == 1 && funcsInModule[0].Name == moduleClassName)
                 {
-                    _ = sb.AppendLine($"                /// <summary>{typeGroup.Key}: {func.Path}</summary>");
-                    _ = sb.AppendLine($"                public const string {func.Name} = \"{func.Path}\";");
+                    var func = funcsInModule[0];
+                    _ = sb.AppendLine($"            /// <summary>{typeGroup.Key}: {func.Path}</summary>");
+                    _ = sb.AppendLine($"            public const string {func.Name} = \"{func.Path}\";");
+                    _ = sb.AppendLine();
                 }
+                else
+                {
+                    // Multiple functions or named exports - use nested class
+                    _ = sb.AppendLine($"            /// <summary>{typeGroup.Key} functions from {moduleGroup.Key}</summary>");
+                    _ = sb.AppendLine($"            public static class {moduleClassName}");
+                    _ = sb.AppendLine($"            {{");
 
-                _ = sb.AppendLine($"            }}");
-                _ = sb.AppendLine();
+                    foreach (var func in funcsInModule.OrderBy(f => f.Name))
+                    {
+                        _ = sb.AppendLine($"                /// <summary>{typeGroup.Key}: {func.Path}</summary>");
+                        _ = sb.AppendLine($"                public const string {func.Name} = \"{func.Path}\";");
+                    }
+
+                    _ = sb.AppendLine($"            }}");
+                    _ = sb.AppendLine();
+                }
             }
 
             _ = sb.AppendLine($"        }}");
