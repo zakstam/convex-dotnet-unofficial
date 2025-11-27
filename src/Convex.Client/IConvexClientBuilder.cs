@@ -5,7 +5,21 @@ namespace Convex.Client;
 
 /// <summary>
 /// Fluent builder interface for configuring and creating a ConvexClient instance.
+/// Provides methods for configuring client options, connection settings, and middleware.
 /// </summary>
+/// <remarks>
+/// This interface is implemented by <see cref="ConvexClientBuilder"/>.
+/// Use the builder pattern to configure your client with a fluent API.
+/// </remarks>
+/// <example>
+/// <code>
+/// var client = new ConvexClientBuilder()
+///     .UseDeployment("https://your-deployment.convex.cloud")
+///     .WithTimeout(TimeSpan.FromSeconds(30))
+///     .Build();
+/// </code>
+/// </example>
+/// <seealso cref="ConvexClientBuilder"/>
 public interface IConvexClientBuilder
 {
     /// <summary>

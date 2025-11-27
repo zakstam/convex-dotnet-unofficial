@@ -7,7 +7,35 @@ namespace Convex.Client;
 
 /// <summary>
 /// Configuration options for ConvexClient.
+/// Used to customize client behavior including timeouts, reconnection policies, logging, and more.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This class is typically used with dependency injection or the <see cref="ConvexClientBuilder"/>.
+/// When constructing <see cref="ConvexClient"/> directly, you can pass an instance of this class
+/// to customize behavior.
+/// </para>
+/// <para>
+/// Most properties have sensible defaults. Only set properties when you need to override defaults.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Create options for dependency injection
+/// var options = new ConvexClientOptions
+/// {
+///     DeploymentUrl = "https://your-deployment.convex.cloud",
+///     DefaultTimeout = TimeSpan.FromSeconds(60),
+///     EnableDebugLogging = true,
+///     Logger = logger
+/// };
+///
+/// // Or use with direct construction
+/// var client = new ConvexClient("https://your-deployment.convex.cloud", options);
+/// </code>
+/// </example>
+/// <seealso cref="ConvexClient"/>
+/// <seealso cref="ConvexClientBuilder"/>
 public sealed class ConvexClientOptions
 {
     /// <summary>

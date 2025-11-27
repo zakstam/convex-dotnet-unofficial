@@ -5,12 +5,75 @@ namespace Convex.Client.Features.Operational.Scheduling;
 /// <summary>
 /// Interface for Convex scheduling operations.
 /// Provides capabilities to schedule functions for delayed execution and recurring tasks.
+/// Use this to schedule one-time jobs, recurring cron jobs, or interval-based tasks.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Scheduling allows you to run Convex functions at specific times or intervals:
+/// <list type="bullet">
+/// <item><strong>One-time</strong> - Run a function once after a delay or at a specific time</item>
+/// <item><strong>Cron</strong> - Run a function on a recurring schedule (e.g., daily at 9 AM)</item>
+/// <item><strong>Interval</strong> - Run a function at regular intervals (e.g., every 5 minutes)</item>
+/// </list>
+/// </para>
+/// <para>
+/// Scheduled jobs return a job ID that can be used to cancel or query the job status.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Schedule a one-time job
+/// var jobId = await client.SchedulingSlice.ScheduleAsync(
+///     functionName: "functions/sendReminder",
+///     delay: TimeSpan.FromHours(24),
+///     args: new { userId = "user123" }
+/// );
+///
+/// // Schedule a recurring daily job
+/// var dailyJobId = await client.SchedulingSlice.ScheduleRecurringAsync(
+///     functionName: "functions/sendDailyDigest",
+///     cronExpression: "0 9 * * *", // Daily at 9 AM
+///     timezone: "America/New_York",
+///     args: new { userId = "user123" }
+/// );
+/// </code>
+/// </example>
+/// <seealso cref="SchedulingSlice"/>
 public interface IConvexScheduler
 {
     /// <summary>
     /// Schedules a function to run after a specified delay.
+    /// The function will execute once after the delay period elapses.
     /// </summary>
+    /// <param name="functionName">The name of the Convex function to schedule (e.g., "functions/sendReminder"). Function names match file paths: `convex/functions/sendReminder.ts` becomes `"functions/sendReminder"`.</param>
+    /// <param name="delay">The delay before the function executes. Must be greater than zero.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that completes with the job ID that can be used to cancel or query the job.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="functionName"/> is null or empty.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="delay"/> is less than or equal to zero.</exception>
+    /// <exception cref="ConvexSchedulingException">Thrown when scheduling fails (function not found, invalid schedule, etc.).</exception>
+    /// <remarks>
+    /// The function will execute once after the specified delay. Use <see cref="ScheduleRecurringAsync{TArgs}(string, string, TArgs, string, CancellationToken)"/>
+    /// for recurring jobs or <see cref="ScheduleIntervalAsync{TArgs}(string, TimeSpan, TArgs, DateTimeOffset?, DateTimeOffset?, CancellationToken)"/>
+    /// for interval-based jobs.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Schedule a reminder to send in 1 hour
+    /// var jobId = await client.SchedulingSlice.ScheduleAsync(
+    ///     functionName: "functions/sendReminder",
+    ///     delay: TimeSpan.FromHours(1)
+    /// );
+    ///
+    /// // Schedule an email to send tomorrow
+    /// var emailJobId = await client.SchedulingSlice.ScheduleAsync(
+    ///     functionName: "functions/sendEmail",
+    ///     delay: TimeSpan.FromDays(1)
+    /// );
+    /// </code>
+    /// </example>
+    /// <seealso cref="ScheduleAsync{TArgs}(string, TimeSpan, TArgs, CancellationToken)"/>
+    /// <seealso cref="ScheduleAtAsync(string, DateTimeOffset, CancellationToken)"/>
     Task<string> ScheduleAsync(string functionName, TimeSpan delay, CancellationToken cancellationToken = default);
 
     /// <summary>

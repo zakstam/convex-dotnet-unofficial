@@ -2,8 +2,44 @@ namespace Convex.Client.Features.Storage.Files;
 
 /// <summary>
 /// Interface for Convex file storage operations.
-/// Provides upload, download, and file management capabilities.
+/// Provides upload, download, and file management capabilities for storing files in Convex.
+/// Files are stored securely and can be accessed via storage IDs or temporary URLs.
 /// </summary>
+/// <remarks>
+/// <para>
+/// File storage operations include:
+/// <list type="bullet">
+/// <item>Uploading files (images, documents, etc.)</item>
+/// <item>Downloading files by storage ID</item>
+/// <item>Getting temporary download URLs for browser access</item>
+/// <item>Retrieving file metadata (size, content type, etc.)</item>
+/// <item>Deleting files</item>
+/// </list>
+/// </para>
+/// <para>
+/// Files are uploaded to Convex storage and assigned a unique storage ID that can be stored
+/// in your database and used to retrieve the file later.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Upload a file
+/// using var fileStream = File.OpenRead("image.jpg");
+/// var storageId = await client.FileStorageSlice.UploadFileAsync(
+///     fileStream,
+///     contentType: "image/jpeg",
+///     filename: "image.jpg"
+/// );
+///
+/// // Get download URL for browser display
+/// var downloadUrl = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+/// Console.WriteLine($"File URL: {downloadUrl}");
+///
+/// // Download file
+/// var downloadedStream = await client.FileStorageSlice.DownloadFileAsync(storageId);
+/// </code>
+/// </example>
+/// <seealso cref="FileStorageSlice"/>
 public interface IConvexFileStorage
 {
     /// <summary>
@@ -27,12 +63,54 @@ public interface IConvexFileStorage
 
     /// <summary>
     /// Uploads a file directly to Convex storage (combines URL generation and upload).
+    /// This is the recommended method for most use cases as it handles both URL generation and upload in one call.
     /// </summary>
-    /// <param name="fileContent">The file content to upload.</param>
-    /// <param name="contentType">The MIME type of the file.</param>
-    /// <param name="filename">Optional filename for the file.</param>
+    /// <param name="fileContent">The file content to upload as a stream. The stream will be read from the current position.</param>
+    /// <param name="contentType">The MIME type of the file (e.g., "image/jpeg", "application/pdf", "text/plain").</param>
+    /// <param name="filename">Optional filename for the file. Used for metadata and download suggestions.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>The storage ID of the uploaded file.</returns>
+    /// <returns>A task that completes with the storage ID of the uploaded file. Store this ID in your database to retrieve the file later.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="fileContent"/> is null or <paramref name="contentType"/> is null or empty.</exception>
+    /// <exception cref="ConvexFileStorageException">Thrown when the upload fails (network error, quota exceeded, etc.).</exception>
+    /// <remarks>
+    /// <para>
+    /// This method automatically generates an upload URL and uploads the file in one operation.
+    /// For more control over the upload process, use <see cref="GenerateUploadUrlAsync(string?, CancellationToken)"/>
+    /// and <see cref="UploadFileAsync(string, Stream, string, string?, CancellationToken)"/> separately.
+    /// </para>
+    /// <para>
+    /// The returned storage ID is a unique identifier that can be stored in your database
+    /// and used to retrieve the file later using <see cref="DownloadFileAsync(string, CancellationToken)"/>
+    /// or <see cref="GetDownloadUrlAsync(string, CancellationToken)"/>.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Upload an image file
+    /// using var imageStream = File.OpenRead("profile.jpg");
+    /// var storageId = await client.FileStorageSlice.UploadFileAsync(
+    ///     imageStream,
+    ///     contentType: "image/jpeg",
+    ///     filename: "profile.jpg"
+    /// );
+    ///
+    /// // Store the storage ID in your database
+    /// await client.Mutate&lt;User&gt;("functions/updateUser")
+    ///     .WithArgs(new { userId = "user123", profilePictureId = storageId })
+    ///     .ExecuteAsync();
+    ///
+    /// // Upload from memory
+    /// var textBytes = Encoding.UTF8.GetBytes("Hello, World!");
+    /// using var textStream = new MemoryStream(textBytes);
+    /// var textStorageId = await client.FileStorageSlice.UploadFileAsync(
+    ///     textStream,
+    ///     contentType: "text/plain",
+    ///     filename: "hello.txt"
+    /// );
+    /// </code>
+    /// </example>
+    /// <seealso cref="GenerateUploadUrlAsync(string?, CancellationToken)"/>
+    /// <seealso cref="DownloadFileAsync(string, CancellationToken)"/>
     Task<string> UploadFileAsync(Stream fileContent, string contentType, string? filename = null, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -45,10 +123,39 @@ public interface IConvexFileStorage
 
     /// <summary>
     /// Gets a temporary download URL for a file in Convex storage.
+    /// The URL can be used directly in browsers or HTML img/src tags for displaying files.
+    /// URLs are temporary and may expire after a period of time.
     /// </summary>
-    /// <param name="storageId">The storage ID of the file.</param>
+    /// <param name="storageId">The storage ID of the file to get a download URL for. Must not be null or empty.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A temporary URL that can be used to download the file.</returns>
+    /// <returns>A task that completes with a temporary URL that can be used to download or display the file.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="storageId"/> is null or empty.</exception>
+    /// <exception cref="ConvexFileStorageException">Thrown when the file is not found or access is denied.</exception>
+    /// <remarks>
+    /// <para>
+    /// This method is useful when you want to display files in a browser (e.g., images in HTML)
+    /// or provide download links to users. The URL is temporary and may expire.
+    /// </para>
+    /// <para>
+    /// For server-side file processing, use <see cref="DownloadFileAsync(string, CancellationToken)"/> instead
+    /// to get a stream directly.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Get download URL for displaying in browser
+    /// var storageId = "storage123"; // Retrieved from database
+    /// var downloadUrl = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+    ///
+    /// // Use in HTML
+    /// Console.WriteLine($"&lt;img src=\"{downloadUrl}\" /&gt;");
+    ///
+    /// // Or return in API response
+    /// return new { imageUrl = downloadUrl };
+    /// </code>
+    /// </example>
+    /// <seealso cref="DownloadFileAsync(string, CancellationToken)"/>
+    /// <seealso cref="GetFileMetadataAsync(string, CancellationToken)"/>
     Task<string> GetDownloadUrlAsync(string storageId, CancellationToken cancellationToken = default);
 
     /// <summary>

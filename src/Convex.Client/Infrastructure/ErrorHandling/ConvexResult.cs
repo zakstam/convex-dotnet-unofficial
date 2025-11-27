@@ -2,9 +2,48 @@ namespace Convex.Client.Infrastructure.ErrorHandling;
 
 /// <summary>
 /// Represents the result of a Convex operation that can either succeed with a value or fail with an error.
-/// This provides a type-safe alternative to exception-based error handling.
+/// This provides a type-safe alternative to exception-based error handling, following functional programming patterns.
 /// </summary>
 /// <typeparam name="T">The type of the success value.</typeparam>
+/// <remarks>
+/// <para>
+/// <see cref="ConvexResult{T}"/> is useful when you want to handle errors without exceptions, or when you want
+/// to chain multiple operations together functionally. It provides methods for:
+/// <list type="bullet">
+/// <item>Checking success/failure status</item>
+/// <item>Accessing values safely</item>
+/// <item>Transforming values with Map</item>
+/// <item>Chaining operations with Bind</item>
+/// <item>Handling both success and failure cases with Match</item>
+/// </list>
+/// </para>
+/// <para>
+/// Use <see cref="Convex.Client.Infrastructure.Builders.IQueryBuilder{TResult}.ExecuteWithResultAsync(CancellationToken)"/> on query/mutation/action builders to get
+/// a result instead of throwing exceptions.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Execute query with result handling
+/// var result = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+///     .ExecuteWithResultAsync();
+///
+/// // Pattern matching approach
+/// result.Match(
+///     onSuccess: todos => Console.WriteLine($"Found {todos.Count} todos"),
+///     onFailure: error => Console.WriteLine($"Error: {error.Message}")
+/// );
+///
+/// // Functional chaining
+/// var todoCount = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+///     .ExecuteWithResultAsync()
+///     .Map(todos => todos.Count)
+///     .GetValueOrDefault(0);
+/// </code>
+/// </example>
+/// <seealso cref="Convex.Client.Infrastructure.Builders.IQueryBuilder{TResult}.ExecuteWithResultAsync(CancellationToken)"/>
+/// <seealso cref="Convex.Client.Infrastructure.Builders.IMutationBuilder{TResult}.ExecuteWithResultAsync(CancellationToken)"/>
+/// <seealso cref="Convex.Client.Infrastructure.Builders.IActionBuilder{TResult}.ExecuteWithResultAsync(CancellationToken)"/>
 public sealed record ConvexResult<T>
 {
     private readonly T? _value;
@@ -37,8 +76,25 @@ public sealed record ConvexResult<T>
     /// <summary>
     /// Gets the success value.
     /// Throws InvalidOperationException if the result is a failure.
+    /// Always check <see cref="IsSuccess"/> before accessing, or use <see cref="Match{TResult}(Func{T, TResult}, Func{ConvexError, TResult})"/> or <see cref="GetValueOrDefault(T)"/> for safe access.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when accessing Value on a failed result.</exception>
+    /// <value>The success value if the operation succeeded.</value>
+    /// <exception cref="InvalidOperationException">Thrown when accessing Value on a failed result. Check <see cref="IsSuccess"/> first or use <see cref="Match{TResult}(Func{T, TResult}, Func{ConvexError, TResult})"/> or <see cref="GetValueOrDefault(T)"/> instead.</exception>
+    /// <example>
+    /// <code>
+    /// var result = await client.Query&lt;User&gt;("functions/getUser").ExecuteWithResultAsync();
+    ///
+    /// // Safe access - check first
+    /// if (result.IsSuccess)
+    /// {
+    ///     var user = result.Value; // Safe to access
+    ///     Console.WriteLine(user.Name);
+    /// }
+    ///
+    /// // Or use GetValueOrDefault for default value
+    /// var user = result.GetValueOrDefault(new User { Name = "Unknown" });
+    /// </code>
+    /// </example>
     public T Value => IsSuccess
         ? _value!
         : throw new InvalidOperationException("Cannot access Value on a failed result. Check IsSuccess first or use Match() instead.");
@@ -151,7 +207,27 @@ public sealed record ConvexResult<T>
     /// <summary>
     /// Maps the success value to a new value using the specified function.
     /// If the result is a failure, returns the failure unchanged.
+    /// This allows you to transform successful results without unwrapping them.
     /// </summary>
+    /// <typeparam name="TNew">The type of the new value.</typeparam>
+    /// <param name="mapper">The function to transform the success value. Must not be null.</param>
+    /// <returns>A new result with the transformed value if successful, or the original failure if failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="mapper"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// // Transform the result without unwrapping
+    /// var countResult = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .ExecuteWithResultAsync()
+    ///     .Map(todos => todos.Count);
+    ///
+    /// // Chain multiple transformations
+    /// var formattedResult = await client.Query&lt;User&gt;("functions/getUser")
+    ///     .ExecuteWithResultAsync()
+    ///     .Map(user => user.Name)
+    ///     .Map(name => name.ToUpper());
+    /// </code>
+    /// </example>
+    /// <seealso cref="Bind{TNew}(Func{T, ConvexResult{TNew}})"/>
     public ConvexResult<TNew> Map<TNew>(Func<T, TNew> mapper)
     {
         return mapper == null

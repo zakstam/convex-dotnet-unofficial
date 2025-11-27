@@ -1,5 +1,6 @@
 using Convex.Client.Infrastructure.Builders;
 using Convex.Client.Infrastructure.Connection;
+using Convex.Client.Infrastructure.Quality;
 using Convex.Client.Features.RealTime.Pagination;
 using Convex.Client.Features.DataAccess.Queries;
 
@@ -42,7 +43,22 @@ public interface IConvexClient : IDisposable
     /// Quality is assessed periodically based on latency, errors, reconnections, and stability.
     /// Provides insights into network performance for adaptive UI and diagnostics.
     /// </summary>
-    IObservable<Convex.Client.Infrastructure.Quality.ConnectionQuality> ConnectionQualityChanges { get; }
+    /// <value>An observable that emits <see cref="ConnectionQuality"/> values whenever the connection quality changes.</value>
+    /// <example>
+    /// <code>
+    /// // Subscribe to connection quality changes
+    /// client.ConnectionQualityChanges
+    ///     .Subscribe(quality => {
+    ///         Console.WriteLine($"Connection quality: {quality}");
+    ///         if (quality == ConnectionQuality.Poor || quality == ConnectionQuality.Terrible)
+    ///         {
+    ///             ShowConnectionWarning();
+    ///         }
+    ///     });
+    /// </code>
+    /// </example>
+    /// <seealso cref="ConnectionStateChanges"/>
+    IObservable<ConnectionQuality> ConnectionQualityChanges { get; }
 
     #endregion
 
@@ -50,16 +66,57 @@ public interface IConvexClient : IDisposable
 
     /// <summary>
     /// Creates a fluent query builder for advanced query configuration.
+    /// Queries are read-only operations that fetch data from your Convex backend.
     /// </summary>
-    /// <typeparam name="TResult">The type of result returned by the query.</typeparam>
-    /// <param name="functionName">The name of the Convex function (e.g., "todos:list").</param>
-    /// <returns>A query builder for configuring and executing the query.</returns>
+    /// <typeparam name="TResult">The type of result returned by the query. This should match the return type of your Convex function.</typeparam>
+    /// <param name="functionName">The name of the Convex function (e.g., "todos:list" or "functions/getTodos"). Function names match file paths: `convex/functions/getTodos.ts` becomes `"functions/getTodos"`.</param>
+    /// <returns>A query builder for configuring and executing the query. Use fluent methods like <see cref="IQueryBuilder{TResult}.WithArgs{TArgs}(TArgs)"/> and <see cref="IQueryBuilder{TResult}.ExecuteAsync(CancellationToken)"/> to configure and execute.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="functionName"/> is null or empty.</exception>
+    /// <example>
+    /// <code>
+    /// // Simple query without arguments
+    /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .ExecuteAsync();
+    ///
+    /// // Query with arguments
+    /// var user = await client.Query&lt;User&gt;("functions/getUser")
+    ///     .WithArgs(new { userId = "user123" })
+    ///     .ExecuteAsync();
+    ///
+    /// // Query with timeout and error handling
+    /// var result = await client.Query&lt;List&lt;Product&gt;&gt;("functions/searchProducts")
+    ///     .WithArgs(new { query = "laptop" })
+    ///     .WithTimeout(TimeSpan.FromSeconds(5))
+    ///     .OnError(ex => Console.WriteLine($"Query failed: {ex.Message}"))
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="IQueryBuilder{TResult}"/>
+    /// <seealso cref="Observe{T}(string)"/>
     IQueryBuilder<TResult> Query<TResult>(string functionName);
 
     /// <summary>
     /// Creates a batch query builder for executing multiple queries in a single request.
+    /// Batch queries are more efficient than executing queries individually as they reduce network round-trips.
+    /// All queries in the batch execute concurrently and return results in the same order they were added.
     /// </summary>
-    /// <returns>A batch query builder.</returns>
+    /// <returns>A batch query builder for adding queries and executing them together.</returns>
+    /// <example>
+    /// <code>
+    /// // Execute multiple queries in a single batch
+    /// var (todos, user, stats) = await client.Batch()
+    ///     .Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .Query&lt;User&gt;("functions/getUser", new { userId = "user123" })
+    ///     .Query&lt;DashboardStats&gt;("functions/getStats")
+    ///     .ExecuteAsync&lt;List&lt;Todo&gt;, User, DashboardStats&gt;();
+    ///
+    /// // Access results by position
+    /// Console.WriteLine($"Found {todos.Count} todos");
+    /// Console.WriteLine($"User: {user.Name}");
+    /// </code>
+    /// </example>
+    /// <seealso cref="IBatchQueryBuilder"/>
+    /// <seealso cref="Query{TResult}(string)"/>
     IBatchQueryBuilder Batch();
 
     #endregion
@@ -68,10 +125,39 @@ public interface IConvexClient : IDisposable
 
     /// <summary>
     /// Creates a fluent mutation builder for advanced mutation configuration.
+    /// Mutations are write operations that modify data in your Convex backend.
+    /// Mutations are queued and executed sequentially to ensure ordering guarantees.
     /// </summary>
-    /// <typeparam name="TResult">The type of result returned by the mutation.</typeparam>
-    /// <param name="functionName">The name of the Convex function (e.g., "todos:create").</param>
-    /// <returns>A mutation builder for configuring and executing the mutation.</returns>
+    /// <typeparam name="TResult">The type of result returned by the mutation. This should match the return type of your Convex function.</typeparam>
+    /// <param name="functionName">The name of the Convex function (e.g., "todos:create" or "functions/createTodo"). Function names match file paths: `convex/functions/createTodo.ts` becomes `"functions/createTodo"`.</param>
+    /// <returns>A mutation builder for configuring and executing the mutation. Use fluent methods like <see cref="IMutationBuilder{TResult}.WithArgs{TArgs}(TArgs)"/>, <see cref="IMutationBuilder{TResult}.Optimistic(Action{TResult})"/>, and <see cref="IMutationBuilder{TResult}.ExecuteAsync(CancellationToken)"/> to configure and execute.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="functionName"/> is null or empty.</exception>
+    /// <example>
+    /// <code>
+    /// // Simple mutation
+    /// var newTodo = await client.Mutate&lt;Todo&gt;("functions/createTodo")
+    ///     .WithArgs(new { text = "Learn Convex .NET", completed = false })
+    ///     .ExecuteAsync();
+    ///
+    /// // Mutation with optimistic update
+    /// await client.Mutate&lt;Todo&gt;("functions/updateTodo")
+    ///     .WithArgs(new { id = "todo123", completed = true })
+    ///     .Optimistic(result => {
+    ///         // Update UI immediately before server responds
+    ///         _todos.First(t => t.Id == result.Id).IsCompleted = true;
+    ///     })
+    ///     .ExecuteAsync();
+    ///
+    /// // Mutation with error handling
+    /// await client.Mutate&lt;Todo&gt;("functions/deleteTodo")
+    ///     .WithArgs(new { id = "todo123" })
+    ///     .OnSuccess(result => Console.WriteLine("Todo deleted"))
+    ///     .OnError(ex => Console.WriteLine($"Failed: {ex.Message}"))
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="IMutationBuilder{TResult}"/>
+    /// <seealso cref="Query{TResult}(string)"/>
     IMutationBuilder<TResult> Mutate<TResult>(string functionName);
 
     #endregion
@@ -80,10 +166,33 @@ public interface IConvexClient : IDisposable
 
     /// <summary>
     /// Creates a fluent action builder for advanced action configuration.
+    /// Actions are server-side operations that can perform side effects like calling external APIs,
+    /// sending emails, or other operations that aren't pure database operations.
+    /// Unlike queries and mutations, actions can access external resources and have longer execution times.
     /// </summary>
-    /// <typeparam name="TResult">The type of result returned by the action.</typeparam>
-    /// <param name="functionName">The name of the Convex action (e.g., "actions:myAction").</param>
-    /// <returns>An action builder for configuring and executing the action.</returns>
+    /// <typeparam name="TResult">The type of result returned by the action. This should match the return type of your Convex action function.</typeparam>
+    /// <param name="functionName">The name of the Convex action (e.g., "actions:sendEmail" or "functions/sendEmail"). Function names match file paths: `convex/functions/sendEmail.ts` becomes `"functions/sendEmail"`.</param>
+    /// <returns>An action builder for configuring and executing the action. Use fluent methods like <see cref="IActionBuilder{TResult}.WithArgs{TArgs}(TArgs)"/>, <see cref="IActionBuilder{TResult}.WithTimeout(TimeSpan)"/>, and <see cref="IActionBuilder{TResult}.ExecuteAsync(CancellationToken)"/> to configure and execute.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="functionName"/> is null or empty.</exception>
+    /// <example>
+    /// <code>
+    /// // Simple action call
+    /// var result = await client.Action&lt;string&gt;("functions/sendEmail")
+    ///     .WithArgs(new { to = "user@example.com", subject = "Hello", body = "Welcome!" })
+    ///     .ExecuteAsync();
+    ///
+    /// // Action with longer timeout for external API calls
+    /// var apiResult = await client.Action&lt;ApiResponse&gt;("functions/callExternalApi")
+    ///     .WithArgs(new { endpoint = "https://api.example.com/data" })
+    ///     .WithTimeout(TimeSpan.FromSeconds(60))
+    ///     .OnSuccess(result => Console.WriteLine($"API call succeeded: {result.Status}"))
+    ///     .OnError(ex => Console.WriteLine($"API call failed: {ex.Message}"))
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="IActionBuilder{TResult}"/>
+    /// <seealso cref="Query{TResult}(string)"/>
+    /// <seealso cref="Mutate{TResult}(string)"/>
     IActionBuilder<TResult> Action<TResult>(string functionName);
 
     #endregion
@@ -111,11 +220,34 @@ public interface IConvexClient : IDisposable
     /// The subscription starts automatically when you call Subscribe() on the observable.
     /// Auto-connects to the WebSocket server if needed and emits new values as the data changes.
     /// </summary>
-    /// <typeparam name="T">The type of data returned by the subscription.</typeparam>
-    /// <typeparam name="TArgs">The type of arguments to pass to the function.</typeparam>
-    /// <param name="functionName">The name of the Convex function (e.g., "messages:get").</param>
-    /// <param name="args">The arguments to pass to the function.</param>
-    /// <returns>An observable stream that emits values as they change. Call Subscribe() to start receiving updates.</returns>
+    /// <typeparam name="T">The type of data returned by the subscription. This should match the return type of your Convex query function.</typeparam>
+    /// <typeparam name="TArgs">The type of arguments to pass to the function. Must be a non-nullable type (class, struct, or record).</typeparam>
+    /// <param name="functionName">The name of the Convex function (e.g., "messages:get" or "functions/getMessages"). Function names match file paths: `convex/functions/getMessages.ts` becomes `"functions/getMessages"`.</param>
+    /// <param name="args">The arguments to pass to the function. These are serialized and sent to the Convex backend.</param>
+    /// <returns>An observable stream that emits values as they change. Call Subscribe() to start receiving updates. The observable will automatically reconnect if the connection is lost.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="functionName"/> is null or empty, or when <paramref name="args"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// // Subscribe to messages for a specific channel
+    /// var subscription = client.Observe&lt;List&lt;Message&gt;, object&gt;("functions/getMessages", new { channelId = "channel123" })
+    ///     .Subscribe(messages => {
+    ///         Console.WriteLine($"Received {messages.Count} messages");
+    ///         UpdateUI(messages);
+    ///     });
+    ///
+    /// // Subscribe with error handling
+    /// client.Observe&lt;User, object&gt;("functions/getUser", new { userId = "user123" })
+    ///     .Subscribe(
+    ///         user => Console.WriteLine($"User: {user.Name}"),
+    ///         error => Console.WriteLine($"Subscription error: {error.Message}")
+    ///     );
+    ///
+    /// // Remember to dispose subscriptions when done
+    /// subscription.Dispose();
+    /// </code>
+    /// </example>
+    /// <seealso cref="Observe{T}(string)"/>
+    /// <seealso cref="GetCachedValue{T}(string)"/>
     IObservable<T> Observe<T, TArgs>(string functionName, TArgs args) where TArgs : notnull;
 
     #endregion
@@ -124,20 +256,61 @@ public interface IConvexClient : IDisposable
 
     /// <summary>
     /// Gets a cached value from an active subscription, if available.
-    /// Returns default(T?) if no subscription exists for this function.
+    /// Returns default(T?) if no subscription exists for this function or if the subscription hasn't received any data yet.
+    /// Cached values are automatically updated when the subscription receives new data.
     /// </summary>
-    /// <typeparam name="T">The type of data.</typeparam>
-    /// <param name="functionName">The name of the Convex function.</param>
-    /// <returns>The cached value, or default(T?) if not found.</returns>
+    /// <typeparam name="T">The type of data to retrieve from the cache.</typeparam>
+    /// <param name="functionName">The name of the Convex function (e.g., "functions/listTodos"). Must match the function name used in <see cref="Observe{T}(string)"/>.</param>
+    /// <returns>The cached value from the most recent subscription update, or default(T?) if no subscription exists or no data has been received yet.</returns>
+    /// <remarks>
+    /// This method is useful for getting the current value without subscribing to updates.
+    /// For subscriptions with arguments, use the same function name format as used in Observe.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Subscribe to updates
+    /// client.Observe&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .Subscribe(todos => Console.WriteLine($"Got {todos.Count} todos"));
+    ///
+    /// // Later, get the cached value without subscribing
+    /// var cachedTodos = client.GetCachedValue&lt;List&lt;Todo&gt;&gt;("functions/listTodos");
+    /// if (cachedTodos != null)
+    /// {
+    ///     Console.WriteLine($"Currently have {cachedTodos.Count} todos cached");
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="TryGetCachedValue{T}"/>
+    /// <seealso cref="Observe{T}(string)"/>
     T? GetCachedValue<T>(string functionName);
 
     /// <summary>
     /// Tries to get a cached value from an active subscription.
+    /// This is the preferred method over <see cref="GetCachedValue{T}"/> as it avoids potential null reference issues.
     /// </summary>
-    /// <typeparam name="T">The type of data.</typeparam>
-    /// <param name="functionName">The name of the Convex function.</param>
-    /// <param name="value">The cached value if found.</param>
-    /// <returns>True if a cached value was found, false otherwise.</returns>
+    /// <typeparam name="T">The type of data to retrieve from the cache.</typeparam>
+    /// <param name="functionName">The name of the Convex function (e.g., "functions/listTodos"). Must match the function name used in <see cref="Observe{T}(string)"/>.</param>
+    /// <param name="value">When this method returns, contains the cached value if found, or default(T?) if not found.</param>
+    /// <returns>True if a cached value was found and assigned to <paramref name="value"/>; otherwise, false.</returns>
+    /// <example>
+    /// <code>
+    /// // Subscribe to updates
+    /// client.Observe&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .Subscribe(todos => UpdateUI(todos));
+    ///
+    /// // Later, safely get the cached value
+    /// if (client.TryGetCachedValue&lt;List&lt;Todo&gt;&gt;("functions/listTodos", out var todos))
+    /// {
+    ///     Console.WriteLine($"Found {todos.Count} todos in cache");
+    /// }
+    /// else
+    /// {
+    ///     Console.WriteLine("No cached value available yet");
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="GetCachedValue{T}(string)"/>
+    /// <seealso cref="Observe{T}(string)"/>
     bool TryGetCachedValue<T>(string functionName, out T? value);
 
     #endregion
@@ -147,7 +320,30 @@ public interface IConvexClient : IDisposable
     /// <summary>
     /// Gets the pagination slice for cursor-based pagination of Convex queries.
     /// Provides cursor-based pagination for loading large datasets in manageable pages.
+    /// Use this when you need to load data incrementally rather than all at once.
     /// </summary>
+    /// <value>The pagination slice that provides methods for creating paginated queries and loading pages.</value>
+    /// <example>
+    /// <code>
+    /// // Create a paginated query
+    /// var paginator = client.PaginationSlice
+    ///     .Query&lt;Todo&gt;("functions/listTodos")
+    ///     .WithPageSize(20)
+    ///     .Build();
+    ///
+    /// // Load first page
+    /// var firstPage = await paginator.LoadNextAsync();
+    /// Console.WriteLine($"Loaded {firstPage.Count} items");
+    ///
+    /// // Load more pages
+    /// while (paginator.HasMore)
+    /// {
+    ///     var nextPage = await paginator.LoadNextAsync();
+    ///     Console.WriteLine($"Loaded {nextPage.Count} more items");
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="IConvexPagination"/>
     IConvexPagination PaginationSlice { get; }
 
     #endregion
@@ -169,19 +365,49 @@ public interface IConvexClient : IDisposable
 
     /// <summary>
     /// Manually invalidates a specific query from the cache.
+    /// After invalidation, the next call to the query will fetch fresh data from the server.
+    /// This is useful when you know data has changed outside of the normal mutation flow.
     /// </summary>
-    /// <param name="queryName">The name of the query to invalidate.</param>
+    /// <param name="queryName">The name of the query to invalidate (e.g., "functions/listTodos"). Must match the function name used in queries.</param>
     /// <returns>A task that completes when invalidation is done.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when queryName is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="queryName"/> is null or whitespace.</exception>
+    /// <example>
+    /// <code>
+    /// // Invalidate a specific query after external data change
+    /// await client.InvalidateQueryAsync("functions/listTodos");
+    ///
+    /// // Next query will fetch fresh data
+    /// var freshTodos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="InvalidateQueriesAsync(string)"/>
+    /// <seealso cref="DefineQueryDependency(string, string[])"/>
     Task InvalidateQueryAsync(string queryName);
 
     /// <summary>
     /// Manually invalidates all queries matching a pattern from the cache.
     /// Supports wildcards: "todos:*" matches "todos:list", "todos:count", etc.
+    /// Use this when you need to invalidate multiple related queries at once.
     /// </summary>
-    /// <param name="pattern">The pattern to match (supports * and ? wildcards).</param>
+    /// <param name="pattern">The pattern to match (supports * and ? wildcards). For example, "todos:*" matches all queries starting with "todos:".</param>
     /// <returns>A task that completes when invalidation is done.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when pattern is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="pattern"/> is null or whitespace.</exception>
+    /// <example>
+    /// <code>
+    /// // Invalidate all todo-related queries
+    /// await client.InvalidateQueriesAsync("functions/todos:*");
+    ///
+    /// // Invalidate all queries starting with "functions/get"
+    /// await client.InvalidateQueriesAsync("functions/get*");
+    ///
+    /// // Next queries will fetch fresh data
+    /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/todos:list").ExecuteAsync();
+    /// var count = await client.Query&lt;int&gt;("functions/todos:count").ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="InvalidateQueryAsync(string)"/>
+    /// <seealso cref="DefineQueryDependency(string, string[])"/>
     Task InvalidateQueriesAsync(string pattern);
 
     #endregion

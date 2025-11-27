@@ -5,7 +5,46 @@ namespace Convex.Client.Features.RealTime.Pagination;
 
 /// <summary>
 /// Interface for creating paginated queries.
+/// Provides cursor-based pagination for loading large datasets in manageable pages.
+/// Use this when you need to load data incrementally rather than all at once.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Pagination is useful for:
+/// <list type="bullet">
+/// <item>Loading large datasets incrementally</item>
+/// <item>Implementing "load more" functionality</item>
+/// <item>Reducing initial load time</item>
+/// <item>Handling datasets that don't fit in memory</item>
+/// </list>
+/// </para>
+/// <para>
+/// Pagination uses cursor-based pagination, which is more efficient than offset-based pagination
+/// and handles concurrent data changes better.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Create a paginated query
+/// var paginator = client.PaginationSlice
+///     .Query&lt;Todo&gt;("functions/listTodos")
+///     .WithPageSize(20)
+///     .Build();
+///
+/// // Load first page
+/// var firstPage = await paginator.LoadNextAsync();
+/// Console.WriteLine($"Loaded {firstPage.Count} items");
+///
+/// // Load more pages
+/// while (paginator.HasMore)
+/// {
+///     var nextPage = await paginator.LoadNextAsync();
+///     Console.WriteLine($"Loaded {nextPage.Count} more items");
+/// }
+/// </code>
+/// </example>
+/// <seealso cref="IPaginationBuilder{T}"/>
+/// <seealso cref="IPaginator{T}"/>
 public interface IConvexPagination
 {
     /// <summary>

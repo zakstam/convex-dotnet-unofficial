@@ -6,8 +6,46 @@ namespace Convex.Client.Features.Operational.HttpActions;
 /// <summary>
 /// Interface for Convex HTTP Actions - building HTTP APIs directly in Convex.
 /// Provides capabilities to create REST endpoints, handle webhooks, and build custom HTTP services.
+/// HTTP Actions allow you to expose Convex functions as HTTP endpoints that can be called from any HTTP client.
 /// </summary>
-public interface IConvexHttpActions
+/// <remarks>
+/// <para>
+/// HTTP Actions enable you to:
+/// <list type="bullet">
+/// <item>Build REST APIs directly in Convex</item>
+/// <item>Handle webhooks from external services</item>
+/// <item>Create public endpoints for third-party integrations</item>
+/// <item>Support file uploads via multipart form data</item>
+/// </list>
+/// </para>
+/// <para>
+/// HTTP Actions are defined in your Convex backend using the `httpAction` function.
+/// The action path corresponds to the route you define in your backend.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // GET request
+    /// var response = await client.HttpActionsSlice.GetAsync&lt;User&gt;(
+    ///     actionPath: "users/123",
+    ///     queryParameters: new Dictionary&lt;string, string&gt; { ["include"] = "profile" }
+    /// );
+    ///
+    /// if (response.IsSuccess)
+    /// {
+    ///     var user = response.Body;
+    ///     Console.WriteLine($"User: {user.Name}");
+    /// }
+    ///
+    /// // POST request with body
+    /// var createResponse = await client.HttpActionsSlice.PostAsync&lt;User, CreateUserRequest&gt;(
+    ///     actionPath: "users",
+    ///     body: new CreateUserRequest { Name = "John", Email = "john@example.com" }
+    /// );
+    /// </code>
+    /// </example>
+    /// <seealso cref="HttpActionsSlice"/>
+    public interface IConvexHttpActions
 {
     /// <summary>
     /// Calls a Convex HTTP action endpoint using GET method.

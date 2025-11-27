@@ -5,9 +5,47 @@ namespace Convex.Client.Infrastructure.Resilience;
 
 /// <summary>
 /// Defines a retry policy for failed operations.
-/// Provides fluent API for configuring retry behavior including backoff strategies,
-/// exception filtering, and retry callbacks.
+/// Provides configuration for retry behavior including backoff strategies, exception filtering, and retry callbacks.
+/// Use retry policies to handle transient failures automatically.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Retry policies are useful for handling transient network errors, temporary server issues, and rate limiting.
+/// They can be configured with:
+/// <list type="bullet">
+/// <item>Maximum number of retries</item>
+/// <item>Backoff strategy (exponential, linear, or constant)</item>
+/// <item>Exception types to retry on</item>
+/// <item>Maximum delay between retries</item>
+/// <item>Jitter to prevent thundering herd problems</item>
+/// </list>
+/// </para>
+/// <para>
+/// Use <see cref="RetryPolicyBuilder"/> to create custom policies, or use predefined policies like
+/// <see cref="Default()"/>, <see cref="Aggressive()"/>, or <see cref="Conservative()"/>.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Use default retry policy
+/// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+///     .WithRetry(RetryPolicy.Default())
+///     .ExecuteAsync();
+///
+/// // Use custom retry policy
+/// var customPolicy = new RetryPolicyBuilder()
+///     .MaxRetries(5)
+///     .ExponentialBackoff(TimeSpan.FromSeconds(1))
+///     .RetryOn&lt;HttpRequestException&gt;()
+///     .Build();
+///
+/// var result = await client.Query&lt;List&lt;Product&gt;&gt;("functions/searchProducts")
+///     .WithRetry(customPolicy)
+///     .ExecuteAsync();
+/// </code>
+/// </example>
+/// <seealso cref="RetryPolicyBuilder"/>
+/// <seealso cref="Convex.Client.Infrastructure.Builders.IQueryBuilder{TResult}.WithRetry(RetryPolicy)"/>
 public sealed class RetryPolicy
 {
     /// <summary>
@@ -65,7 +103,27 @@ public sealed class RetryPolicy
 
     /// <summary>
     /// Gets a default retry policy with 3 retries and exponential backoff with jitter.
+    /// This is a good starting point for most applications.
     /// </summary>
+    /// <returns>A retry policy with 3 retries, exponential backoff starting at 100ms, and jitter enabled.</returns>
+    /// <remarks>
+    /// The default policy:
+    /// <list type="bullet">
+    /// <item>Retries up to 3 times</item>
+    /// <item>Uses exponential backoff starting at 100ms</item>
+    /// <item>Doubles delay with each retry (100ms, 200ms, 400ms)</item>
+    /// <item>Caps maximum delay at 30 seconds</item>
+    /// <item>Uses jitter to prevent synchronized retries</item>
+    /// </list>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Use default retry policy
+    /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .WithRetry(RetryPolicy.Default())
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
     public static RetryPolicy Default()
     {
         return new RetryPolicyBuilder()

@@ -23,6 +23,40 @@ namespace Convex.Client;
 /// Unified Convex client that provides both HTTP operations (queries/mutations)
 /// and WebSocket operations (real-time subscriptions) in a single, easy-to-use interface.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The ConvexClient is the main entry point for interacting with your Convex backend.
+/// It provides a fluent API for queries, mutations, actions, and real-time subscriptions.
+/// </para>
+/// <para>
+/// The client automatically manages WebSocket connections - they connect lazily when you create
+/// your first subscription and reconnect automatically with exponential backoff on failures.
+/// </para>
+/// <para>
+/// Always dispose the client when done to properly clean up resources:
+/// <code>client.Dispose();</code>
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Simple usage
+/// using var client = new ConvexClient("https://your-deployment.convex.cloud");
+/// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos").ExecuteAsync();
+///
+/// // With builder for advanced configuration
+/// var client = new ConvexClientBuilder()
+///     .UseDeployment("https://your-deployment.convex.cloud")
+///     .WithAutoReconnect(maxAttempts: 5)
+///     .WithTimeout(TimeSpan.FromSeconds(30))
+///     .Build();
+///
+/// // Real-time subscription
+/// client.Observe&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+///     .Subscribe(todos => Console.WriteLine($"Got {todos.Count} todos"));
+/// </code>
+/// </example>
+/// <seealso cref="IConvexClient"/>
+/// <seealso cref="ConvexClientBuilder"/>
 public sealed class ConvexClient : IConvexClient
 {
     private readonly HttpClient _httpClient;
@@ -100,6 +134,30 @@ public sealed class ConvexClient : IConvexClient
     /// Gets the error that occurred during PreConnect, if any.
     /// Returns null if PreConnect was not enabled or if it succeeded.
     /// </summary>
+    /// <value>
+    /// The exception that occurred during PreConnect initialization, or null if PreConnect
+    /// was not enabled, hasn't completed yet, or succeeded.
+    /// </value>
+    /// <remarks>
+    /// Check this property after construction if PreConnect was enabled to determine if
+    /// the initial connection attempt failed. The client will still be usable, but you may
+    /// want to handle the error or retry the connection.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// var client = new ConvexClientBuilder()
+    ///     .UseDeployment("https://your-deployment.convex.cloud")
+    ///     .PreConnect()
+    ///     .Build();
+    ///
+    /// // Check if PreConnect succeeded
+    /// if (client.PreConnectError != null)
+    /// {
+    ///     Console.WriteLine($"PreConnect failed: {client.PreConnectError.Message}");
+    ///     // Optionally retry or handle the error
+    /// }
+    /// </code>
+    /// </example>
     public Exception? PreConnectError { get; private set; }
 
 
@@ -108,9 +166,42 @@ public sealed class ConvexClient : IConvexClient
     /// If PreConnect was enabled, this will wait for the pre-connection to complete.
     /// If PreConnect was not enabled, this will establish the connection now.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation. Can be used to cancel the connection attempt.</param>
     /// <returns>A task that completes when the connection is established.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if PreConnect failed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if PreConnect failed. Check <see cref="PreConnectError"/> for details.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via <paramref name="cancellationToken"/>.</exception>
+    /// <remarks>
+    /// <para>
+    /// This method is typically not needed as connections are established automatically when you create subscriptions.
+    /// Use this method when you want to ensure the connection is ready before creating subscriptions, or when
+    /// you need to wait for PreConnect to complete.
+    /// </para>
+    /// <para>
+    /// If PreConnect was enabled and failed, this method will throw an InvalidOperationException.
+    /// Check <see cref="PreConnectError"/> before calling this method to handle errors gracefully.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Ensure connection before creating subscriptions
+    /// await client.EnsureConnectedAsync();
+    ///
+    /// // Now safe to create subscriptions
+    /// client.Observe&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .Subscribe(todos => UpdateUI(todos));
+    ///
+    /// // With cancellation support
+    /// using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    /// try
+    /// {
+    ///     await client.EnsureConnectedAsync(cts.Token);
+    /// }
+    /// catch (OperationCanceledException)
+    /// {
+    ///     Console.WriteLine("Connection attempt timed out");
+    /// }
+    /// </code>
+    /// </example>
     public async Task EnsureConnectedAsync(CancellationToken cancellationToken = default)
     {
         // If PreConnect task exists, wait for it to complete
@@ -140,19 +231,72 @@ public sealed class ConvexClient : IConvexClient
 
     /// <summary>
     /// Creates a new ConvexClient with the specified deployment URL.
+    /// Uses default configuration options (30 second timeout, automatic reconnection, etc.).
     /// </summary>
-    /// <param name="deploymentUrl">The Convex deployment URL.</param>
-    /// <exception cref="ArgumentException">Thrown when deploymentUrl is null or whitespace.</exception>
+    /// <param name="deploymentUrl">The Convex deployment URL (e.g., "https://happy-animal-123.convex.cloud").</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deploymentUrl"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// For advanced configuration, use <see cref="ConvexClientBuilder"/> instead.
+    /// Always dispose the client when done: <code>client.Dispose();</code>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Simple client creation
+    /// using var client = new ConvexClient("https://your-deployment.convex.cloud");
+    ///
+    /// // Use the client
+    /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos").ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="ConvexClient(string, ConvexClientOptions?)"/>
+    /// <seealso cref="ConvexClientBuilder"/>
     public ConvexClient(string deploymentUrl) : this(deploymentUrl, null)
     {
     }
 
     /// <summary>
     /// Creates a new ConvexClient with the specified deployment URL and options.
+    /// Allows fine-grained control over client behavior including timeouts, reconnection policies, and logging.
     /// </summary>
-    /// <param name="deploymentUrl">The Convex deployment URL.</param>
-    /// <param name="options">Optional client configuration.</param>
-    /// <exception cref="ArgumentException">Thrown when deploymentUrl is null or whitespace.</exception>
+    /// <param name="deploymentUrl">The Convex deployment URL (e.g., "https://happy-animal-123.convex.cloud").</param>
+    /// <param name="options">Optional client configuration. If null, default options are used (30 second timeout, automatic reconnection, etc.).</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deploymentUrl"/> is null or whitespace.</exception>
+    /// <remarks>
+    /// <para>
+    /// For most use cases, the simple constructor <see cref="ConvexClient(string)"/> is sufficient.
+    /// Use this constructor when you need custom configuration like:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>Custom timeout values</item>
+    /// <item>Custom reconnection policies</item>
+    /// <item>Logging configuration</item>
+    /// <item>PreConnect for early connection establishment</item>
+    /// <item>Custom HttpClient instances</item>
+    /// </list>
+    /// <para>
+    /// Always dispose the client when done: <code>client.Dispose();</code>
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Client with custom options
+    /// var options = new ConvexClientOptions
+    /// {
+    ///     DefaultTimeout = TimeSpan.FromSeconds(60),
+    ///     EnableDebugLogging = true
+    /// };
+    /// using var client = new ConvexClient("https://your-deployment.convex.cloud", options);
+    ///
+    /// // Or use the builder for fluent configuration
+    /// var client = new ConvexClientBuilder()
+    ///     .UseDeployment("https://your-deployment.convex.cloud")
+    ///     .WithTimeout(TimeSpan.FromSeconds(60))
+    ///     .EnableDebugLogging()
+    ///     .Build();
+    /// </code>
+    /// </example>
+    /// <seealso cref="ConvexClientOptions"/>
+    /// <seealso cref="ConvexClientBuilder"/>
     public ConvexClient(string deploymentUrl, ConvexClientOptions? options)
     {
         if (string.IsNullOrWhiteSpace(deploymentUrl))
@@ -371,22 +515,88 @@ public sealed class ConvexClient : IConvexClient
 
     /// <summary>
     /// Gets the FileStorage slice for file upload and download operations.
+    /// Provides methods for uploading files, downloading files, getting download URLs, and managing file metadata.
     /// </summary>
+    /// <value>The file storage slice implementing <see cref="Features.Storage.Files.IConvexFileStorage"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Upload a file
+    /// using var fileStream = File.OpenRead("image.jpg");
+    /// var storageId = await client.FileStorageSlice.UploadFileAsync(
+    ///     fileStream,
+    ///     contentType: "image/jpeg",
+    ///     filename: "image.jpg"
+    /// );
+    ///
+    /// // Get download URL
+    /// var downloadUrl = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Storage.Files.IConvexFileStorage"/>
     public Features.Storage.Files.FileStorageSlice FileStorageSlice { get; }
 
     /// <summary>
     /// Gets the VectorSearch slice for vector similarity search operations.
+    /// Provides AI-powered semantic search capabilities using vector embeddings.
     /// </summary>
+    /// <value>The vector search slice implementing <see cref="Features.Storage.VectorSearch.IConvexVectorSearch"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Search by text (automatically creates embedding)
+    /// var results = await client.VectorSearchSlice.SearchByTextAsync&lt;Product&gt;(
+    ///     indexName: "product_embeddings",
+    ///     text: "laptop computer",
+    ///     limit: 10
+    /// );
+    ///
+    /// // Create custom embedding
+    /// var embedding = await client.VectorSearchSlice.CreateEmbeddingAsync("search query");
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Storage.VectorSearch.IConvexVectorSearch"/>
     public Features.Storage.VectorSearch.VectorSearchSlice VectorSearchSlice { get; }
 
     /// <summary>
-    /// Gets the HTTP actions slice (migrated to vertical slice architecture).
+    /// Gets the HTTP actions slice for building REST APIs directly in Convex.
+    /// Provides methods for calling HTTP endpoints, handling webhooks, and file uploads.
     /// </summary>
+    /// <value>The HTTP actions slice implementing <see cref="Features.Operational.HttpActions.IConvexHttpActions"/>.</value>
+    /// <example>
+    /// <code>
+    /// // GET request
+    /// var response = await client.HttpActionsSlice.GetAsync&lt;User&gt;("users/123");
+    ///
+    /// // POST request with body
+    /// var createResponse = await client.HttpActionsSlice.PostAsync&lt;User, CreateUserRequest&gt;(
+    ///     actionPath: "users",
+    ///     body: new CreateUserRequest { Name = "John" }
+    /// );
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Operational.HttpActions.IConvexHttpActions"/>
     public Features.Operational.HttpActions.HttpActionsSlice HttpActionsSlice { get; }
 
     /// <summary>
-    /// Gets the scheduling slice (migrated to vertical slice architecture).
+    /// Gets the scheduling slice for scheduling functions to run at specific times or intervals.
+    /// Supports one-time jobs, recurring cron jobs, and interval-based tasks.
     /// </summary>
+    /// <value>The scheduling slice implementing <see cref="Features.Operational.Scheduling.IConvexScheduler"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Schedule a one-time job
+    /// var jobId = await client.SchedulingSlice.ScheduleAsync(
+    ///     functionName: "functions/sendReminder",
+    ///     delay: TimeSpan.FromHours(24)
+    /// );
+    ///
+    /// // Schedule recurring daily job
+    /// var dailyJobId = await client.SchedulingSlice.ScheduleRecurringAsync(
+    ///     functionName: "functions/sendDailyDigest",
+    ///     cronExpression: "0 9 * * *" // Daily at 9 AM
+    /// );
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Operational.Scheduling.IConvexScheduler"/>
     public Features.Operational.Scheduling.SchedulingSlice SchedulingSlice { get; }
 
     /// <summary>
@@ -396,30 +606,95 @@ public sealed class ConvexClient : IConvexClient
     public Features.RealTime.Pagination.IConvexPagination PaginationSlice => _pagination;
 
     /// <summary>
-    /// Gets the new caching slice (migrated to vertical slice architecture).
-    /// Provides in-memory caching with optimistic updates and pattern-based invalidation.
-    /// Note: The QueryCache property above is kept for backward compatibility.
+    /// Gets the caching slice for in-memory caching with optimistic updates and pattern-based invalidation.
+    /// Provides query result caching to reduce network requests and improve performance.
     /// </summary>
+    /// <value>The caching slice implementing <see cref="Infrastructure.Caching.IConvexCache"/>.</value>
+    /// <remarks>
+    /// <para>
+    /// The cache automatically invalidates queries when related mutations execute (if dependencies are configured).
+    /// You can also manually invalidate queries using <see cref="InvalidateQueryAsync(string)"/> or <see cref="InvalidateQueriesAsync(string)"/>.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Query with caching
+    /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
+    ///     .Cached(TimeSpan.FromMinutes(5))
+    ///     .ExecuteAsync();
+    ///
+    /// // Manually invalidate cache
+    /// await client.InvalidateQueryAsync("functions/listTodos");
+    /// </code>
+    /// </example>
+    /// <seealso cref="Infrastructure.Caching.IConvexCache"/>
+    /// <seealso cref="InvalidateQueryAsync(string)"/>
     public Features.DataAccess.Caching.CachingSlice CachingSlice { get; }
 
     /// <summary>
     /// Gets the Authentication slice for managing authentication state and tokens.
+    /// Supports static tokens, admin keys, and token providers with automatic refresh.
     /// </summary>
+    /// <value>The authentication slice implementing <see cref="Features.Security.Authentication.IConvexAuthentication"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Set authentication token
+    /// await client.AuthenticationSlice.SetAuthTokenAsync("your-jwt-token");
+    ///
+    /// // Monitor authentication state
+    /// client.AuthenticationSlice.AuthenticationStateChanged += (sender, e) => {
+    ///     Console.WriteLine($"Auth state: {e.State}");
+    /// };
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Security.Authentication.IConvexAuthentication"/>
     public Features.Security.Authentication.AuthenticationSlice AuthenticationSlice { get; }
 
     /// <summary>
     /// Gets the Health slice for monitoring connection health and metrics.
+    /// Provides health check information including connection state and subscription counts.
     /// </summary>
+    /// <value>The health slice implementing <see cref="Features.Observability.Health.IConvexHealth"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Check client health
+    /// var health = await client.HealthSlice.GetHealthAsync();
+    /// Console.WriteLine($"Is healthy: {health.IsHealthy}");
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Observability.Health.IConvexHealth"/>
     public Features.Observability.Health.HealthSlice HealthSlice { get; }
 
     /// <summary>
     /// Gets the Diagnostics slice for performance tracking and disconnection monitoring.
+    /// Provides metrics and diagnostics for troubleshooting connection and performance issues.
     /// </summary>
+    /// <value>The diagnostics slice implementing <see cref="Features.Observability.Diagnostics.IConvexDiagnostics"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Get performance metrics
+    /// var metrics = await client.DiagnosticsSlice.GetPerformanceMetricsAsync();
+    /// Console.WriteLine($"Average latency: {metrics.AverageLatencyMs}ms");
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Observability.Diagnostics.IConvexDiagnostics"/>
     public Features.Observability.Diagnostics.DiagnosticsSlice DiagnosticsSlice { get; }
 
     /// <summary>
     /// Gets the Resilience slice for retry and circuit breaker patterns.
+    /// Provides advanced resilience patterns for handling transient failures and circuit breaking.
     /// </summary>
+    /// <value>The resilience slice implementing <see cref="Features.Observability.Resilience.IConvexResilience"/>.</value>
+    /// <example>
+    /// <code>
+    /// // Configure retry policy
+    /// var retryPolicy = client.ResilienceSlice.CreateRetryPolicy()
+    ///     .MaxRetries(3)
+    ///     .ExponentialBackoff(TimeSpan.FromSeconds(1))
+    ///     .Build();
+    /// </code>
+    /// </example>
+    /// <seealso cref="Features.Observability.Resilience.IConvexResilience"/>
     public Features.Observability.Resilience.ResilienceSlice ResilienceSlice { get; }
 
     /// <inheritdoc/>
@@ -486,8 +761,30 @@ public sealed class ConvexClient : IConvexClient
 
     /// <summary>
     /// Gets the current health status of the Convex client connection.
+    /// Provides information about connection state, active subscriptions, and overall health metrics.
     /// </summary>
-    /// <returns>A health check result with connection metrics and status.</returns>
+    /// <returns>A task that completes with a health check result containing connection metrics and status.</returns>
+    /// <remarks>
+    /// This method is useful for monitoring and diagnostics. It provides a snapshot of the client's
+    /// current state including connection status and subscription counts.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Check client health
+    /// var health = await client.GetHealthAsync();
+    /// Console.WriteLine($"Connection state: {health.ConnectionState}");
+    /// Console.WriteLine($"Is healthy: {health.IsHealthy}");
+    ///
+    /// // Use in health check endpoints
+    /// app.MapGet("/health", async (IConvexClient client) =>
+    /// {
+    ///     var health = await client.GetHealthAsync();
+    ///     return health.IsHealthy ? Results.Ok(health) : Results.StatusCode(503);
+    /// });
+    /// </code>
+    /// </example>
+    /// <seealso cref="HealthSlice"/>
+    /// <seealso cref="ConnectionState"/>
     public Task<Features.Observability.Health.ConvexHealthCheck> GetHealthAsync()
     {
         // Get current connection state
@@ -516,7 +813,32 @@ public sealed class ConvexClient : IConvexClient
     /// Gets the current connection quality assessment.
     /// Quality is determined by latency, packet loss, reconnections, and stability.
     /// </summary>
-    /// <returns>Detailed connection quality information.</returns>
+    /// <returns>A task that completes with detailed connection quality information including quality level, latency metrics, and stability indicators.</returns>
+    /// <remarks>
+    /// <para>
+    /// Connection quality is assessed periodically and can be used to adapt UI behavior or trigger
+    /// diagnostics. Quality levels range from Excellent to Terrible.
+    /// </para>
+    /// <para>
+    /// Subscribe to <see cref="ConnectionQualityChanges"/> to be notified when quality changes.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Check current connection quality
+    /// var quality = await client.GetConnectionQualityAsync();
+    /// Console.WriteLine($"Quality: {quality.Quality}");
+    /// Console.WriteLine($"Average latency: {quality.AverageLatencyMs}ms");
+    ///
+    /// // Adapt UI based on quality
+    /// if (quality.Quality == ConnectionQuality.Poor || quality.Quality == ConnectionQuality.Terrible)
+    /// {
+    ///     ShowConnectionWarning();
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="ConnectionQualityChanges"/>
+    /// <seealso cref="ConnectionQuality"/>
     public Task<ConnectionQualityInfo> GetConnectionQualityAsync()
     {
         var isConnected = ConnectionState == ConnectionState.Connected;

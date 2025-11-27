@@ -6,16 +6,68 @@ namespace Convex.Client.Infrastructure.Builders;
 
 /// <summary>
 /// Fluent builder for creating and configuring Convex mutations.
+/// Mutations are write operations that modify data in your Convex backend.
+/// Mutations are queued and executed sequentially to ensure ordering guarantees.
 /// </summary>
-/// <typeparam name="TResult">The type of result returned by the mutation.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the mutation. This should match the return type of your Convex function.</typeparam>
+/// <remarks>
+/// <para>
+/// The builder pattern allows you to configure mutations fluently before execution.
+/// All configuration methods return the builder instance for method chaining.
+/// </para>
+/// <para>
+/// Mutations support optimistic updates for instant UI feedback. If the server mutation fails,
+/// optimistic updates are automatically rolled back.
+/// </para>
+/// <para>
+/// Mutations are queued by default to ensure ordering guarantees. Use <see cref="SkipQueue"/>
+/// to bypass the queue if ordering is not important.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Simple mutation
+/// var newTodo = await client.Mutate&lt;Todo&gt;("functions/createTodo")
+///     .WithArgs(new { text = "Learn Convex .NET", completed = false })
+///     .ExecuteAsync();
+///
+/// // Mutation with optimistic update
+/// await client.Mutate&lt;Todo&gt;("functions/updateTodo")
+///     .WithArgs(new { id = "todo123", completed = true })
+///     .Optimistic(result => {
+///         // Update UI immediately
+///         _todos.First(t => t.Id == result.Id).IsCompleted = true;
+///     })
+///     .ExecuteAsync();
+/// </code>
+/// </example>
+/// <seealso cref="Convex.Client.IConvexClient.Mutate{TResult}(string)"/>
+/// <seealso cref="IQueryBuilder{TResult}"/>
+/// <seealso cref="IActionBuilder{TResult}"/>
 public interface IMutationBuilder<TResult>
 {
     /// <summary>
     /// Sets the arguments to pass to the Convex function.
+    /// Arguments are serialized to JSON and sent to the Convex backend.
     /// </summary>
-    /// <typeparam name="TArgs">The type of the arguments object.</typeparam>
-    /// <param name="args">The arguments to pass to the function.</param>
+    /// <typeparam name="TArgs">The type of the arguments object. Can be an anonymous type, class, record, or struct.</typeparam>
+    /// <param name="args">The arguments to pass to the function. Must not be null.</param>
     /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="args"/> is null.</exception>
+    /// <example>
+    /// <code>
+    /// // Using anonymous type
+    /// var todo = await client.Mutate&lt;Todo&gt;("functions/createTodo")
+    ///     .WithArgs(new { text = "Learn Convex", completed = false })
+    ///     .ExecuteAsync();
+    ///
+    /// // Using a class
+    /// var updateArgs = new UpdateTodoArgs { Id = "todo123", Completed = true };
+    /// var updated = await client.Mutate&lt;Todo&gt;("functions/updateTodo")
+    ///     .WithArgs(updateArgs)
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
     IMutationBuilder<TResult> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
 
     /// <summary>
@@ -28,19 +80,37 @@ public interface IMutationBuilder<TResult>
 
     /// <summary>
     /// Sets a timeout for the mutation execution.
+    /// Overrides the default timeout set on the client. The mutation will fail if it doesn't complete within this time.
     /// </summary>
-    /// <param name="timeout">The timeout duration.</param>
+    /// <param name="timeout">The timeout duration. Must be greater than zero.</param>
     /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is less than or equal to zero.</exception>
+    /// <remarks>
+    /// Mutations typically complete quickly, but complex mutations may take longer.
+    /// Use longer timeouts for mutations that process large amounts of data or perform complex operations.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Mutation with custom timeout
+    /// var result = await client.Mutate&lt;BatchResult&gt;("functions/batchUpdate")
+    ///     .WithArgs(new { items = largeItemList })
+    ///     .WithTimeout(TimeSpan.FromMinutes(2))
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
     IMutationBuilder<TResult> WithTimeout(TimeSpan timeout);
 
     /// <summary>
     /// Enables optimistic update that executes immediately before the server responds.
     /// If the server mutation fails, the optimistic update is automatically rolled back.
-    ///
+    /// </summary>
+    /// <remarks>
+    /// <para>
     /// Note: This uses a state-focused approach (operates on arbitrary state), which differs
     /// from convex-js's query-focused optimistic updates (operates on query results).
     /// Both patterns are functionally equivalent but use different API styles.
-    /// </summary>
+    /// </para>
+    /// </remarks>
     /// <param name="optimisticUpdate">A callback that performs the optimistic UI update.</param>
     /// <returns>The builder for method chaining.</returns>
     IMutationBuilder<TResult> Optimistic(Action<TResult> optimisticUpdate);
@@ -48,11 +118,14 @@ public interface IMutationBuilder<TResult>
     /// <summary>
     /// Enables optimistic update with a custom value to use before the server responds.
     /// If the server mutation fails, the optimistic update is automatically rolled back.
-    ///
+    /// </summary>
+    /// <remarks>
+    /// <para>
     /// Note: This uses a state-focused approach (operates on arbitrary state), which differs
     /// from convex-js's query-focused optimistic updates (operates on query results).
     /// Both patterns are functionally equivalent but use different API styles.
-    /// </summary>
+    /// </para>
+    /// </remarks>
     /// <param name="optimisticValue">The value to use for the optimistic update.</param>
     /// <param name="apply">A callback that applies the optimistic value to the UI.</param>
     /// <returns>The builder for method chaining.</returns>
@@ -62,11 +135,14 @@ public interface IMutationBuilder<TResult>
     /// Enables optimistic update with automatic rollback on failure.
     /// Captures the current state before applying the update, and automatically restores it if the mutation fails.
     /// This is the recommended approach as it eliminates the need to manually implement rollback logic.
-    ///
+    /// </summary>
+    /// <remarks>
+    /// <para>
     /// Note: This uses a state-focused approach (operates on arbitrary state), which differs
     /// from convex-js's query-focused optimistic updates (operates on query results).
     /// Both patterns are functionally equivalent but use different API styles.
-    /// </summary>
+    /// </para>
+    /// </remarks>
     /// <typeparam name="TState">The type of state to update optimistically.</typeparam>
     /// <param name="getter">Function to get the current state (called before update).</param>
     /// <param name="setter">Action to set the state (used for both apply and rollback).</param>
@@ -93,9 +169,35 @@ public interface IMutationBuilder<TResult>
     /// <summary>
     /// Registers a rollback action to undo an optimistic update if the server mutation fails.
     /// Call this when using the value-based <see cref="Optimistic(TResult, Action{TResult})"/> variant.
+    /// The rollback action is only called if the mutation fails after the optimistic update was applied.
     /// </summary>
-    /// <param name="rollback">An action that restores the UI/model to its pre-optimistic state.</param>
+    /// <param name="rollback">An action that restores the UI/model to its pre-optimistic state. Must not be null.</param>
     /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="rollback"/> is null.</exception>
+    /// <remarks>
+    /// <para>
+    /// For automatic rollback without manual implementation, use <see cref="OptimisticWithAutoRollback{TState}"/> instead.
+    /// </para>
+    /// <para>
+    /// The rollback action should restore the UI to exactly the state it was in before the optimistic update.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Mutation with manual rollback
+    /// var originalState = _todos.ToList();
+    /// await client.Mutate&lt;Todo&gt;("functions/createTodo")
+    ///     .WithArgs(new { text = "New todo" })
+    ///     .Optimistic(result => {
+    ///         _todos.Add(result); // Optimistic update
+    ///     })
+    ///     .WithRollback(() => {
+    ///         _todos = originalState; // Restore original state on failure
+    ///     })
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
+    /// <seealso cref="OptimisticWithAutoRollback{TState}"/>
     IMutationBuilder<TResult> WithRollback(Action rollback);
 
     /// <summary>
@@ -126,6 +228,25 @@ public interface IMutationBuilder<TResult>
     /// This matches convex-js behavior where mutations are queued by default.
     /// </summary>
     /// <returns>The builder for method chaining.</returns>
+    /// <remarks>
+    /// <para>
+    /// Use this when ordering is not important and you want the mutation to execute immediately
+    /// without waiting for other queued mutations to complete.
+    /// </para>
+    /// <para>
+    /// Skipping the queue can improve perceived performance for mutations that don't depend on
+    /// the order of execution, but may lead to race conditions if mutations depend on each other.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Execute mutation immediately without queuing
+    /// await client.Mutate&lt;AnalyticsEvent&gt;("functions/trackEvent")
+    ///     .WithArgs(new { eventName = "button_click", timestamp = DateTime.UtcNow })
+    ///     .SkipQueue()
+    ///     .ExecuteAsync();
+    /// </code>
+    /// </example>
     IMutationBuilder<TResult> SkipQueue();
 
     /// <summary>
@@ -146,9 +267,43 @@ public interface IMutationBuilder<TResult>
 
     /// <summary>
     /// Executes the mutation and returns the result.
+    /// This is the final step in the mutation builder pattern - call this to execute the configured mutation.
     /// </summary>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>A task that completes with the mutation result.</returns>
+    /// <param name="cancellationToken">Optional cancellation token. Can be used to cancel the mutation operation.</param>
+    /// <returns>A task that completes with the mutation result of type <typeparamref name="TResult"/>.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via <paramref name="cancellationToken"/>.</exception>
+    /// <exception cref="ConvexException">Thrown when the mutation fails. Use <see cref="OnError(Action{Exception})"/> to handle errors, or <see cref="ExecuteWithResultAsync(CancellationToken)"/> to avoid exceptions.</exception>
+    /// <remarks>
+    /// <para>
+    /// This method executes the mutation immediately (or queues it if not skipped). If the mutation fails,
+    /// an exception is thrown and any optimistic updates are automatically rolled back.
+    /// </para>
+    /// <para>
+    /// To handle errors without exceptions, use <see cref="ExecuteWithResultAsync(CancellationToken)"/>.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Execute mutation
+    /// var newTodo = await client.Mutate&lt;Todo&gt;("functions/createTodo")
+    ///     .WithArgs(new { text = "Learn Convex .NET" })
+    ///     .ExecuteAsync();
+    ///
+    /// // With cancellation support
+    /// using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+    /// try
+    /// {
+    ///     var result = await client.Mutate&lt;Todo&gt;("functions/createTodo")
+    ///         .WithArgs(new { text = "New todo" })
+    ///         .ExecuteAsync(cts.Token);
+    /// }
+    /// catch (OperationCanceledException)
+    /// {
+    ///     Console.WriteLine("Mutation was cancelled");
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="ExecuteWithResultAsync(CancellationToken)"/>
     Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -156,8 +311,39 @@ public interface IMutationBuilder<TResult>
     /// This method never throws exceptions - all errors are captured in the Result.
     /// Note: Optimistic updates are still applied, but rollback is only triggered for exceptions.
     /// </summary>
-    /// <param name="cancellationToken">Optional cancellation token.</param>
-    /// <returns>A task that completes with a Result containing either the mutation result or an error.</returns>
+    /// <param name="cancellationToken">Optional cancellation token. Can be used to cancel the mutation operation.</param>
+    /// <returns>A task that completes with a <see cref="ConvexResult{TResult}"/> containing either the mutation result or an error.</returns>
+    /// <remarks>
+    /// <para>
+    /// The result object has an <see cref="ConvexResult{TResult}.IsSuccess"/> property to check if the mutation succeeded.
+    /// If successful, access the value via <see cref="ConvexResult{TResult}.Value"/>.
+    /// If failed, access the error via <see cref="ConvexResult{TResult}.Error"/>.
+    /// </para>
+    /// <para>
+    /// Optimistic updates are still applied even when using this method. However, rollback only occurs
+    /// if an exception would have been thrown (i.e., for error results, optimistic updates remain).
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Execute with result handling
+    /// var result = await client.Mutate&lt;Todo&gt;("functions/createTodo")
+    ///     .WithArgs(new { text = "New todo" })
+    ///     .ExecuteWithResultAsync();
+    ///
+    /// if (result.IsSuccess)
+    /// {
+    ///     var todo = result.Value;
+    ///     Console.WriteLine($"Created todo: {todo.Text}");
+    /// }
+    /// else
+    /// {
+    ///     Console.WriteLine($"Mutation failed: {result.Error.Message}");
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="ConvexResult{TResult}"/>
+    /// <seealso cref="ExecuteAsync(CancellationToken)"/>
     Task<ConvexResult<TResult>> ExecuteWithResultAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
