@@ -30,6 +30,10 @@ window.CursorInterop = {
     // User info
     currentUserColor: '#64C8FF',
 
+    // Window/tab state
+    isMouseInWindow: true,
+    isTabVisible: true,
+
     initialize: function (dotNetReference, userColor, userName, userEmoji) {
         this.dotNetRef = dotNetReference;
         this.currentUserColor = userColor || '#64C8FF';
@@ -55,10 +59,52 @@ window.CursorInterop = {
         // Track keyboard shortcuts
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
 
+        // Handle mouse leaving the window
+        document.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+        document.addEventListener('mouseenter', this.handleMouseEnter.bind(this));
+
+        // Handle tab visibility changes
+        document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+
         // Start animation loop for smooth cursor interpolation and effects
         this.startAnimationLoop();
 
         console.log('CursorInterop initialized with color:', this.currentUserColor);
+    },
+
+    // Handle mouse leaving the window
+    handleMouseLeave: function (e) {
+        // Hide local cursor when mouse leaves the window
+        if (this.localCursor) {
+            this.localCursor.style.opacity = '0';
+        }
+        this.isMouseInWindow = false;
+    },
+
+    // Handle mouse entering the window
+    handleMouseEnter: function (e) {
+        // Show local cursor when mouse enters the window
+        if (this.localCursor) {
+            this.localCursor.style.opacity = '1';
+        }
+        this.isMouseInWindow = true;
+    },
+
+    // Handle tab visibility changes
+    handleVisibilityChange: function () {
+        if (document.hidden) {
+            // Tab is hidden - hide local cursor and pause updates
+            if (this.localCursor) {
+                this.localCursor.style.opacity = '0';
+            }
+            this.isTabVisible = false;
+        } else {
+            // Tab is visible again
+            if (this.localCursor && this.isMouseInWindow !== false) {
+                this.localCursor.style.opacity = '1';
+            }
+            this.isTabVisible = true;
+        }
     },
 
     // Create local cursor element for current user
@@ -330,6 +376,7 @@ window.CursorInterop = {
     // Update remote cursor with batch of positions for smooth interpolation
     updateRemoteCursorBatch: function (userId, positions, userName, emoji, color) {
         let cursor = this.remoteCursors.get(userId);
+        const now = performance.now();
 
         if (!cursor) {
             // Create new cursor element with position queue
@@ -345,7 +392,9 @@ window.CursorInterop = {
                 color: color,
                 trail: [],
                 positionQueue: [...positions.slice(1)], // Queue remaining positions
-                element: this.createCursorElement(userName, emoji, color)
+                element: this.createCursorElement(userName, emoji, color),
+                lastUpdateTime: now,
+                lastMoveTime: now
             };
             this.remoteCursors.set(userId, cursor);
             document.body.appendChild(cursor.element);
@@ -362,6 +411,7 @@ window.CursorInterop = {
             // Add all new positions to the queue
             cursor.positionQueue = cursor.positionQueue || [];
             cursor.positionQueue.push(...positions);
+            cursor.lastUpdateTime = now;
         }
     },
 
@@ -402,14 +452,21 @@ window.CursorInterop = {
         const maxTrailLength = 15;
 
         const animate = () => {
-            // Clear trail canvas with fade effect (balanced for trails and particles)
+            // Fade out trail canvas content using destination-out composite
+            // This fades existing content without adding black background
             if (this.trailCtx) {
-                this.trailCtx.fillStyle = 'rgba(0, 0, 0, 0.12)'; // Balanced fade - fast enough for particles, smooth for trails
+                this.trailCtx.globalCompositeOperation = 'destination-out';
+                this.trailCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
                 this.trailCtx.fillRect(0, 0, this.trailCanvas.width, this.trailCanvas.height);
+                this.trailCtx.globalCompositeOperation = 'source-over';
             }
 
             // Interpolate all remote cursors and update trails
             this.remoteCursors.forEach(cursor => {
+                const prevX = cursor.x;
+                const prevY = cursor.y;
+                let moved = false;
+
                 // Check if we have queued positions to play back for smooth movement
                 if (cursor.positionQueue && cursor.positionQueue.length > 0) {
                     // Consume next position from queue
@@ -419,26 +476,56 @@ window.CursorInterop = {
                     // Update target for any remaining lerp
                     cursor.targetX = nextPos.x;
                     cursor.targetY = nextPos.y;
+                    moved = true;
+                    cursor.lastMoveTime = performance.now();
                 } else {
                     // Fallback to lerp if no queue (for backwards compatibility)
-                    cursor.x += (cursor.targetX - cursor.x) * smoothness;
-                    cursor.y += (cursor.targetY - cursor.y) * smoothness;
+                    const dx = cursor.targetX - cursor.x;
+                    const dy = cursor.targetY - cursor.y;
+                    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                        cursor.x += dx * smoothness;
+                        cursor.y += dy * smoothness;
+                        moved = true;
+                    }
                 }
 
-                // Add to trail
-                cursor.trail.push({ x: cursor.x, y: cursor.y });
-                if (cursor.trail.length > maxTrailLength) {
-                    cursor.trail.shift();
+                // Only add to trail if cursor actually moved
+                if (moved) {
+                    cursor.trail.push({ x: cursor.x, y: cursor.y });
+                    if (cursor.trail.length > maxTrailLength) {
+                        cursor.trail.shift();
+                    }
                 }
 
-                // Draw trail
-                this.drawTrail(cursor);
+                // Clear trail if cursor hasn't moved in a while (2 seconds)
+                const timeSinceMove = performance.now() - (cursor.lastMoveTime || 0);
+                if (timeSinceMove > 2000 && cursor.trail.length > 0) {
+                    cursor.trail = [];
+                }
+
+                // Draw trail only if there are points
+                if (cursor.trail.length > 1) {
+                    this.drawTrail(cursor);
+                }
 
                 // Update DOM position (remove scale from here as it's only for entry/exit)
                 const currentTransform = cursor.element.style.transform;
                 if (!currentTransform.includes('scale(0)')) {
                     cursor.element.style.transform = `translate(${cursor.x}px, ${cursor.y}px)`;
                 }
+            });
+
+            // Clean up stale cursors (no updates for 10 seconds)
+            const now = performance.now();
+            const staleTimeout = 10000; // 10 seconds
+            const staleCursors = [];
+            this.remoteCursors.forEach((cursorData, odell) => {
+                if (now - (cursorData.lastUpdateTime || 0) > staleTimeout) {
+                    staleCursors.push(odell);
+                }
+            });
+            staleCursors.forEach(staleId => {
+                this.removeRemoteCursor(staleId);
             });
 
             // Update and draw particles
@@ -625,6 +712,9 @@ window.CursorInterop = {
         document.removeEventListener('dblclick', this.handleDoubleClick);
         document.removeEventListener('contextmenu', this.handleContextMenu);
         document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('mouseleave', this.handleMouseLeave);
+        document.removeEventListener('mouseenter', this.handleMouseEnter);
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
 
         // Remove reaction picker if exists
         const picker = document.getElementById('reaction-picker');

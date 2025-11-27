@@ -1,5 +1,5 @@
 using Convex.Client;
-using CursorPlayground.Shared.Models;
+using CursorPlayground.Shared.Generated;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,17 +8,18 @@ namespace CursorPlayground.Shared.Services;
 
 /// <summary>
 /// Service for interacting with the Cursor Playground backend.
+/// Uses generated types from the Convex schema.
 /// </summary>
 public class CursorService : IDisposable
 {
     private readonly IConvexClient _client;
     private readonly List<IDisposable> _subscriptions = new();
 
-    // Events
-    public event EventHandler<List<User>>? ActiveUsersUpdated;
-    public event EventHandler<List<CursorBatch>>? CursorBatchesUpdated;
-    public event EventHandler<List<Reaction>>? ReactionsUpdated;
-    public event EventHandler<List<ClickEffect>>? ClickEffectsUpdated;
+    // Events - using generated types from schema
+    public event EventHandler<List<Users>>? ActiveUsersUpdated;
+    public event EventHandler<List<CursorBatches>>? CursorBatchesUpdated;
+    public event EventHandler<List<Reactions>>? ReactionsUpdated;
+    public event EventHandler<List<ClickEffects>>? ClickEffectsUpdated;
 
     public CursorService(IConvexClient client)
     {
@@ -34,9 +35,9 @@ public class CursorService : IDisposable
     public void SubscribeToActiveUsers()
     {
         var subscription = _client
-            .Observe<List<User>>("functions/users:listActive")
+            .Observe<List<Users>>("functions/users:listActive")
             .Subscribe(
-                users => ActiveUsersUpdated?.Invoke(this, users ?? new List<User>()),
+                users => ActiveUsersUpdated?.Invoke(this, users ?? new List<Users>()),
                 error => Console.WriteLine($"Active users subscription error: {error.Message}")
             );
 
@@ -47,9 +48,9 @@ public class CursorService : IDisposable
     public void SubscribeToCursorBatches()
     {
         var subscription = _client
-            .Observe<List<CursorBatch>>("functions/cursorBatches:list")
+            .Observe<List<CursorBatches>>("functions/cursorBatches:list")
             .Subscribe(
-                batches => CursorBatchesUpdated?.Invoke(this, batches ?? new List<CursorBatch>()),
+                batches => CursorBatchesUpdated?.Invoke(this, batches ?? new List<CursorBatches>()),
                 error => Console.WriteLine($"Cursor batches subscription error: {error.Message}")
             );
 
@@ -60,9 +61,9 @@ public class CursorService : IDisposable
     public void SubscribeToReactions()
     {
         var subscription = _client
-            .Observe<List<Reaction>>("functions/reactions:listRecent")
+            .Observe<List<Reactions>>("functions/reactions:listRecent")
             .Subscribe(
-                reactions => ReactionsUpdated?.Invoke(this, reactions ?? new List<Reaction>()),
+                reactions => ReactionsUpdated?.Invoke(this, reactions ?? new List<Reactions>()),
                 error => Console.WriteLine($"Reactions subscription error: {error.Message}")
             );
 
@@ -73,9 +74,9 @@ public class CursorService : IDisposable
     public void SubscribeToClickEffects()
     {
         var subscription = _client
-            .Observe<List<ClickEffect>>("functions/clickEffects:listRecent")
+            .Observe<List<ClickEffects>>("functions/clickEffects:listRecent")
             .Subscribe(
-                effects => ClickEffectsUpdated?.Invoke(this, effects ?? new List<ClickEffect>()),
+                effects => ClickEffectsUpdated?.Invoke(this, effects ?? new List<ClickEffects>()),
                 error => Console.WriteLine($"Click effects subscription error: {error.Message}")
             );
 

@@ -18,6 +18,10 @@
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.SchemaGenerator\Convex.SchemaGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
     <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
@@ -26,6 +30,20 @@
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!-- Schema type generation -->
+  <PropertyGroup>
+    <ConvexGeneratedNamespace>CursorPlayground.Shared.Generated</ConvexGeneratedNamespace>
+  </PropertyGroup>
+
+  <!-- Make property visible to analyzers -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ConvexGeneratedNamespace" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\backend\convex\schema.ts" />
   </ItemGroup>
 
 </Project>

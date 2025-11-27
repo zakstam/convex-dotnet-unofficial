@@ -1,3 +1,4 @@
+@using CursorPlayground.Shared.Generated
 @inject IJSRuntime JS
 @inject CursorService CursorService
 @implements IAsyncDisposable
@@ -10,13 +11,15 @@
     <div class="playground-content">
         <!-- Header -->
         <div class="playground-header">
-            <h1 class="playground-title">🎨 Cursor Playground</h1>
-            <p class="playground-subtitle">Move your cursor and watch the magic!</p>
+            <h1 class="playground-title">Cursor Playground</h1>
+            <p class="playground-subtitle">Move your cursor and watch the magic</p>
         </div>
 
         <!-- User count -->
         <div class="user-count">
-            👥 Online: <span class="user-count-number">@ActiveUsers.Count</span>
+            <span class="user-count-icon">●</span>
+            <span>Online:</span>
+            <span class="user-count-number">@ActiveUsers.Count</span>
         </div>
 
         <!-- Instructions -->
@@ -68,7 +71,7 @@
         <!-- Batching Settings Panel -->
         <div class="settings-panel">
             <div class="settings-header" @onclick="ToggleSettings">
-                <span>⚙️ Batching Settings</span>
+                <span>Batching Settings</span>
                 <span class="toggle-icon">@(ShowSettings ? "▼" : "▶")</span>
             </div>
 
@@ -131,6 +134,44 @@
             }
         </div>
     </div>
+
+    <!-- User List Sidebar -->
+    <div class="user-list-panel @(ShowUserList ? "expanded" : "collapsed")">
+        <div class="user-list-header" @onclick="ToggleUserList">
+            <span class="user-list-title">Online Users</span>
+            <span class="user-list-count">@ActiveUsers.Count</span>
+            <span class="toggle-icon">@(ShowUserList ? "▶" : "◀")</span>
+        </div>
+
+        @if (ShowUserList)
+        {
+            <div class="user-list-content">
+                @if (ActiveUsers.Count == 0)
+                {
+                    <div class="user-list-empty">
+                        <span>No other users online</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var user in ActiveUsers)
+                    {
+                        <div class="user-list-item @(user.Id == UserId ? "current-user" : "")">
+                            <span class="user-emoji">@user.Emoji</span>
+                            <div class="user-info">
+                                <span class="user-name">@user.Name</span>
+                                @if (user.Id == UserId)
+                                {
+                                    <span class="user-badge">You</span>
+                                }
+                            </div>
+                            <span class="user-color-indicator" style="background-color: @user.Color"></span>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -145,8 +186,9 @@
     private System.Timers.Timer? heartbeatTimer;
     private System.Timers.Timer? fpsTimer;
 
-    private List<User> ActiveUsers = new();
-    private Dictionary<string, CursorBatch> RemoteCursors = new();
+    // Using generated types from Convex schema
+    private List<Users> ActiveUsers = new();
+    private Dictionary<string, CursorBatches> RemoteCursors = new();
 
     private int WindowWidth = 1920;
     private int WindowHeight = 1080;
@@ -159,6 +201,9 @@
     private int SamplingIntervalMs = 16;  // Default: ~60fps
     private int BatchIntervalMs = 200;    // Default: 200ms
     private double MinEventDistance = 5.0; // Default: 5px
+
+    // User list panel state
+    private bool ShowUserList = true;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -231,7 +276,7 @@
         await CursorService.CreateReactionAsync(UserId, emoji, x, y);
     }
 
-    private async void OnReactionsUpdated(object? sender, List<Reaction> reactions)
+    private async void OnReactionsUpdated(object? sender, List<Reactions> reactions)
     {
         // Render recent reactions (from last 5 seconds)
         var recentReactions = reactions.Where(r =>
@@ -253,7 +298,7 @@
         }
     }
 
-    private async void OnClickEffectsUpdated(object? sender, List<ClickEffect> effects)
+    private async void OnClickEffectsUpdated(object? sender, List<ClickEffects> effects)
     {
         // Render recent click effects (from last 2 seconds)
         var recentEffects = effects.Where(e =>
@@ -275,13 +320,13 @@
         }
     }
 
-    private void OnActiveUsersUpdated(object? sender, List<User> users)
+    private void OnActiveUsersUpdated(object? sender, List<Users> users)
     {
         ActiveUsers = users;
         InvokeAsync(StateHasChanged);
     }
 
-    private async void OnCursorBatchesUpdated(object? sender, List<CursorBatch> batches)
+    private async void OnCursorBatchesUpdated(object? sender, List<CursorBatches> batches)
     {
         foreach (var batch in batches)
         {
@@ -296,7 +341,7 @@
 
                 if (user != null)
                 {
-                    // Extract all positions from the batch
+                    // Extract all positions from the batch (using generated nested types)
                     var positions = batch.Events.Select(e => new
                     {
                         x = e.EventData.X,
@@ -345,6 +390,12 @@
     private void ToggleSettings()
     {
         ShowSettings = !ShowSettings;
+    }
+
+    // User list panel methods
+    private void ToggleUserList()
+    {
+        ShowUserList = !ShowUserList;
     }
 
     private void CreateCursorBatcher()

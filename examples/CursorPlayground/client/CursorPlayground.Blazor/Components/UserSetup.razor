@@ -2,32 +2,42 @@
 
 <div class="setup-modal @(IsVisible ? "visible" : "")">
     <div class="setup-content">
-        <h1 class="setup-title">🎨 Welcome to Cursor Playground!</h1>
-        <p class="setup-subtitle">Let's set up your profile</p>
+        <div class="setup-header">
+            <h1 class="setup-title">Welcome to Cursor Playground</h1>
+            <p class="setup-subtitle">Create your profile to join the experience</p>
+        </div>
 
         <div class="setup-form">
             <!-- Name Input -->
             <div class="form-group">
-                <label for="username">Your Name</label>
+                <label for="username">
+                    <span class="label-icon">@selectedEmoji</span>
+                    Your Name
+                </label>
                 <input
                     id="username"
                     type="text"
                     @bind="userName"
                     @bind:event="oninput"
-                    placeholder="Enter your name"
+                    placeholder="Enter your name..."
                     maxlength="20"
                     class="form-input" />
+                <div class="input-hint">@userName.Length/20 characters</div>
             </div>
 
             <!-- Emoji Selection -->
             <div class="form-group">
-                <label>Choose Your Emoji</label>
+                <label>
+                    <span class="label-icon">*</span>
+                    Choose Your Avatar
+                </label>
                 <div class="emoji-grid">
                     @foreach (var emoji in AvailableEmojis)
                     {
                         <button
                             class="emoji-button @(selectedEmoji == emoji ? "selected" : "")"
-                            @onclick="() => SelectEmoji(emoji)">
+                            @onclick="() => SelectEmoji(emoji)"
+                            title="Select @emoji">
                             @emoji
                         </button>
                     }
@@ -36,14 +46,18 @@
 
             <!-- Color Selection -->
             <div class="form-group">
-                <label>Choose Your Color</label>
+                <label>
+                    <span class="label-icon" style="color: @selectedColor">●</span>
+                    Choose Your Color
+                </label>
                 <div class="color-grid">
                     @foreach (var color in AvailableColors)
                     {
                         <button
                             class="color-button @(selectedColor == color.Value ? "selected" : "")"
-                            style="background-color: @color.Value"
-                            @onclick="() => SelectColor(color.Value)">
+                            style="--color-value: @color.Value"
+                            @onclick="() => SelectColor(color.Value)"
+                            title="@color.Name">
                             @if (selectedColor == color.Value)
                             {
                                 <span class="checkmark">✓</span>
@@ -53,34 +67,50 @@
                 </div>
             </div>
 
-            <!-- Preview -->
+            <!-- Live Preview -->
             <div class="preview-section">
-                <div class="preview-label">Preview:</div>
-                <div class="user-preview">
-                    <span class="preview-emoji">@selectedEmoji</span>
-                    <span class="preview-name" style="color: @selectedColor">@(string.IsNullOrWhiteSpace(userName) ? "Your Name" : userName)</span>
+                <div class="preview-label">Live Preview</div>
+                <div class="preview-card">
+                    <div class="preview-cursor" style="--cursor-color: @selectedColor">
+                        <span class="preview-emoji">@selectedEmoji</span>
+                    </div>
+                    <div class="preview-info">
+                        <span class="preview-name" style="color: @selectedColor">
+                            @(string.IsNullOrWhiteSpace(userName) ? "Your Name" : userName)
+                        </span>
+                        <span class="preview-status">Ready to play</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Submit Button -->
             <button
-                class="submit-button"
+                class="submit-button @(isJoining ? "loading" : "")"
                 @onclick="JoinPlayground"
-                disabled="@(!IsValid)">
+                disabled="@(!IsValid || isJoining)">
                 @if (isJoining)
                 {
+                    <span class="button-spinner"></span>
                     <span>Joining...</span>
                 }
                 else
                 {
-                    <span>Enter Playground →</span>
+                    <span>Enter Playground</span>
+                    <span class="button-arrow">→</span>
                 }
             </button>
 
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="error-message">@errorMessage</div>
+                <div class="error-message">
+                    <span class="error-icon">!</span>
+                    @errorMessage
+                </div>
             }
+        </div>
+
+        <div class="setup-footer">
+            <span>Real-time cursor tracking powered by Convex</span>
         </div>
     </div>
 </div>
