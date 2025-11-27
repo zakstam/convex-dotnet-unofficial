@@ -12,12 +12,50 @@ The main client class for interacting with Convex.
 // Simple constructor
 var client = new ConvexClient(string deploymentUrl);
 
+// Constructor with options
+var client = new ConvexClient(string deploymentUrl, ConvexClientOptions options);
+
 // Builder pattern for advanced configuration
 var client = new ConvexClientBuilder()
     .UseDeployment(string deploymentUrl)
     .WithAutoReconnect(int maxAttempts = 5, int delayMs = 1000)
     .WithTimeout(TimeSpan timeout)
+    .WithHttpClient(HttpClient httpClient)
+    .WithReconnectionPolicy(ReconnectionPolicy policy)
+    .WithSyncContext(SynchronizationContext synchronizationContext)
+    .WithLogging(ILogger logger)
+    .EnableDebugLogging(bool enabled = true)
+    .PreConnect()
+    .UseMiddleware(IConvexMiddleware middleware)
+    .UseMiddleware<TMiddleware>()
+    .Use(Func<ConvexRequest, ConvexRequestDelegate, Task<ConvexResponse>> middleware)
+    .WithSchemaValidation(Action<SchemaValidationOptions> configure)
+    .WithStrictSchemaValidation()
+    .WithRequestLogging(bool enabled = true)
+    .WithDevelopmentDefaults()
+    .WithProductionDefaults()
     .Build();
+
+// Async builder
+var client = await new ConvexClientBuilder()
+    .UseDeployment(deploymentUrl)
+    .BuildAsync(CancellationToken cancellationToken = default);
+```
+
+### Properties
+
+```csharp
+// Deployment URL
+string DeploymentUrl { get; }
+
+// Default timeout for HTTP operations
+TimeSpan Timeout { get; set; }
+
+// Current WebSocket connection state
+ConnectionState ConnectionState { get; }
+
+// PreConnect error if connection failed during initialization
+Exception? PreConnectError { get; }
 ```
 
 ### Real-Time Subscriptions
@@ -35,254 +73,408 @@ bool TryGetCachedValue<T>(string functionName, out T? value);
 ### Queries
 
 ```csharp
-// Execute a query
+// Create a query builder
 IQueryBuilder<TResult> Query<TResult>(string functionName);
 
 // Query builder methods
 IQueryBuilder<TResult> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
+IQueryBuilder<TResult> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
 IQueryBuilder<TResult> WithTimeout(TimeSpan timeout);
+IQueryBuilder<TResult> IncludeMetadata();
+IQueryBuilder<TResult> Cached(TimeSpan cacheDuration);
+IQueryBuilder<TResult> OnError(Action<Exception> onError);
+IQueryBuilder<TResult> WithRetry(Action<RetryPolicyBuilder> configure);
+IQueryBuilder<TResult> WithRetry(RetryPolicy policy);
 Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default);
+Task<ConvexResult<TResult>> ExecuteWithResultAsync(CancellationToken cancellationToken = default);
+
+// Experimental: Consistent reads
+[Obsolete("Experimental API")]
+IQueryBuilder<TResult> UseConsistency(long timestamp);
 ```
 
 ### Mutations
 
 ```csharp
-// Execute a mutation
+// Create a mutation builder
 IMutationBuilder<TResult> Mutate<TResult>(string functionName);
 
 // Mutation builder methods
 IMutationBuilder<TResult> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
+IMutationBuilder<TResult> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
 IMutationBuilder<TResult> WithTimeout(TimeSpan timeout);
 Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default);
+Task<ConvexResult<TResult>> ExecuteWithResultAsync(CancellationToken cancellationToken = default);
+
+// Optimistic updates
+IMutationBuilder<TResult> Optimistic(Action<TResult> optimisticUpdate);
+IMutationBuilder<TResult> Optimistic(TResult optimisticValue, Action<TResult> apply);
+IMutationBuilder<TResult> OptimisticWithAutoRollback<TState>(
+    Func<TState> getter,
+    Action<TState> setter,
+    Func<TState, TState> update);
+IMutationBuilder<TResult> WithOptimisticUpdate<TArgs>(Action<IOptimisticLocalStore, TArgs> updateFn) where TArgs : notnull;
+IMutationBuilder<TResult> UpdateCache<TCache>(string queryName, Func<TCache, TCache> updateFn);
+IMutationBuilder<TResult> WithRollback(Action rollback);
+IMutationBuilder<TResult> RollbackOn<TException>() where TException : Exception;
+
+// Callbacks
+IMutationBuilder<TResult> OnSuccess(Action<TResult> onSuccess);
+IMutationBuilder<TResult> OnError(Action<Exception> onError);
+IMutationBuilder<TResult> WithCleanup(Action cleanup);
+
+// Queue and retry
+IMutationBuilder<TResult> SkipQueue();
+IMutationBuilder<TResult> WithRetry(Action<RetryPolicyBuilder> configure);
+IMutationBuilder<TResult> WithRetry(RetryPolicy policy);
+
+// Pending mutation tracking
+IMutationBuilder<TResult> TrackPending(ISet<string> tracker, string key);
 ```
 
 ### Actions
 
 ```csharp
-// Execute an action
+// Create an action builder
 IActionBuilder<TResult> Action<TResult>(string functionName);
 
 // Action builder methods
 IActionBuilder<TResult> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
+IActionBuilder<TResult> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
 IActionBuilder<TResult> WithTimeout(TimeSpan timeout);
+IActionBuilder<TResult> OnSuccess(Action<TResult> onSuccess);
+IActionBuilder<TResult> OnError(Action<Exception> onError);
+IActionBuilder<TResult> WithRetry(Action<RetryPolicyBuilder> configure);
+IActionBuilder<TResult> WithRetry(RetryPolicy policy);
 Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default);
+Task<ConvexResult<TResult>> ExecuteWithResultAsync(CancellationToken cancellationToken = default);
 ```
 
 ### Batch Operations
 
 ```csharp
-// Execute multiple queries in parallel
+// Create a batch query builder
 IBatchQueryBuilder Batch();
 
 // Batch builder methods
-IBatchQueryBuilder Query<TResult>(string functionName);
-IBatchQueryBuilder Query<TResult, TArgs>(string functionName, TArgs args) where TArgs : notnull;
-Task<(T1, T2, T3)> ExecuteAsync<T1, T2, T3>();
+IBatchQueryBuilder Query<T>(string functionName);
+IBatchQueryBuilder Query<T, TArgs>(string functionName, TArgs args) where TArgs : notnull;
+
+// Execute batch queries
+Task<Dictionary<string, object>> ExecuteAsDictionaryAsync(CancellationToken cancellationToken = default);
+Task<object[]> ExecuteAsync(CancellationToken cancellationToken = default);
+
+// Tuple overloads (2-8 results)
+Task<(T1, T2)> ExecuteAsync<T1, T2>(CancellationToken cancellationToken = default);
+Task<(T1, T2, T3)> ExecuteAsync<T1, T2, T3>(CancellationToken cancellationToken = default);
+Task<(T1, T2, T3, T4)> ExecuteAsync<T1, T2, T3, T4>(CancellationToken cancellationToken = default);
+Task<(T1, T2, T3, T4, T5)> ExecuteAsync<T1, T2, T3, T4, T5>(CancellationToken cancellationToken = default);
+Task<(T1, T2, T3, T4, T5, T6)> ExecuteAsync<T1, T2, T3, T4, T5, T6>(CancellationToken cancellationToken = default);
+Task<(T1, T2, T3, T4, T5, T6, T7)> ExecuteAsync<T1, T2, T3, T4, T5, T6, T7>(CancellationToken cancellationToken = default);
+Task<(T1, T2, T3, T4, T5, T6, T7, T8)> ExecuteAsync<T1, T2, T3, T4, T5, T6, T7, T8>(CancellationToken cancellationToken = default);
+```
+
+### Pagination
+
+```csharp
+// Access pagination slice
+IConvexPagination PaginationSlice { get; }
+
+// Create paginated query
+IPaginationBuilder<T> Query<T>(string functionName);
+
+// Pagination builder methods
+IPaginationBuilder<T> WithPageSize(int pageSize);
+IPaginationBuilder<T> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
+IPaginationBuilder<T> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
+IPaginator<T> Build();
+
+// Paginator methods
+bool HasMore { get; }
+int LoadedPageCount { get; }
+IReadOnlyList<T> LoadedItems { get; }
+IReadOnlyList<int> PageBoundaries { get; }
+event Action<int>? PageBoundaryAdded;
+int GetPageIndex(int itemIndex);
+Task<IReadOnlyList<T>> LoadNextAsync(CancellationToken cancellationToken = default);
+void Reset();
+IAsyncEnumerable<T> AsAsyncEnumerable(CancellationToken cancellationToken = default);
+MergedPaginationResult<T> MergeWithSubscription(
+    IEnumerable<T> subscriptionItems,
+    Func<T, string> getId,
+    Func<T, IComparable>? getSortKey = null);
 ```
 
 ### Authentication
 
 ```csharp
-// Set authentication token
+// Access authentication slice
+AuthenticationSlice AuthenticationSlice { get; }
+
+// Authentication methods (via IConvexAuthentication)
+AuthenticationState AuthenticationState { get; }
+string? CurrentAuthToken { get; }
+event EventHandler<AuthenticationStateChangedEventArgs>? AuthenticationStateChanged;
 Task SetAuthTokenAsync(string token, CancellationToken cancellationToken = default);
-
-// Set token provider for automatic refresh
-Task SetAuthTokenProviderAsync(IAuthTokenProvider provider, CancellationToken cancellationToken = default);
-
-// Set admin authentication (server-side only)
 Task SetAdminAuthAsync(string adminKey, CancellationToken cancellationToken = default);
+Task SetAuthTokenProviderAsync(IAuthTokenProvider provider, CancellationToken cancellationToken = default);
+Task ClearAuthAsync(CancellationToken cancellationToken = default);
+Task<string?> GetAuthTokenAsync(CancellationToken cancellationToken = default);
+Task<Dictionary<string, string>> GetAuthHeadersAsync(CancellationToken cancellationToken = default);
+
+// Observable authentication state
+IObservable<AuthenticationState> AuthenticationStateChanges { get; }
 ```
 
 ### File Storage
 
 ```csharp
-// Upload a file
-Task<string> UploadFileAsync(
-    Stream fileContent,
-    string contentType,
-    string? filename = null,
-    CancellationToken cancellationToken = default);
+// Access file storage slice
+FileStorageSlice FileStorageSlice { get; }
 
-// Get download URL
-Task<string> GetDownloadUrlAsync(string storageId, CancellationToken cancellationToken = default);
-
-// Download file
+// File storage methods (via IConvexFileStorage)
+Task<ConvexUploadUrlResponse> GenerateUploadUrlAsync(string? filename = null, CancellationToken cancellationToken = default);
+Task<string> UploadFileAsync(string uploadUrl, Stream fileContent, string contentType, string? filename = null, CancellationToken cancellationToken = default);
+Task<string> UploadFileAsync(Stream fileContent, string contentType, string? filename = null, CancellationToken cancellationToken = default);
 Task<Stream> DownloadFileAsync(string storageId, CancellationToken cancellationToken = default);
+Task<string> GetDownloadUrlAsync(string storageId, CancellationToken cancellationToken = default);
+Task<ConvexFileMetadata> GetFileMetadataAsync(string storageId, CancellationToken cancellationToken = default);
+Task<bool> DeleteFileAsync(string storageId, CancellationToken cancellationToken = default);
 ```
 
 ### Vector Search
 
 ```csharp
-// Search using vector embeddings
-Task<IEnumerable<VectorSearchResult<T>>> SearchAsync<T>(
-    string indexName,
-    float[] vector,
-    int limit = 10,
-    CancellationToken cancellationToken = default);
+// Access vector search slice
+VectorSearchSlice VectorSearchSlice { get; }
+
+// Vector search methods (via IConvexVectorSearch)
+Task<IEnumerable<VectorSearchResult<T>>> SearchAsync<T>(string indexName, float[] vector, int limit = 10, CancellationToken cancellationToken = default);
+Task<IEnumerable<VectorSearchResult<TResult>>> SearchAsync<TResult, TFilter>(string indexName, float[] vector, int limit, TFilter filter, CancellationToken cancellationToken = default) where TFilter : notnull;
+Task<IEnumerable<VectorSearchResult<T>>> SearchByTextAsync<T>(string indexName, string text, string embeddingModel = "text-embedding-ada-002", int limit = 10, CancellationToken cancellationToken = default);
+Task<IEnumerable<VectorSearchResult<TResult>>> SearchByTextAsync<TResult, TFilter>(string indexName, string text, string embeddingModel, int limit, TFilter filter, CancellationToken cancellationToken = default) where TFilter : notnull;
+Task<float[]> CreateEmbeddingAsync(string text, string model = "text-embedding-ada-002", CancellationToken cancellationToken = default);
+Task<float[][]> CreateEmbeddingsAsync(string[] texts, string model = "text-embedding-ada-002", CancellationToken cancellationToken = default);
+Task<VectorIndexInfo> GetIndexInfoAsync(string indexName, CancellationToken cancellationToken = default);
+Task<IEnumerable<VectorIndexInfo>> ListIndicesAsync(CancellationToken cancellationToken = default);
 ```
 
 ### Scheduling
 
 ```csharp
-// Schedule one-time execution
-Task<string> ScheduleAsync(
-    string functionName,
-    TimeSpan delay,
-    object? args = null,
-    CancellationToken cancellationToken = default);
+// Access scheduling slice
+SchedulingSlice SchedulingSlice { get; }
 
-// Schedule recurring job (cron)
-Task<string> ScheduleRecurringAsync(
-    string functionName,
-    string cronExpression,
-    string timezone = "UTC",
-    object? args = null,
-    CancellationToken cancellationToken = default);
-
-// Schedule interval job
-Task<string> ScheduleIntervalAsync(
-    string functionName,
-    TimeSpan interval,
-    object? args = null,
-    CancellationToken cancellationToken = default);
-
-// Cancel scheduled job
+// Scheduling methods (via IConvexScheduler)
+Task<string> ScheduleAsync(string functionName, TimeSpan delay, CancellationToken cancellationToken = default);
+Task<string> ScheduleAsync<TArgs>(string functionName, TimeSpan delay, TArgs args, CancellationToken cancellationToken = default) where TArgs : notnull;
+Task<string> ScheduleAtAsync(string functionName, DateTimeOffset scheduledTime, CancellationToken cancellationToken = default);
+Task<string> ScheduleAtAsync<TArgs>(string functionName, DateTimeOffset scheduledTime, TArgs args, CancellationToken cancellationToken = default) where TArgs : notnull;
+Task<string> ScheduleRecurringAsync(string functionName, string cronExpression, string timezone = "UTC", CancellationToken cancellationToken = default);
+Task<string> ScheduleRecurringAsync<TArgs>(string functionName, string cronExpression, TArgs args, string timezone = "UTC", CancellationToken cancellationToken = default) where TArgs : notnull;
+Task<string> ScheduleIntervalAsync(string functionName, TimeSpan interval, DateTimeOffset? startTime = null, DateTimeOffset? endTime = null, CancellationToken cancellationToken = default);
+Task<string> ScheduleIntervalAsync<TArgs>(string functionName, TimeSpan interval, TArgs args, DateTimeOffset? startTime = null, DateTimeOffset? endTime = null, CancellationToken cancellationToken = default) where TArgs : notnull;
 Task<bool> CancelAsync(string jobId, CancellationToken cancellationToken = default);
+Task<ConvexScheduledJob> GetJobAsync(string jobId, CancellationToken cancellationToken = default);
+Task<IEnumerable<ConvexScheduledJob>> ListJobsAsync(ConvexJobStatus? status = null, string? functionName = null, int limit = 100, CancellationToken cancellationToken = default);
+Task<bool> UpdateScheduleAsync(string jobId, ConvexScheduleConfig newSchedule, CancellationToken cancellationToken = default);
 ```
 
 ### HTTP Actions
 
 ```csharp
-// GET request
-Task<ConvexHttpActionResponse<T>> GetAsync<T>(
-    string actionPath,
-    Dictionary<string, string>? queryParameters = null,
-    Dictionary<string, string>? headers = null,
-    CancellationToken cancellationToken = default);
+// Access HTTP actions slice
+HttpActionsSlice HttpActionsSlice { get; }
 
-// POST request
-Task<ConvexHttpActionResponse<TResponse>> PostAsync<TResponse, TBody>(
-    string actionPath,
-    TBody body,
-    string contentType = "application/json",
-    Dictionary<string, string>? headers = null,
-    CancellationToken cancellationToken = default) where TBody : notnull;
+// HTTP action methods (via IConvexHttpActions)
+Task<ConvexHttpActionResponse<T>> GetAsync<T>(string actionPath, Dictionary<string, string>? queryParameters = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<T>> PostAsync<T>(string actionPath, string contentType = "application/json", Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<TResponse>> PostAsync<TResponse, TBody>(string actionPath, TBody body, string contentType = "application/json", Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default) where TBody : notnull;
+Task<ConvexHttpActionResponse<T>> PutAsync<T>(string actionPath, string contentType = "application/json", Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<TResponse>> PutAsync<TResponse, TBody>(string actionPath, TBody body, string contentType = "application/json", Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default) where TBody : notnull;
+Task<ConvexHttpActionResponse<T>> DeleteAsync<T>(string actionPath, Dictionary<string, string>? queryParameters = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<T>> PatchAsync<T>(string actionPath, string contentType = "application/json", Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<TResponse>> PatchAsync<TResponse, TBody>(string actionPath, TBody body, string contentType = "application/json", Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default) where TBody : notnull;
+Task<ConvexHttpActionResponse<T>> CallAsync<T>(HttpMethod method, string actionPath, string contentType = "application/json", Dictionary<string, string>? queryParameters = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<TResponse>> CallAsync<TResponse, TBody>(HttpMethod method, string actionPath, TBody body, string contentType = "application/json", Dictionary<string, string>? queryParameters = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default) where TBody : notnull;
+Task<ConvexHttpActionResponse<T>> UploadFileAsync<T>(string actionPath, Stream fileContent, string fileName, string contentType, Dictionary<string, string>? additionalFields = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
+Task<ConvexHttpActionResponse<TResponse>> CallWebhookAsync<TResponse, TPayload>(string webhookPath, TPayload payload, string? signature = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default) where TPayload : notnull;
 ```
 
 ### Connection Monitoring
 
 ```csharp
-// Connection state changes
+// Observable streams
 IObservable<ConnectionState> ConnectionStateChanges { get; }
-
-// Connection quality changes
 IObservable<ConnectionQuality> ConnectionQualityChanges { get; }
+
+// Connection management
+Task EnsureConnectedAsync(CancellationToken cancellationToken = default);
+Task<ConnectionQualityInfo> GetConnectionQualityAsync();
 ```
 
-### Query Dependencies
+### Health Monitoring
 
 ```csharp
-// Define cache invalidation rules
+// Access health slice
+HealthSlice HealthSlice { get; }
+
+// Get health status
+Task<ConvexHealthCheck> GetHealthAsync();
+```
+
+### Caching
+
+```csharp
+// Access caching slice
+CachingSlice CachingSlice { get; }
+
+// Cache invalidation
 void DefineQueryDependency(string mutationName, params string[] invalidates);
+Task InvalidateQueryAsync(string queryName);
+Task InvalidateQueriesAsync(string pattern);
 ```
 
 ### Disposal
 
 ```csharp
-// Clean up resources
 void Dispose();
 ```
 
-## Extension Methods
+## Retry Policies
 
-### Reactive Extensions (Rx)
+### RetryPolicy
 
-Located in `Convex.Client.Extensions.ExtensionMethods` namespace:
+```csharp
+// Predefined policies
+RetryPolicy.Default()       // 3 retries, exponential backoff
+RetryPolicy.Aggressive()    // 5 retries, faster backoff
+RetryPolicy.Conservative()  // 2 retries, longer delays
+RetryPolicy.None()          // No retries
 
-- `RetryWithBackoff<T>()` - Retry with exponential backoff
-- `SmartDebounce<T>()` - Debounce preserving first and last values
-- `ShareReplayLatest<T>()` - Share subscription with replay
-- `WhenConnected<T>()` - Only emit when connected
-- `BufferDuringPoorConnection<T>()` - Buffer during poor connection
-- `RetryWhen<T>()` - Conditional retry
-- `WithCircuitBreaker<T>()` - Circuit breaker pattern
-- `TimeoutWithMessage<T>()` - Timeout with custom message
-- `CatchAndReport<T>()` - Error reporting with context
-- `DistinctUntilChangedBy<T>()` - Multi-key change detection
-- `ThrottleToMaxFrequency<T>()` - Rate limiting
-- `ThrottleSlidingWindow<T>()` - Sliding window rate limiting
-- `BatchUpdates<T>()` - Intelligent batching
-- `WithPerformanceLogging<T>()` - Performance monitoring
+// Custom policy via builder
+new RetryPolicyBuilder()
+    .MaxRetries(int maxRetries)
+    .ExponentialBackoff(TimeSpan initialDelay, double multiplier = 2.0, bool useJitter = true)
+    .LinearBackoff(TimeSpan initialDelay)
+    .ConstantBackoff(TimeSpan delay)
+    .WithMaxDelay(TimeSpan maxDelay)
+    .RetryOn<TException>()
+    .OnRetry(Action<int, Exception, TimeSpan> callback)
+    .Build();
+```
 
-### UI Framework Integrations
+### BackoffStrategy
 
-**WPF/MAUI:**
-- `ObserveOnUI<T>()` - Marshal to UI thread
-- `ToObservableCollection<T>()` - Convert to ObservableCollection
-- `BindToProperty<TSource, TTarget, TProp>()` - Reactive property binding
-- `BindToCanExecute()` - Command enablement binding
+```csharp
+public enum BackoffStrategy
+{
+    Constant,
+    Linear,
+    Exponential
+}
+```
 
-**Blazor:**
-- `SubscribeWithStateHasChanged<T>()` - Subscribe with StateHasChanged
-- `ToAsyncEnumerable<T>()` - Convert to async enumerable
-- `BindToForm<T>()` - Two-way form binding
+## Result Types
 
-### Common Patterns
+### ConvexResult<T>
 
-- `CreateInfiniteScroll<T>()` - Infinite scroll helper
-- `CreateDebouncedSearch<TResult>()` - Debounced search helper
-- `CreateConnectionIndicator()` - Connection status indicator
-- `CreateDetailedConnectionIndicator()` - Detailed connection status
-- `CreateResilientSubscription<T>()` - Resilient subscription helper
+Functional error handling type for operations that can fail.
 
-### Testing
+```csharp
+public sealed record ConvexResult<T>
+{
+    bool IsSuccess { get; }
+    bool IsFailure { get; }
+    T Value { get; }
+    ConvexError Error { get; }
 
-- `CreateMockClient()` - Create mock client for testing
-- `Record<T>()` - Record observable emissions
-- `WaitForValue<T>()` - Wait for specific values
-- `SimulateIntermittentConnection()` - Simulate connection issues
+    static ConvexResult<T> Success(T value);
+    static ConvexResult<T> Failure(ConvexError error);
+    static ConvexResult<T> Failure(Exception exception);
+
+    TResult Match<TResult>(Func<T, TResult> onSuccess, Func<ConvexError, TResult> onFailure);
+    void Match(Action<T> onSuccess, Action<ConvexError> onFailure);
+    ConvexResult<T> OnSuccess(Action<T> action);
+    ConvexResult<T> OnFailure(Action<ConvexError> action);
+    ConvexResult<TNew> Map<TNew>(Func<T, TNew> mapper);
+    ConvexResult<TNew> Bind<TNew>(Func<T, ConvexResult<TNew>> binder);
+    T GetValueOrDefault(T defaultValue = default);
+    T GetValueOrDefault(Func<ConvexError, T> defaultValueFactory);
+}
+```
+
+### ConvexError
+
+```csharp
+public abstract class ConvexError
+{
+    Exception Exception { get; }
+    string Message { get; }
+
+    TResult Match<TResult>(
+        Func<ConvexFunctionError, TResult> onConvexError,
+        Func<NetworkError, TResult> onNetworkError,
+        Func<TimeoutError, TResult> onTimeoutError,
+        Func<CancellationError, TResult> onCancellationError,
+        Func<UnexpectedError, TResult> onUnexpectedError);
+}
+
+// Error subtypes
+public sealed class ConvexFunctionError : ConvexError { }
+public sealed class NetworkError : ConvexError { }
+public sealed class TimeoutError : ConvexError { }
+public sealed class CancellationError : ConvexError { }
+public sealed class UnexpectedError : ConvexError { }
+```
 
 ## Attributes
 
-### ConvexTableAttribute
+### ConvexFunctionAttribute
 
-Marks a class as a Convex table:
+Base attribute for Convex functions:
 
 ```csharp
-[ConvexTable]
-public class MyTable { }
+[ConvexFunction("function:name", FunctionType.Query)]
+public class MyFunction { }
 ```
 
 ### ConvexQueryAttribute
 
-Marks a method as a Convex query function:
-
 ```csharp
 [ConvexQuery("function:name")]
-public static ReturnType MyQuery() { }
+public class MyQuery { }
 ```
 
 ### ConvexMutationAttribute
 
-Marks a method as a Convex mutation function:
-
 ```csharp
 [ConvexMutation("function:name")]
-public static ReturnType MyMutation() { }
+public class MyMutation { }
 ```
 
 ### ConvexActionAttribute
 
-Marks a method as a Convex action function:
-
 ```csharp
 [ConvexAction("function:name")]
-public static ReturnType MyAction() { }
+public class MyAction { }
+```
+
+### ConvexTableAttribute
+
+```csharp
+[ConvexTable]
+public class MyTable { }
+
+// With custom table name
+[ConvexTable]
+public class MyModel
+{
+    // TableName property can override class name
+}
 ```
 
 ### ConvexIndexAttribute
-
-Marks a property as indexed:
 
 ```csharp
 [ConvexIndex(IndexName = "myIndex", IsUnique = true)]
@@ -291,14 +483,33 @@ public string MyProperty { get; set; }
 
 ### ConvexSearchIndexAttribute
 
-Marks a property as searchable:
-
 ```csharp
-[ConvexSearchIndex]
+[ConvexSearchIndex(IndexName = "searchIndex")]
 public string SearchableText { get; set; }
 ```
 
-## Types
+### ConvexForeignKeyAttribute
+
+```csharp
+[ConvexForeignKey("users")]
+public string UserId { get; set; }
+```
+
+### ConvexValidationAttribute
+
+```csharp
+[ConvexValidation(Min = 0, Max = 100, MinLength = 1, MaxLength = 255)]
+public string MyProperty { get; set; }
+```
+
+### ConvexIgnoreAttribute
+
+```csharp
+[ConvexIgnore]
+public string IgnoredProperty { get; set; }
+```
+
+## Enums
 
 ### ConnectionState
 
@@ -308,7 +519,8 @@ public enum ConnectionState
     Disconnected,
     Connecting,
     Connected,
-    Reconnecting
+    Reconnecting,
+    Failed
 }
 ```
 
@@ -317,20 +529,93 @@ public enum ConnectionState
 ```csharp
 public enum ConnectionQuality
 {
-    Excellent,
-    Good,
-    Poor,
-    Offline
+    Unknown = 0,
+    Excellent = 1,
+    Good = 2,
+    Fair = 3,
+    Poor = 4,
+    Terrible = 5
 }
 ```
+
+### AuthenticationState
+
+```csharp
+public enum AuthenticationState
+{
+    Unauthenticated,
+    Authenticated,
+    AuthenticationFailed,
+    TokenExpired
+}
+```
+
+### FunctionType
+
+```csharp
+public enum FunctionType
+{
+    Query,
+    Mutation,
+    Action
+}
+```
+
+### ConvexJobStatus
+
+```csharp
+public enum ConvexJobStatus
+{
+    Pending,
+    Running,
+    Completed,
+    Failed,
+    Cancelled,
+    Active,
+    Paused
+}
+```
+
+### ConvexScheduleType
+
+```csharp
+public enum ConvexScheduleType
+{
+    OneTime,
+    Cron,
+    Interval
+}
+```
+
+## Types
 
 ### VectorSearchResult<T>
 
 ```csharp
 public class VectorSearchResult<T>
 {
-    public T Item { get; }
-    public float Score { get; }
+    string Id { get; init; }
+    float Score { get; init; }
+    T Data { get; init; }
+    float[]? Vector { get; init; }
+    Dictionary<string, JsonElement>? Metadata { get; init; }
+}
+```
+
+### VectorIndexInfo
+
+```csharp
+public class VectorIndexInfo
+{
+    string Name { get; init; }
+    int Dimension { get; init; }
+    VectorDistanceMetric Metric { get; init; }
+    long VectorCount { get; init; }
+    string Table { get; init; }
+    string VectorField { get; init; }
+    string? FilterField { get; init; }
+    DateTimeOffset CreatedAt { get; init; }
+    DateTimeOffset UpdatedAt { get; init; }
 }
 ```
 
@@ -339,10 +624,210 @@ public class VectorSearchResult<T>
 ```csharp
 public class ConvexHttpActionResponse<T>
 {
-    public bool IsSuccess { get; }
-    public T? Body { get; }
-    public int StatusCode { get; }
-    public Dictionary<string, string> Headers { get; }
+    HttpStatusCode StatusCode { get; init; }
+    bool IsSuccess { get; }
+    T? Body { get; init; }
+    string? RawBody { get; init; }
+    Dictionary<string, string> Headers { get; init; }
+    string? ContentType { get; init; }
+    double ResponseTimeMs { get; init; }
+    ConvexHttpActionError? Error { get; init; }
+}
+```
+
+### ConvexUploadUrlResponse
+
+```csharp
+public class ConvexUploadUrlResponse
+{
+    string UploadUrl { get; init; }
+    string StorageId { get; init; }
+}
+```
+
+### ConvexFileMetadata
+
+```csharp
+public class ConvexFileMetadata
+{
+    string StorageId { get; init; }
+    string? Filename { get; init; }
+    string? ContentType { get; init; }
+    long Size { get; init; }
+    DateTimeOffset UploadedAt { get; init; }
+    string? Sha256 { get; init; }
+}
+```
+
+### ConvexScheduledJob
+
+```csharp
+public class ConvexScheduledJob
+{
+    string Id { get; init; }
+    string FunctionName { get; init; }
+    ConvexJobStatus Status { get; init; }
+    JsonElement? Arguments { get; init; }
+    ConvexScheduleConfig Schedule { get; init; }
+    DateTimeOffset CreatedAt { get; init; }
+    DateTimeOffset UpdatedAt { get; init; }
+    DateTimeOffset? NextExecutionTime { get; init; }
+    DateTimeOffset? LastExecutionTime { get; init; }
+    int ExecutionCount { get; init; }
+    ConvexJobError? LastError { get; init; }
+    JsonElement? LastResult { get; init; }
+}
+```
+
+### ConvexScheduleConfig
+
+```csharp
+public class ConvexScheduleConfig
+{
+    ConvexScheduleType Type { get; init; }
+    DateTimeOffset? ScheduledTime { get; init; }
+    string? CronExpression { get; init; }
+    TimeSpan? Interval { get; init; }
+    string? Timezone { get; init; }
+    DateTimeOffset? StartTime { get; init; }
+    DateTimeOffset? EndTime { get; init; }
+    int? MaxExecutions { get; init; }
+
+    static ConvexScheduleConfig OneTime(DateTimeOffset scheduledTime);
+    static ConvexScheduleConfig Cron(string cronExpression, string timezone = "UTC");
+    static ConvexScheduleConfig CreateInterval(TimeSpan interval, DateTimeOffset? startTime = null, DateTimeOffset? endTime = null);
+}
+```
+
+### PaginationResult<T>
+
+```csharp
+public class PaginationResult<T>
+{
+    List<T> Page { get; set; }
+    bool IsDone { get; set; }
+    string? ContinueCursor { get; set; }
+    string? SplitCursor { get; set; }
+    PageStatus? PageStatus { get; set; }
+}
+```
+
+### ConnectionQualityInfo
+
+```csharp
+public sealed class ConnectionQualityInfo
+{
+    ConnectionQuality Quality { get; }
+    string Description { get; }
+    DateTimeOffset Timestamp { get; }
+    double? AverageLatencyMs { get; }
+    double? LatencyVarianceMs { get; }
+    double? PacketLossRate { get; }
+    int ReconnectionCount { get; }
+    int ErrorCount { get; }
+    TimeSpan? TimeSinceLastMessage { get; }
+    double UptimePercentage { get; }
+    int QualityScore { get; }
+}
+```
+
+## Exceptions
+
+### ConvexException
+
+Base exception for all Convex-related errors:
+
+```csharp
+public class ConvexException : Exception
+{
+    string? ErrorCode { get; set; }
+    JsonElement? ErrorData { get; set; }
+    RequestContext? RequestContext { get; set; }
+    ConvexErrorDetails? ErrorDetails { get; set; }
+    string GetDetailedMessage();
+}
+```
+
+### Specialized Exceptions
+
+```csharp
+public class ConvexFunctionException : ConvexException
+{
+    string FunctionName { get; }
+}
+
+public class ConvexArgumentException : ConvexException
+{
+    string ArgumentName { get; }
+}
+
+public class ConvexNetworkException : ConvexException
+{
+    NetworkErrorType ErrorType { get; }
+    HttpStatusCode? StatusCode { get; set; }
+}
+
+public class ConvexAuthenticationException : ConvexException { }
+
+public class ConvexRateLimitException : ConvexException
+{
+    TimeSpan RetryAfter { get; }
+    int CurrentLimit { get; }
+}
+
+public class ConvexCircuitBreakerException : ConvexException
+{
+    CircuitBreakerState CircuitState { get; }
+}
+
+public class ConvexFileStorageException : Exception
+{
+    FileStorageErrorType ErrorType { get; }
+    string? StorageId { get; }
+}
+
+public class ConvexVectorSearchException : Exception
+{
+    VectorSearchErrorType ErrorType { get; }
+    string? IndexName { get; }
+}
+
+public class ConvexSchedulingException : Exception
+{
+    SchedulingErrorType ErrorType { get; }
+    string? JobId { get; }
+}
+
+public class ConvexHttpActionException : Exception
+{
+    HttpStatusCode? StatusCode { get; }
+    string? ActionPath { get; }
+    HttpActionErrorType ErrorType { get; }
+}
+
+public class ConvexPaginationException : Exception
+{
+    string? FunctionName { get; }
+}
+```
+
+## Interfaces
+
+### IAuthTokenProvider
+
+```csharp
+public interface IAuthTokenProvider
+{
+    Task<string?> GetTokenAsync(CancellationToken cancellationToken = default);
+}
+```
+
+### IConvexMiddleware
+
+```csharp
+public interface IConvexMiddleware
+{
+    Task<ConvexResponse> InvokeAsync(ConvexRequest request, ConvexRequestDelegate next);
 }
 ```
 
@@ -351,4 +836,3 @@ public class ConvexHttpActionResponse<T>
 - [Getting Started Guide](getting-started.md)
 - [Troubleshooting Guide](troubleshooting.md)
 - [Transpiler Limitations](transpiler-limitations.md)
-
