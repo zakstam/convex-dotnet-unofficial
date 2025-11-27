@@ -110,15 +110,15 @@ public class ChatConfiguration
 
         string? deploymentUrl = null;
 
-        int initialMessageLimit = 10;
-        bool enableDebugLogging = false;
+        var initialMessageLimit = 10;
+        var enableDebugLogging = false;
 
         // Clerk configuration
         string? clerkPublishableKey = null;
-        string clerkTokenTemplate = "convex";
+        var clerkTokenTemplate = "convex";
         string? clerkDomain = null;
-        int clerkCallbackPort = 8080;
-        string clerkCallbackPath = "/callback";
+        var clerkCallbackPort = 8080;
+        var clerkCallbackPath = "/callback";
         string? clerkOAuthClientId = null;
 
         // Try to read from "Convex:DeploymentUrl" path
@@ -132,7 +132,7 @@ public class ChatConfiguration
             // Read InitialMessageLimit from Convex section
             if (convexElement.TryGetProperty(nameof(InitialMessageLimit), out var limitElement))
             {
-                if (limitElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                if (limitElement.ValueKind == JsonValueKind.Number)
                 {
                     initialMessageLimit = limitElement.GetInt32();
                 }
@@ -141,8 +141,8 @@ public class ChatConfiguration
             // Read EnableDebugLogging from Convex section
             if (convexElement.TryGetProperty(nameof(EnableDebugLogging), out var debugLoggingElement))
             {
-                if (debugLoggingElement.ValueKind == System.Text.Json.JsonValueKind.True ||
-                    debugLoggingElement.ValueKind == System.Text.Json.JsonValueKind.False)
+                if (debugLoggingElement.ValueKind is JsonValueKind.True or
+                    JsonValueKind.False)
                 {
                     enableDebugLogging = debugLoggingElement.GetBoolean();
                 }
@@ -173,7 +173,7 @@ public class ChatConfiguration
 
             if (clerkElement.TryGetProperty("CallbackPort", out var portElement))
             {
-                if (portElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                if (portElement.ValueKind == JsonValueKind.Number)
                 {
                     clerkCallbackPort = portElement.GetInt32();
                 }
@@ -294,14 +294,11 @@ public class ChatConfiguration
     /// </summary>
     public IConvexClient CreateClient()
     {
-        if (string.IsNullOrWhiteSpace(DeploymentUrl))
-        {
-            throw new InvalidOperationException(
+        return string.IsNullOrWhiteSpace(DeploymentUrl)
+            ? throw new InvalidOperationException(
                 $"{nameof(DeploymentUrl)} must be set before creating a client. " +
-                "Set it directly, or use FromEnvironment(), FromJsonFile(), or Load() methods.");
-        }
-
-        return CreateClientBuilder().Build();
+                "Set it directly, or use FromEnvironment(), FromJsonFile(), or Load() methods.")
+            : (IConvexClient)CreateClientBuilder().Build();
     }
 
     /// <summary>
@@ -320,7 +317,7 @@ public class ChatConfiguration
 
         if (EnableDebugLogging)
         {
-            builder.EnableDebugLogging(true);
+            _ = builder.EnableDebugLogging(true);
         }
 
         return builder;

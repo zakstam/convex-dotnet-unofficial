@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace RealtimeChatClerk.Shared.Models;
@@ -53,24 +51,41 @@ public class MessageDto
     public List<AttachmentDto>? Attachments { get; set; }
 
     /// <summary>
-    /// Get formatted timestamp as readable string.
+    /// Get formatted timestamp as a human-readable relative time string.
     /// </summary>
+    /// <returns>
+    /// A relative time string like "just now", "5m ago", "2h ago", "3d ago",
+    /// or the full date for messages older than a week.
+    /// </returns>
     public string GetFormattedTime()
     {
-        var dateTime = UnixTimeStampToDateTime(Timestamp);
-        var now = DateTime.Now;
-        var diff = now - dateTime;
+        var messageTime = UnixTimeStampToDateTime(Timestamp);
+        var timeSinceMessage = DateTime.Now - messageTime;
 
-        if (diff.TotalMinutes < 1)
+        if (timeSinceMessage.TotalMinutes < 1)
+        {
             return "just now";
-        if (diff.TotalMinutes < 60)
-            return $"{(int)diff.TotalMinutes}m ago";
-        if (diff.TotalHours < 24)
-            return $"{(int)diff.TotalHours}h ago";
-        if (diff.TotalDays < 7)
-            return $"{(int)diff.TotalDays}d ago";
+        }
 
-        return dateTime.ToString("MMM d, yyyy");
+        if (timeSinceMessage.TotalMinutes < 60)
+        {
+            var minutes = (int)timeSinceMessage.TotalMinutes;
+            return $"{minutes}m ago";
+        }
+
+        if (timeSinceMessage.TotalHours < 24)
+        {
+            var hours = (int)timeSinceMessage.TotalHours;
+            return $"{hours}h ago";
+        }
+
+        if (timeSinceMessage.TotalDays < 7)
+        {
+            var days = (int)timeSinceMessage.TotalDays;
+            return $"{days}d ago";
+        }
+
+        return messageTime.ToString("MMM d, yyyy");
     }
 
     private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)

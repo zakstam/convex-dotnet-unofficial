@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace RealtimeChatClerk.Shared.Models;
@@ -13,7 +12,7 @@ public class GetMessagesResponse
     /// List of message objects.
     /// </summary>
     [JsonPropertyName("messages")]
-    public List<MessageDto> Messages { get; set; } = new();
+    public List<MessageDto> Messages { get; set; } = [];
 
     /// <summary>
     /// Indicates if there are more messages to load (used with pagination).

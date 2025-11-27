@@ -7,12 +7,10 @@ namespace RealtimeChatClerk.Shared.Services;
 /// <summary>
 /// Service for file upload and attachment operations.
 /// </summary>
-public class FileService : IFileService
+public class FileService(IConvexClient convexClient) : IFileService
 {
-    private readonly IConvexClient _convexClient;
+    private readonly IConvexClient _convexClient = convexClient ?? throw new ArgumentNullException(nameof(convexClient));
     private readonly Dictionary<string, string> _attachmentUrlCache = [];
-
-    public FileService(IConvexClient convexClient) => _convexClient = convexClient ?? throw new ArgumentNullException(nameof(convexClient));
 
     public async Task<List<Attachment>> UploadFilesAsync(List<PendingFile> pendingFiles)
     {
@@ -144,7 +142,7 @@ public class FileService : IFileService
 
     public string FormatFileSize(long bytes)
     {
-        string[] sizes = { "B", "KB", "MB", "GB" };
+        string[] sizes = ["B", "KB", "MB", "GB"];
         double len = bytes;
         var order = 0;
         while (len >= 1024 && order < sizes.Length - 1)

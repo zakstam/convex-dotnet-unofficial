@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
 using Convex.Client.Infrastructure.ErrorHandling;
@@ -396,12 +392,9 @@ public class ChatService : IDisposable
     /// </summary>
     public List<MessageDto> SearchMessages(string searchText, int maxResults = 20)
     {
-        if (string.IsNullOrWhiteSpace(searchText) || searchText.Length < 2)
-        {
-            return [];
-        }
-
-        return [.. _currentMessages
+        return string.IsNullOrWhiteSpace(searchText) || searchText.Length < 2
+            ? []
+            : [.. _currentMessages
             .Where(m => m.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
                        m.Username.Contains(searchText, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(m => m.Timestamp)

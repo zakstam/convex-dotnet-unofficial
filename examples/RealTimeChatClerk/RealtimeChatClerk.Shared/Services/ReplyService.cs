@@ -11,13 +11,11 @@ public class ReplyService : IReplyService
 {
     private readonly IConvexClient _convexClient;
     private readonly string _getRepliesFunctionName;
-    private readonly string _sendReplyFunctionName;
 
-    public ReplyService(IConvexClient convexClient, string getRepliesFunctionName = "functions/getReplies", string sendReplyFunctionName = "functions/sendReply")
+    public ReplyService(IConvexClient convexClient, string getRepliesFunctionName = "functions/getReplies")
     {
         _convexClient = convexClient ?? throw new ArgumentNullException(nameof(convexClient));
         _getRepliesFunctionName = getRepliesFunctionName;
-        _sendReplyFunctionName = sendReplyFunctionName;
     }
 
     public async Task<List<Message>> LoadRepliesAsync(string parentMessageId)
