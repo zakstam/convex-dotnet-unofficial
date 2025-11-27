@@ -58,7 +58,7 @@ public class TicTacToeConfiguration
         var jsonDoc = JsonDocument.Parse(json);
 
         string? deploymentUrl = null;
-        bool enableDebugLogging = false;
+        var enableDebugLogging = false;
 
         // Try to read from "Convex" section
         if (jsonDoc.RootElement.TryGetProperty("Convex", out var convexElement))
@@ -71,8 +71,8 @@ public class TicTacToeConfiguration
             // Read EnableDebugLogging from Convex section
             if (convexElement.TryGetProperty(nameof(EnableDebugLogging), out var debugLoggingElement))
             {
-                if (debugLoggingElement.ValueKind == System.Text.Json.JsonValueKind.True ||
-                    debugLoggingElement.ValueKind == System.Text.Json.JsonValueKind.False)
+                if (debugLoggingElement.ValueKind is JsonValueKind.True or
+                    JsonValueKind.False)
                 {
                     enableDebugLogging = debugLoggingElement.GetBoolean();
                 }
@@ -160,14 +160,11 @@ public class TicTacToeConfiguration
     /// </summary>
     public IConvexClient CreateClient()
     {
-        if (string.IsNullOrWhiteSpace(DeploymentUrl))
-        {
-            throw new InvalidOperationException(
+        return string.IsNullOrWhiteSpace(DeploymentUrl)
+            ? throw new InvalidOperationException(
                 $"{nameof(DeploymentUrl)} must be set before creating a client. " +
-                "Set it directly, or use FromEnvironment(), FromJsonFile(), or Load() methods.");
-        }
-
-        return CreateClientBuilder().Build();
+                "Set it directly, or use FromEnvironment(), FromJsonFile(), or Load() methods.")
+            : (IConvexClient)CreateClientBuilder().Build();
     }
 
     /// <summary>
@@ -186,7 +183,7 @@ public class TicTacToeConfiguration
 
         if (EnableDebugLogging)
         {
-            builder.EnableDebugLogging(true);
+            _ = builder.EnableDebugLogging(true);
         }
 
         return builder;

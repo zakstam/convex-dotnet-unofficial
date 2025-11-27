@@ -38,7 +38,7 @@ public class Game
     /// Empty strings represent empty cells, "X" or "O" represent marks.
     /// </summary>
     [JsonPropertyName("board")]
-    public List<string> Board { get; set; } = new();
+    public List<string> Board { get; set; } = [];
 
     /// <summary>
     /// Current player's turn ("X" or "O").
