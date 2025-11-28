@@ -1,0 +1,174 @@
+@using RealtimeChat.Frontend.Services
+
+<div class="config-error-container">
+    <div class="config-error-card">
+        <div class="error-icon">⚠️</div>
+        <h1>Configuration Error</h1>
+        <p class="subtitle">The application cannot start due to missing configuration.</p>
+
+        @foreach (var error in Errors)
+        {
+            <div class="error-section">
+                <h2>@error.Title</h2>
+                <p>@error.Description</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>wwwroot/appsettings.json</span>
+                    </div>
+                    <pre><code>@error.ConfigExample</code></pre>
+                </div>
+
+                <p class="dashboard-link">
+                    Find your credentials at:
+                    <a href="@error.DashboardUrl" target="_blank" rel="noopener noreferrer">@error.DashboardName</a>
+                </p>
+            </div>
+        }
+
+        <div class="help-section">
+            <h3>Need help?</h3>
+            <ol>
+                <li>Copy <code>wwwroot/appsettings.example.json</code> to <code>wwwroot/appsettings.json</code></li>
+                <li>Replace the placeholder values with your actual credentials</li>
+                <li>Refresh this page</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<style>
+    .config-error-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+
+    .config-error-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 700px;
+        width: 100%;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .error-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+
+    h1 {
+        color: #dc3545;
+        font-size: 28px;
+        margin: 0 0 8px 0;
+    }
+
+    .subtitle {
+        color: #666;
+        font-size: 16px;
+        margin: 0 0 32px 0;
+    }
+
+    .error-section {
+        background: #fff8f8;
+        border: 1px solid #ffebee;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .error-section h2 {
+        color: #c62828;
+        font-size: 18px;
+        margin: 0 0 12px 0;
+    }
+
+    .error-section>p {
+        color: #555;
+        margin: 0 0 16px 0;
+        line-height: 1.5;
+    }
+
+    .code-block {
+        background: #1e1e1e;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .code-header {
+        background: #333;
+        padding: 8px 16px;
+        font-size: 12px;
+        color: #888;
+    }
+
+    .code-block pre {
+        margin: 0;
+        padding: 16px;
+        overflow-x: auto;
+    }
+
+    .code-block code {
+        color: #9cdcfe;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .dashboard-link {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .dashboard-link a {
+        color: #1976d2;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .dashboard-link a:hover {
+        text-decoration: underline;
+    }
+
+    .help-section {
+        background: #e3f2fd;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: left;
+    }
+
+    .help-section h3 {
+        color: #1565c0;
+        font-size: 16px;
+        margin: 0 0 16px 0;
+    }
+
+    .help-section ol {
+        margin: 0;
+        padding-left: 20px;
+        color: #555;
+        line-height: 1.8;
+    }
+
+    .help-section code {
+        background: #bbdefb;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public List<ConfigurationError> Errors { get; set; } = [];
+}
