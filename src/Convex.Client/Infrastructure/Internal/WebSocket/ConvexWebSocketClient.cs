@@ -132,6 +132,14 @@ internal sealed class ConvexWebSocketClient(
             _receiveCts = new CancellationTokenSource();
             _receiveTask = ReceiveMessagesAsync(_receiveCts.Token);
 
+            // Re-establish all active subscriptions BEFORE signaling Connected
+            // This is critical: LiveQuery instances waiting in EnsureConnectedAsync will unblock
+            // when state becomes Connected, and they need their new channels to be ready
+            await ResubscribeAllAsync();
+
+            // Only NOW signal that we're connected (after channels are ready)
+            // This prevents the race condition where LiveQuery checks for new channels
+            // before ResubscribeAllAsync has created them
             UpdateConnectionState(ConnectionState.Connected);
 
             // Reset reconnection policy on successful connection
@@ -139,9 +147,6 @@ internal sealed class ConvexWebSocketClient(
 
             // Update last close reason for next reconnection
             _lastCloseReason = null;
-
-            // Re-establish all active subscriptions after reconnection
-            await ResubscribeAllAsync();
 
         }
         catch (Exception ex)
@@ -188,24 +193,10 @@ internal sealed class ConvexWebSocketClient(
         {
             UpdateConnectionState(ConnectionState.Disconnected);
 
-            // Complete channels with an exception to signal disconnection (not normal completion)
-            // This allows consumers to distinguish between normal completion and disconnection
-            // Channels will be recreated in ResubscribeAllAsync when reconnecting
-            var disconnectException = new InvalidOperationException("WebSocket connection lost. Subscription will be re-established on reconnection.");
-            foreach (var subscription in _subscriptions.Values)
-            {
-                try
-                {
-                    // Complete with exception so consumers know it's a disconnection
-                    subscription.Channel.Writer.Complete(disconnectException);
-                }
-                catch
-                {
-                    // Channel may already be completed - ignore
-                }
-            }
+            // Complete all channels so LiveQuery foreach loops exit and can switch to new channels
             // Note: We don't clear _subscriptions here - metadata is preserved for reconnection
             // Channels will be recreated in ResubscribeAllAsync when reconnecting
+            CompleteAllChannels();
         }
     }
 
@@ -250,18 +241,58 @@ internal sealed class ConvexWebSocketClient(
                 throw;
             }
 
-            // Yield values as they arrive
-            await foreach (var value in subscriptionInfo.Channel.Reader.ReadAllAsync())
+            // Yield values as they arrive, handling reconnection transparently
+            // When WebSocket reconnects, ResubscribeAllAsync creates a NEW channel for this subscription
+            // We need to detect when the current channel is completed and switch to the new one
+            while (!_isDisposed)
             {
-                // Deserialize from raw JSON string to type T
-                if (value is string json)
+                // Get the current channel from the subscription dictionary (may be updated on reconnect)
+                if (!_subscriptions.TryGetValue(subscriptionId, out var currentSubscription))
                 {
-                    var typedValue = JsonSerializer.Deserialize<T>(json, JsonOptions);
-                    if (typedValue != null)
+                    // Subscription was removed - exit
+                    break;
+                }
+
+                var currentChannel = currentSubscription.Channel;
+
+                await foreach (var value in currentChannel.Reader.ReadAllAsync())
+                {
+                    // Deserialize from raw JSON string to type T
+                    if (value is string json)
                     {
-                        yield return typedValue;
+                        var typedValue = JsonSerializer.Deserialize<T>(json, JsonOptions);
+                        if (typedValue != null)
+                        {
+                            yield return typedValue;
+                        }
                     }
                 }
+
+                // Channel completed - this usually means the WebSocket disconnected
+                // Wait for reconnection to complete before checking for a new channel
+                // This is critical: ResubscribeAllAsync creates new channels AFTER reconnection
+                try
+                {
+                    await EnsureConnectedAsync();
+                }
+                catch
+                {
+                    // Connection failed - exit the loop
+                    break;
+                }
+
+                // Now check if a new channel was created during reconnection
+                if (_subscriptions.TryGetValue(subscriptionId, out var newSubscription) &&
+                    newSubscription.Channel != currentChannel)
+                {
+                    // New channel was created during reconnection - continue with it
+                    _logger?.LogDebug("LiveQuery switching to new channel after reconnection for {FunctionName} (subscriptionId: {SubscriptionId})",
+                        functionName, subscriptionId);
+                    continue;
+                }
+
+                // Subscription was removed or channel completed without reconnection - exit
+                break;
             }
         }
         finally
@@ -321,17 +352,58 @@ internal sealed class ConvexWebSocketClient(
                 throw;
             }
 
-            await foreach (var value in subscriptionInfo.Channel.Reader.ReadAllAsync())
+            // Yield values as they arrive, handling reconnection transparently
+            // When WebSocket reconnects, ResubscribeAllAsync creates a NEW channel for this subscription
+            // We need to detect when the current channel is completed and switch to the new one
+            while (!_isDisposed)
             {
-                // Deserialize from raw JSON string to type T
-                if (value is string json)
+                // Get the current channel from the subscription dictionary (may be updated on reconnect)
+                if (!_subscriptions.TryGetValue(subscriptionId, out var currentSubscription))
                 {
-                    var typedValue = JsonSerializer.Deserialize<T>(json, JsonOptions);
-                    if (typedValue != null)
+                    // Subscription was removed - exit
+                    break;
+                }
+
+                var currentChannel = currentSubscription.Channel;
+
+                await foreach (var value in currentChannel.Reader.ReadAllAsync())
+                {
+                    // Deserialize from raw JSON string to type T
+                    if (value is string json)
                     {
-                        yield return typedValue;
+                        var typedValue = JsonSerializer.Deserialize<T>(json, JsonOptions);
+                        if (typedValue != null)
+                        {
+                            yield return typedValue;
+                        }
                     }
                 }
+
+                // Channel completed - this usually means the WebSocket disconnected
+                // Wait for reconnection to complete before checking for a new channel
+                // This is critical: ResubscribeAllAsync creates new channels AFTER reconnection
+                try
+                {
+                    await EnsureConnectedAsync();
+                }
+                catch
+                {
+                    // Connection failed - exit the loop
+                    break;
+                }
+
+                // Now check if a new channel was created during reconnection
+                if (_subscriptions.TryGetValue(subscriptionId, out var newSubscription) &&
+                    newSubscription.Channel != currentChannel)
+                {
+                    // New channel was created during reconnection - continue with it
+                    _logger?.LogDebug("LiveQuery switching to new channel after reconnection for {FunctionName} (subscriptionId: {SubscriptionId})",
+                        functionName, subscriptionId);
+                    continue;
+                }
+
+                // Subscription was removed or channel completed without reconnection - exit
+                break;
             }
         }
         finally
@@ -605,6 +677,9 @@ internal sealed class ConvexWebSocketClient(
                     _lastCloseReason = "ServerClosed";
                     UpdateConnectionState(ConnectionState.Disconnected);
 
+                    // Complete all channels so LiveQuery foreach loops exit and can switch to new channels
+                    CompleteAllChannels();
+
                     // Attempt automatic reconnection
                     await TryReconnectAsync(cancellationToken);
                     break;
@@ -639,6 +714,9 @@ internal sealed class ConvexWebSocketClient(
             _lastCloseReason = $"Exception:{ex.GetType().Name}";
             UpdateConnectionState(ConnectionState.Disconnected);
 
+            // Complete all channels so LiveQuery foreach loops exit and can switch to new channels
+            CompleteAllChannels();
+
             // Attempt automatic reconnection
             if (!cancellationToken.IsCancellationRequested)
             {
@@ -646,6 +724,25 @@ internal sealed class ConvexWebSocketClient(
             }
         }
 
+    }
+
+    /// <summary>
+    /// Completes all subscription channels without an exception.
+    /// This allows ReadAllAsync() to complete normally so LiveQuery can switch to new channels.
+    /// </summary>
+    private void CompleteAllChannels()
+    {
+        foreach (var subscription in _subscriptions.Values)
+        {
+            try
+            {
+                subscription.Channel.Writer.Complete();
+            }
+            catch
+            {
+                // Channel may already be completed - ignore
+            }
+        }
     }
 
     /// <summary>
