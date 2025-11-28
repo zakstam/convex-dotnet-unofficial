@@ -73,7 +73,7 @@ public sealed class ConvexClient : IConvexClient
     private readonly ConcurrentDictionary<string, object?> _cachedValues = new();
     private readonly object _connectionStateLock = new();
     private readonly QueryDependencyRegistry _dependencyRegistry;
-    private readonly MiddlewarePipeline _middlewarePipeline = new();
+    private readonly MiddlewarePipeline _middlewarePipeline;
     private Timer? _qualityCheckTimer;
     private ConnectionQuality _lastQuality = ConnectionQuality.Unknown;
     private bool _isDisposed;
@@ -317,6 +317,7 @@ public sealed class ConvexClient : IConvexClient
         HealthSlice = new Features.Observability.Health.HealthSlice(logger, enableDebugLogging);
         DiagnosticsSlice = new Features.Observability.Diagnostics.DiagnosticsSlice();
         _dependencyRegistry = new QueryDependencyRegistry();
+        _middlewarePipeline = new MiddlewarePipeline(logger, enableDebugLogging);
 
         // Capture SynchronizationContext for automatic UI thread marshalling
         _syncContext = options?.SynchronizationContext != null

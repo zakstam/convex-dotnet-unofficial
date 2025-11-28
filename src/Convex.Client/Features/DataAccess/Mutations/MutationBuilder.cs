@@ -6,6 +6,9 @@ using Convex.Client.Infrastructure.OptimisticUpdates;
 using Convex.Client.Infrastructure.Resilience;
 using Convex.Client.Infrastructure.Serialization;
 using Convex.Client.Infrastructure.Internal.Threading;
+using Microsoft.Extensions.Logging;
+using Convex.Client.Infrastructure.Telemetry;
+using System.Diagnostics;
 
 namespace Convex.Client.Features.DataAccess.Mutations;
 
@@ -22,7 +25,9 @@ internal sealed class MutationBuilder<TResult>(
     Func<string, Task>? invalidateDependencies = null,
     Func<string, string, object?, TimeSpan?, CancellationToken, Task<TResult>>? middlewareExecutor = null,
     SyncContextCapture? syncContext = null,
-    Func<Func<CancellationToken, Task<TResult>>, CancellationToken, Task<TResult>>? enqueueMutation = null) : IMutationBuilder<TResult>
+    Func<Func<CancellationToken, Task<TResult>>, CancellationToken, Task<TResult>>? enqueueMutation = null,
+    ILogger? logger = null,
+    bool enableDebugLogging = false) : IMutationBuilder<TResult>
 {
     private readonly IHttpClientProvider _httpProvider = httpProvider ?? throw new ArgumentNullException(nameof(httpProvider));
     private readonly IConvexSerializer _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -31,6 +36,8 @@ internal sealed class MutationBuilder<TResult>(
     private readonly Func<string, Task>? _invalidateDependencies = invalidateDependencies;
     private readonly Func<string, string, object?, TimeSpan?, CancellationToken, Task<TResult>>? _middlewareExecutor = middlewareExecutor;
     private readonly SyncContextCapture? _syncContext = syncContext;
+    private readonly ILogger? _logger = logger;
+    private readonly bool _enableDebugLogging = enableDebugLogging;
 
     private object? _args;
     private TimeSpan? _timeout;
@@ -282,15 +289,28 @@ internal sealed class MutationBuilder<TResult>(
     /// <inheritdoc/>
     public async Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
         var appliedOptimistic = false;
         var appliedCacheUpdates = new List<CacheSnapshot>();
         OptimisticLocalStore? optimisticStore = null;
+
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            var argsJson = _args != null ? _serializer.Serialize(_args) : "null";
+            _logger!.LogDebug("[Mutation] Starting execution: Function={FunctionName}, Args={Args}, HasOptimistic={HasOptimistic}, HasRetry={HasRetry}, SkipQueue={SkipQueue}, Timeout={Timeout}",
+                _functionName, argsJson, _applyOptimistic != null || _optimisticUpdate != null, _retryPolicy != null, _skipQueue, _timeout);
+        }
 
         try
         {
             // Apply query-focused optimistic update if configured and cache is available
             if (_queryCache != null && _queryFocusedOptimisticUpdate != null && _args != null)
             {
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Mutation] Applying query-focused optimistic update: Function={FunctionName}", _functionName);
+                }
+
                 optimisticStore = new OptimisticLocalStore(_queryCache, _serializer);
 
                 // Invoke the optimistic update function
@@ -304,6 +324,11 @@ internal sealed class MutationBuilder<TResult>(
                 // Capture snapshots of modified queries for rollback
                 // OptimisticLocalStore already captured original values in SetQuery
                 _querySnapshots = new Dictionary<string, object?>(optimisticStore.OriginalValues);
+
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Mutation] Query-focused optimistic update applied: ModifiedQueries={Count}", _querySnapshots.Count);
+                }
             }
 
             // Apply cache updates optimistically if configured and cache is available
@@ -368,10 +393,18 @@ internal sealed class MutationBuilder<TResult>(
             // Queue mutation if queueing is enabled and not skipped
             if (!_skipQueue && _enqueueMutation != null)
             {
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Mutation] Queueing mutation: Function={FunctionName}", _functionName);
+                }
                 result = await _enqueueMutation(ExecuteMutationAsync, cancellationToken);
             }
             else
             {
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Mutation] Executing immediately (queue skipped): Function={FunctionName}", _functionName);
+                }
                 // Execute immediately without queueing
                 result = await ExecuteMutationAsync(cancellationToken);
             }
@@ -403,10 +436,19 @@ internal sealed class MutationBuilder<TResult>(
                 _ = _pendingTracker.Remove(_pendingKey);
             }
 
+            stopwatch.Stop();
+            if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+            {
+                _logger!.LogDebug("[Mutation] Completed successfully: Function={FunctionName}, Duration={DurationMs}ms",
+                    _functionName, stopwatch.Elapsed.TotalMilliseconds);
+            }
+
             return result;
         }
         catch (Exception ex)
         {
+            stopwatch.Stop();
+
             // Check if we should rollback optimistic update
             var shouldRollback = _rollbackExceptionType == null ||
                                 ex.GetType() == _rollbackExceptionType ||
@@ -414,6 +456,11 @@ internal sealed class MutationBuilder<TResult>(
 
             if (shouldRollback)
             {
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Mutation] Rolling back optimistic updates: Function={FunctionName}, ErrorType={ErrorType}",
+                        _functionName, ex.GetType().Name);
+                }
                 // Rollback query-focused optimistic updates
                 if (_queryCache != null && _querySnapshots != null)
                 {
@@ -453,6 +500,12 @@ internal sealed class MutationBuilder<TResult>(
                 {
                     _rollbackOptimistic?.Invoke();
                 }
+
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Mutation] Rollback completed: Function={FunctionName}, RolledBackQueries={QueryCount}, RolledBackCache={CacheCount}",
+                        _functionName, _querySnapshots?.Count ?? 0, appliedCacheUpdates.Count);
+                }
             }
 
             // Invoke error callback
@@ -469,6 +522,9 @@ internal sealed class MutationBuilder<TResult>(
             {
                 _ = _pendingTracker.Remove(_pendingKey);
             }
+
+            _logger?.LogError(ex, "[Mutation] Failed: Function={FunctionName}, Duration={DurationMs}ms, ErrorType={ErrorType}, Message={Message}",
+                _functionName, stopwatch.Elapsed.TotalMilliseconds, ex.GetType().Name, ex.Message);
 
             throw;
         }

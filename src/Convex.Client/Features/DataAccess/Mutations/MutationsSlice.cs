@@ -66,7 +66,9 @@ public class MutationsSlice(
             _invalidateDependencies,
             middlewareExecutor,
             _syncContext,
-            EnqueueMutationAsync);
+            EnqueueMutationAsync,
+            _logger,
+            _enableDebugLogging);
     }
 
     /// <summary>

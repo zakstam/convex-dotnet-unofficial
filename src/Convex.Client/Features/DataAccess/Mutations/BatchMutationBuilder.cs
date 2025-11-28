@@ -1,5 +1,8 @@
 using Convex.Client.Infrastructure.Http;
 using Convex.Client.Infrastructure.Serialization;
+using Microsoft.Extensions.Logging;
+using Convex.Client.Infrastructure.Telemetry;
+using System.Diagnostics;
 
 namespace Convex.Client.Features.DataAccess.Mutations;
 
@@ -11,11 +14,17 @@ namespace Convex.Client.Features.DataAccess.Mutations;
 /// This implementation is primarily for reducing network round-trips and improving performance
 /// when multiple independent mutations need to be executed.
 /// </summary>
-internal sealed class BatchMutationBuilder(IHttpClientProvider httpProvider, IConvexSerializer serializer)
+internal sealed class BatchMutationBuilder(
+    IHttpClientProvider httpProvider,
+    IConvexSerializer serializer,
+    ILogger? logger = null,
+    bool enableDebugLogging = false)
 {
     private readonly IHttpClientProvider _httpProvider = httpProvider ?? throw new ArgumentNullException(nameof(httpProvider));
     private readonly IConvexSerializer _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     private readonly List<(string FunctionName, object? Args, Type ResultType)> _mutations = [];
+    private readonly ILogger? _logger = logger;
+    private readonly bool _enableDebugLogging = enableDebugLogging;
 
     /// <summary>
     /// Adds a mutation to the batch without arguments.
@@ -45,12 +54,28 @@ internal sealed class BatchMutationBuilder(IHttpClientProvider httpProvider, ICo
             throw new InvalidOperationException($"Expected 2 mutations but got {_mutations.Count}");
         }
 
+        var stopwatch = Stopwatch.StartNew();
+
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[BatchMutation] Starting batch execution: MutationCount={Count}",
+                _mutations.Count);
+        }
+
         var task1 = ExecuteMutationAsync<T1>(_mutations[0], cancellationToken);
         var task2 = ExecuteMutationAsync<T2>(_mutations[1], cancellationToken);
 
         // Await both tasks in parallel and directly return their results
         var result1 = await task1;
         var result2 = await task2;
+
+        stopwatch.Stop();
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[BatchMutation] Batch completed: MutationCount={Count}, Duration={DurationMs}ms",
+                _mutations.Count, stopwatch.Elapsed.TotalMilliseconds);
+        }
+
         return (result1, result2);
     }
 

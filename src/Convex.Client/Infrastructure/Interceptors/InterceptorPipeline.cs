@@ -1,14 +1,16 @@
 using Microsoft.Extensions.Logging;
+using Convex.Client.Infrastructure.Telemetry;
 
 namespace Convex.Client.Infrastructure.Interceptors;
 
 /// <summary>
 /// Executes interceptors in a pipeline for Convex requests.
 /// </summary>
-internal sealed class InterceptorPipeline(IReadOnlyList<IConvexInterceptor> interceptors, ILogger? logger = null)
+internal sealed class InterceptorPipeline(IReadOnlyList<IConvexInterceptor> interceptors, ILogger? logger = null, bool enableDebugLogging = false)
 {
     private readonly IReadOnlyList<IConvexInterceptor> _interceptors = interceptors ?? throw new ArgumentNullException(nameof(interceptors));
     private readonly ILogger? _logger = logger;
+    private readonly bool _enableDebugLogging = enableDebugLogging;
 
     /// <summary>
     /// Executes BeforeRequest hooks for all interceptors in order.
@@ -19,11 +21,22 @@ internal sealed class InterceptorPipeline(IReadOnlyList<IConvexInterceptor> inte
     {
         var currentContext = context;
 
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Interceptor] Executing BeforeRequest: InterceptorCount={Count}, RequestType={RequestType}, Function={FunctionName}",
+                _interceptors.Count, context.RequestType, context.FunctionName);
+        }
+
         foreach (var interceptor in _interceptors)
         {
             try
             {
                 currentContext = await interceptor.BeforeRequestAsync(currentContext, cancellationToken);
+
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Interceptor] BeforeRequest executed: Interceptor={InterceptorType}", interceptor.GetType().Name);
+                }
             }
             catch (Exception ex)
             {
@@ -48,11 +61,22 @@ internal sealed class InterceptorPipeline(IReadOnlyList<IConvexInterceptor> inte
     {
         var currentContext = context;
 
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Interceptor] Executing AfterResponse: InterceptorCount={Count}, RequestType={RequestType}, Function={FunctionName}",
+                _interceptors.Count, context.Request.RequestType, context.Request.FunctionName);
+        }
+
         foreach (var interceptor in _interceptors)
         {
             try
             {
                 currentContext = await interceptor.AfterResponseAsync(currentContext, cancellationToken);
+
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Interceptor] AfterResponse executed: Interceptor={InterceptorType}", interceptor.GetType().Name);
+                }
             }
             catch (Exception ex)
             {
@@ -75,11 +99,22 @@ internal sealed class InterceptorPipeline(IReadOnlyList<IConvexInterceptor> inte
         ConvexErrorContext context,
         CancellationToken cancellationToken = default)
     {
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Interceptor] Executing OnError: InterceptorCount={Count}, RequestType={RequestType}, Function={FunctionName}, ErrorType={ErrorType}",
+                _interceptors.Count, context.Request.RequestType, context.Request.FunctionName, context.Exception.GetType().Name);
+        }
+
         foreach (var interceptor in _interceptors)
         {
             try
             {
                 await interceptor.OnErrorAsync(context, cancellationToken);
+
+                if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+                {
+                    _logger!.LogDebug("[Interceptor] OnError executed: Interceptor={InterceptorType}", interceptor.GetType().Name);
+                }
             }
             catch (Exception ex)
             {
