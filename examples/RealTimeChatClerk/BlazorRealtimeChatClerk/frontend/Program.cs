@@ -93,8 +93,7 @@ internal class Program
             var convexClient = sp.GetRequiredService<IConvexClient>();
             return new RealtimeChatClerk.Shared.Services.ReplyService(
                 convexClient,
-                getRepliesFunctionName: ConvexFunctions.Queries.GetReplies,
-                sendReplyFunctionName: ConvexFunctions.Mutations.SendReply
+                getRepliesFunctionName: ConvexFunctions.Queries.GetReplies
             );
         });
         _ = builder.Services.AddScoped(sp =>
