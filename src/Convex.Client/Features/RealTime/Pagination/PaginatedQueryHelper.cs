@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reactive.Linq;
 using Convex.Client.Infrastructure.Internal.Threading;
@@ -5,6 +6,109 @@ using Convex.Client.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.Client.Features.RealTime.Pagination;
+
+/// <summary>
+/// Helper class for convention-based ID and sort key extraction.
+/// </summary>
+internal static class PaginationConventions
+{
+    // Cached delegates for convention-based extraction
+    private static readonly Dictionary<Type, Func<object, string>?> _idExtractorCache = new();
+    private static readonly Dictionary<Type, Func<object, IComparable>?> _sortKeyExtractorCache = new();
+    private static readonly object _cacheLock = new();
+
+    /// <summary>
+    /// Tries to get an ID extractor for the given type using conventions.
+    /// Priority: 1. IHasId interface, 2. Id property, 3. _id property, 4. id property
+    /// </summary>
+    public static Func<T, string>? TryGetIdExtractor<T>()
+    {
+        var type = typeof(T);
+
+        lock (_cacheLock)
+        {
+            if (_idExtractorCache.TryGetValue(type, out var cached))
+            {
+                return cached != null ? obj => cached(obj!) : null;
+            }
+
+            Func<object, string>? extractor = null;
+
+            // Check for IHasId interface first
+            if (typeof(IHasId).IsAssignableFrom(type))
+            {
+                extractor = obj => ((IHasId)obj).Id;
+            }
+            else
+            {
+                // Try common property names: Id, _id, id
+                var property = type.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)
+                    ?? type.GetProperty("_id", BindingFlags.Public | BindingFlags.Instance)
+                    ?? type.GetProperty("id", BindingFlags.Public | BindingFlags.Instance);
+
+                if (property != null && property.PropertyType == typeof(string))
+                {
+                    // Create a compiled delegate for performance
+                    var param = Expression.Parameter(typeof(object), "obj");
+                    var cast = Expression.Convert(param, type);
+                    var propertyAccess = Expression.Property(cast, property);
+                    var lambda = Expression.Lambda<Func<object, string>>(propertyAccess, param);
+                    extractor = lambda.Compile();
+                }
+            }
+
+            _idExtractorCache[type] = extractor;
+            return extractor != null ? obj => extractor(obj!) : null;
+        }
+    }
+
+    /// <summary>
+    /// Tries to get a sort key extractor for the given type using conventions.
+    /// Priority: 1. IHasSortKey interface, 2. Timestamp property, 3. CreatedAt property
+    /// </summary>
+    public static Func<T, IComparable>? TryGetSortKeyExtractor<T>()
+    {
+        var type = typeof(T);
+
+        lock (_cacheLock)
+        {
+            if (_sortKeyExtractorCache.TryGetValue(type, out var cached))
+            {
+                return cached != null ? obj => cached(obj!) : null;
+            }
+
+            Func<object, IComparable>? extractor = null;
+
+            // Check for IHasSortKey interface first
+            if (typeof(IHasSortKey).IsAssignableFrom(type))
+            {
+                extractor = obj => ((IHasSortKey)obj).SortKey;
+            }
+            else
+            {
+                // Try common property names: Timestamp, CreatedAt, timestamp, createdAt
+                var property = type.GetProperty("Timestamp", BindingFlags.Public | BindingFlags.Instance)
+                    ?? type.GetProperty("CreatedAt", BindingFlags.Public | BindingFlags.Instance)
+                    ?? type.GetProperty("timestamp", BindingFlags.Public | BindingFlags.Instance)
+                    ?? type.GetProperty("createdAt", BindingFlags.Public | BindingFlags.Instance);
+
+                if (property != null && typeof(IComparable).IsAssignableFrom(property.PropertyType))
+                {
+                    // Create a compiled delegate for performance
+                    var param = Expression.Parameter(typeof(object), "obj");
+                    var cast = Expression.Convert(param, type);
+                    var propertyAccess = Expression.Property(cast, property);
+                    var convertToComparable = Expression.Convert(propertyAccess, typeof(IComparable));
+                    var lambda = Expression.Lambda<Func<object, IComparable>>(convertToComparable, param);
+                    extractor = lambda.Compile();
+                }
+            }
+
+            _sortKeyExtractorCache[type] = extractor;
+            return extractor != null ? obj => extractor(obj!) : null;
+        }
+    }
+}
 
 /// <summary>
 /// Higher-level helper class that wraps common pagination patterns for easier use.
@@ -772,7 +876,7 @@ public class PaginatedQueryHelperBuilder<T>
     /// <returns>The builder for method chaining.</returns>
     /// <example>
     /// <code>
-    /// var helper = await client.CreatePaginatedQuery&lt;MessageDto&gt;("messages:get")
+    /// var helper = await client.Paginate&lt;MessageDto&gt;("messages:get")
     ///     .WithUIThreadMarshalling()
     ///     .OnItemsUpdated((items, boundaries) => UpdateUI(items)) // Already on UI thread
     ///     .InitializeAsync();
@@ -792,7 +896,7 @@ public class PaginatedQueryHelperBuilder<T>
     /// <returns>The builder for method chaining.</returns>
     /// <example>
     /// <code>
-    /// var helper = await client.CreatePaginatedQuery&lt;MessageDto&gt;("messages:get")
+    /// var helper = await client.Paginate&lt;MessageDto&gt;("messages:get")
     ///     .WithUIThreadMarshalling()
     ///     .OnItemsUpdated((items, boundaries) => {
     ///         Messages = items.ToList();
@@ -815,7 +919,7 @@ public class PaginatedQueryHelperBuilder<T>
     /// <returns>The builder for method chaining.</returns>
     /// <example>
     /// <code>
-    /// var helper = await client.CreatePaginatedQuery&lt;MessageDto&gt;("messages:get")
+    /// var helper = await client.Paginate&lt;MessageDto&gt;("messages:get")
     ///     .WithUIThreadMarshalling()
     ///     .OnError(error => ShowErrorToast(error)) // Already on UI thread
     ///     .InitializeAsync();
@@ -854,20 +958,40 @@ public class PaginatedQueryHelperBuilder<T>
     /// <summary>
     /// Builds and returns the paginated query helper.
     /// </summary>
+    /// <remarks>
+    /// If no ID extractor is specified via <see cref="WithIdExtractor"/>, the builder will attempt
+    /// to use convention-based extraction in this order:
+    /// <list type="number">
+    /// <item>If T implements <see cref="IHasId"/>, uses the <c>Id</c> property from the interface</item>
+    /// <item>Looks for a public string property named <c>Id</c>, <c>_id</c>, or <c>id</c></item>
+    /// </list>
+    /// Similarly, if no sort key is specified, it will look for <see cref="IHasSortKey"/> or
+    /// properties named <c>Timestamp</c> or <c>CreatedAt</c>.
+    /// </remarks>
     public PaginatedQueryHelper<T> Build()
     {
-        if (_getId == null)
+        // Try convention-based ID extraction if not explicitly set
+        var getId = _getId ?? PaginationConventions.TryGetIdExtractor<T>();
+
+        if (getId == null)
         {
-            throw new InvalidOperationException("IdExtractor must be set. Call WithIdExtractor() before building.");
+            throw new InvalidOperationException(
+                $"No ID extractor found for type '{typeof(T).Name}'. Either:\n" +
+                $"  1. Implement IHasId interface on {typeof(T).Name}\n" +
+                $"  2. Add a public 'Id' property of type string\n" +
+                $"  3. Call WithIdExtractor() explicitly");
         }
+
+        // Try convention-based sort key extraction if not explicitly set
+        var getSortKey = _getSortKey ?? PaginationConventions.TryGetSortKeyExtractor<T>();
 
         var helper = new PaginatedQueryHelper<T>(
             _client,
             _functionName,
             _pageSize,
             _args,
-            _getId,
-            _getSortKey,
+            getId,
+            getSortKey,
             _extractSubscriptionItems,
             _subscriptionFactory,
             _subscriptionType,
@@ -948,13 +1072,12 @@ public class PaginatedQueryHelperBuilder<T>
     /// <returns>The initialized paginated query helper.</returns>
     /// <example>
     /// <code>
-    /// var helper = await client.CreatePaginatedQuery&lt;MessageDto&gt;("messages:get")
-    ///     .WithPageSize(25)
-    ///     .WithIdExtractor(msg => msg.Id)
+    /// // Simple usage with convention-based ID/sort extraction
+    /// var helper = await client.Paginate&lt;MessageDto&gt;("messages:get")
     ///     .WithUIThreadMarshalling()
     ///     .OnItemsUpdated((items, boundaries) => UpdateUI(items))
     ///     .OnError(error => ShowError(error))
-    ///     .InitializeAsync(); // Returns initialized helper
+    ///     .InitializeAsync();
     /// </code>
     /// </example>
     public async Task<PaginatedQueryHelper<T>> InitializeAsync(bool enableSubscription = true, CancellationToken cancellationToken = default)

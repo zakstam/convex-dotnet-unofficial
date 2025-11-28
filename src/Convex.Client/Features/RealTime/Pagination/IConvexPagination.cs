@@ -4,6 +4,66 @@ using System.Text.Json.Serialization;
 namespace Convex.Client.Features.RealTime.Pagination;
 
 /// <summary>
+/// Interface for entities with a unique identifier.
+/// Implement this interface on your DTOs to enable automatic ID extraction in pagination,
+/// eliminating the need to call <c>WithIdExtractor()</c>.
+/// </summary>
+/// <example>
+/// <code>
+/// public class MessageDto : IHasId
+/// {
+///     [JsonPropertyName("_id")]
+///     public string Id { get; set; }
+///     // ...
+/// }
+///
+/// // Now you can skip WithIdExtractor:
+/// var paginator = client.Paginate&lt;MessageDto&gt;("messages:list")
+///     .WithPageSize(25)
+///     .Build();
+/// </code>
+/// </example>
+public interface IHasId
+{
+    /// <summary>
+    /// Gets the unique identifier for this entity.
+    /// </summary>
+    string Id { get; }
+}
+
+/// <summary>
+/// Interface for entities with a sortable key.
+/// Implement this interface on your DTOs to enable automatic sort key extraction in pagination,
+/// eliminating the need to call <c>WithSortKey()</c>.
+/// </summary>
+/// <example>
+/// <code>
+/// public class MessageDto : IHasId, IHasSortKey
+/// {
+///     [JsonPropertyName("_id")]
+///     public string Id { get; set; }
+///
+///     [JsonPropertyName("timestamp")]
+///     public long Timestamp { get; set; }
+///
+///     public IComparable SortKey => Timestamp;
+/// }
+///
+/// // Now pagination automatically uses the sort key:
+/// var paginator = client.Paginate&lt;MessageDto&gt;("messages:list")
+///     .WithPageSize(25)
+///     .Build();
+/// </code>
+/// </example>
+public interface IHasSortKey
+{
+    /// <summary>
+    /// Gets the sort key for ordering this entity.
+    /// </summary>
+    IComparable SortKey { get; }
+}
+
+/// <summary>
 /// Interface for creating paginated queries.
 /// Provides cursor-based pagination for loading large datasets in manageable pages.
 /// Use this when you need to load data incrementally rather than all at once.

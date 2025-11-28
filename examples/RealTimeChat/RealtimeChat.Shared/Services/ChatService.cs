@@ -138,21 +138,19 @@ public class ChatService : IDisposable
                 _paginationHelper = null;
             }
 
-            // Create pagination helper with automatic subscription handling and UI thread marshalling
-            // The subscription returns GetMessagesResponse, so we extract Messages from it
+            // Create pagination helper with automatic subscription handling and UI thread marshalling.
+            // Since MessageDto implements IHasId and IHasSortKey, we don't need WithIdExtractor or WithSortKey.
+            // The subscription returns GetMessagesResponse wrapper, so we still need WithSubscriptionExtractor.
             _paginationHelper = await _client
-                .CreatePaginatedQuery<MessageDto>(_getMessagesFunctionName)
-                .WithPageSize(PageSize)
+                .Paginate<MessageDto>(_getMessagesFunctionName, PageSize)
                 .WithArgs(new GetMessagesArgs { Limit = _initialMessageLimit })
-                .WithIdExtractor(msg => msg.Id)
-                .WithSortKey(msg => msg.Timestamp)
                 .WithSubscriptionExtractor<GetMessagesResponse>(response => response.Messages ?? [])
-                .WithUIThreadMarshalling() // Automatically marshal callbacks to UI thread
+                .WithUIThreadMarshalling()
                 .OnItemsUpdated(OnPaginationItemsUpdated)
                 .OnPageBoundaryAdded(OnPageBoundaryAdded)
                 .OnSubscriptionStatusChanged(OnSubscriptionStatusChanged)
                 .OnError(OnPaginationError)
-                .InitializeAsync(enableSubscription: true); // Returns initialized helper
+                .InitializeAsync(enableSubscription: true);
         }
         catch (ConvexException ex)
         {

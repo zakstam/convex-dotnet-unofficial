@@ -1,7 +1,7 @@
 # Pagination Slice
 
 ## Purpose
-Provides cursor-based pagination for Convex queries. Enables loading large datasets in manageable pages with automatic cursor management and support for async iteration.
+Provides cursor-based pagination for Convex queries. Enables loading large datasets in manageable pages with automatic cursor management, real-time subscription merging, and convention-based configuration.
 
 ## Responsibilities
 - Cursor-based pagination management
@@ -10,10 +10,42 @@ Provides cursor-based pagination for Convex queries. Enables loading large datas
 - Async enumerable support for automatic page loading
 - Thread-safe pagination state
 - Custom argument merging with pagination options
+- Convention-based ID and sort key extraction
+- Real-time subscription merging with deduplication
 
 ## Public API Surface
 
-### Main Interface
+### Convention Interfaces
+```csharp
+// Implement for automatic ID extraction (eliminates WithIdExtractor())
+public interface IHasId
+{
+    string Id { get; }
+}
+
+// Implement for automatic sort key extraction (eliminates WithSortKey())
+public interface IHasSortKey
+{
+    IComparable SortKey { get; }
+}
+```
+
+### Extension Methods (Recommended Entry Points)
+```csharp
+// Simple paginated query with conventions
+PaginatedQueryHelperBuilder<T> Paginate<T>(string functionName, int pageSize = 25);
+
+// With typed arguments
+PaginatedQueryHelperBuilder<T> Paginate<T, TArgs>(string functionName, TArgs args, int pageSize = 25);
+
+// One-liner initialization
+Task<PaginatedQueryHelper<T>> PaginateAsync<T>(string functionName, int pageSize = 25, ...);
+
+// One-liner with arguments
+Task<PaginatedQueryHelper<T>> PaginateAsync<T, TArgs>(string functionName, TArgs args, int pageSize = 25, ...);
+```
+
+### Low-Level Interfaces
 ```csharp
 public interface IConvexPagination
 {
@@ -33,10 +65,33 @@ public interface IPaginator<T>
     bool HasMore { get; }
     int LoadedPageCount { get; }
     IReadOnlyList<T> LoadedItems { get; }
+    IReadOnlyList<int> PageBoundaries { get; }
+    event Action<int>? PageBoundaryAdded;
 
     Task<IReadOnlyList<T>> LoadNextAsync(...);
     void Reset();
     IAsyncEnumerable<T> AsAsyncEnumerable(...);
+    MergedPaginationResult<T> MergeWithSubscription(...);
+}
+```
+
+### High-Level Helper
+```csharp
+public class PaginatedQueryHelper<T> : IDisposable
+{
+    IReadOnlyList<T> CurrentItems { get; }
+    IReadOnlyList<int> PageBoundaries { get; }
+    bool HasMore { get; }
+
+    event Action<IReadOnlyList<T>, IReadOnlyList<int>>? ItemsUpdated;
+    event Action<int>? PageBoundaryAdded;
+    event Action<string>? SubscriptionStatusChanged;
+    event Action<string>? ErrorOccurred;
+
+    Task InitializeAsync(bool enableSubscription = true, ...);
+    Task<IReadOnlyList<T>> LoadNextAsync(...);
+    void MergeSubscriptionItems(IEnumerable<T> items);
+    void Reset();
 }
 ```
 
@@ -68,62 +123,88 @@ public enum PageStatus
 }
 ```
 
-### Exception Types
+## Usage Examples
+
+### Simplest Usage (Convention-Based DTOs)
 ```csharp
-public class ConvexPaginationException : Exception
+// Define DTO with convention interfaces
+public class MessageDto : IHasId, IHasSortKey
 {
-    public string? FunctionName { get; }
+    [JsonPropertyName("_id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("timestamp")]
+    public long Timestamp { get; set; }
+
+    [JsonIgnore]
+    public IComparable SortKey => Timestamp;
+}
+
+// One-liner pagination
+var paginator = await client.PaginateAsync<MessageDto>("messages:list");
+
+// Access items
+foreach (var msg in paginator.CurrentItems)
+{
+    Console.WriteLine(msg.Text);
+}
+
+// Load more if available
+if (paginator.HasMore)
+{
+    await paginator.LoadNextAsync();
 }
 ```
 
-## Shared Dependencies
-- **IHttpClientProvider**: For HTTP request execution
-- **IConvexSerializer**: For JSON serialization/deserialization
-
-## Architecture
-- **PaginationSlice**: Public facade implementing IConvexPagination
-- **PaginationBuilder**: Fluent builder for creating paginators
-- **Paginator**: Implementation with direct HTTP calls and state management
-- **Uses**: `/api/query` endpoint with pagination options
-
-## Usage Examples
-
-### Basic Pagination
+### With Builder Pattern
 ```csharp
-// Create a paginator with default page size (20)
+var paginator = await client.Paginate<MessageDto>("messages:list", pageSize: 25)
+    .WithArgs(new { channel = "general" })
+    .WithUIThreadMarshalling()
+    .OnItemsUpdated((items, boundaries) => UpdateUI(items))
+    .OnError(error => ShowError(error))
+    .InitializeAsync();
+```
+
+### With Subscription Wrapper Type
+```csharp
+// When subscription returns a wrapper type instead of items directly
+var paginator = await client.Paginate<MessageDto>("messages:list")
+    .WithArgs(new GetMessagesArgs { Limit = 50 })
+    .WithSubscriptionExtractor<GetMessagesResponse>(r => r.Messages ?? [])
+    .WithUIThreadMarshalling()
+    .OnItemsUpdated((items, _) => Messages = items.ToList())
+    .InitializeAsync(enableSubscription: true);
+```
+
+### Custom ID/Sort Key (When Not Following Conventions)
+```csharp
+var paginator = await client.Paginate<CustomDto>("items:list")
+    .WithIdExtractor(item => item.UniqueKey)
+    .WithSortKey(item => item.CreatedDate)
+    .InitializeAsync();
+```
+
+### Low-Level Pagination (Without Helper)
+```csharp
+// Create a paginator directly
 var paginator = client.PaginationSlice
     .Query<Message>("messages:list")
+    .WithPageSize(20)
     .Build();
 
 // Load first page
 var firstPage = await paginator.LoadNextAsync();
-Console.WriteLine($"Loaded {firstPage.Count} messages");
 
-// Load next page
-if (paginator.HasMore)
+// Load more pages
+while (paginator.HasMore)
 {
-    var secondPage = await paginator.LoadNextAsync();
+    var nextPage = await paginator.LoadNextAsync();
 }
-
-// Check total loaded
-Console.WriteLine($"Total loaded: {paginator.LoadedItems.Count} items");
-```
-
-### Custom Page Size and Arguments
-```csharp
-// Paginator with custom page size and filter arguments
-var paginator = client.PaginationSlice
-    .Query<Product>("products:search")
-    .WithPageSize(50)
-    .WithArgs(new { category = "electronics", minPrice = 100 })
-    .Build();
-
-var page = await paginator.LoadNextAsync();
 ```
 
 ### Async Enumerable (Auto-Loading)
 ```csharp
-// Automatically load all pages
 var paginator = client.PaginationSlice
     .Query<Article>("articles:list")
     .WithPageSize(25)
@@ -136,79 +217,55 @@ await foreach (var article in paginator.AsAsyncEnumerable())
 }
 ```
 
-### With Builder Pattern for Args
-```csharp
-var paginator = client.PaginationSlice
-    .Query<User>("users:search")
-    .WithPageSize(30)
-    .WithArgs<UserSearchArgs>(args =>
-    {
-        args.SearchTerm = "john";
-        args.IncludeInactive = false;
-        args.Role = "admin";
-    })
-    .Build();
-```
+## Convention-Based Extraction
 
-### Reset and Reload
-```csharp
-var paginator = client.PaginationSlice
-    .Query<Order>("orders:list")
-    .WithPageSize(20)
-    .Build();
+The pagination system automatically extracts IDs and sort keys using conventions:
 
-// Load some pages
-await paginator.LoadNextAsync();
-await paginator.LoadNextAsync();
+### ID Extraction Priority
+1. `IHasId.Id` - If type implements `IHasId`
+2. `Id` property - Public string property named "Id"
+3. `_id` property - Public string property named "_id"
+4. `id` property - Public string property named "id"
 
-// Reset to start over
-paginator.Reset();
+### Sort Key Extraction Priority
+1. `IHasSortKey.SortKey` - If type implements `IHasSortKey`
+2. `Timestamp` property - Public `IComparable` property named "Timestamp"
+3. `CreatedAt` property - Public `IComparable` property named "CreatedAt"
+4. `timestamp` property - Public `IComparable` property named "timestamp"
+5. `createdAt` property - Public `IComparable` property named "createdAt"
 
-// Start loading from beginning again
-var firstPage = await paginator.LoadNextAsync();
-```
+## Architecture
+- **PaginationSlice**: Public facade implementing IConvexPagination
+- **PaginationBuilder**: Fluent builder for creating paginators
+- **Paginator**: Implementation with direct HTTP calls and state management
+- **PaginatedQueryHelper**: High-level helper with subscription integration
+- **PaginatedQueryHelperBuilder**: Fluent builder for the helper
+- **PaginationConventions**: Static helper for convention-based extraction
+- **Uses**: `/api/query` endpoint with pagination options
 
 ## Implementation Details
 - Uses direct HTTP POST to `/api/query` endpoint
 - Merges user arguments with pagination options automatically
 - Maintains thread-safe state with lock-based synchronization
 - Cursor is managed automatically between page loads
-- Returns empty list when no more pages available
-- Supports async enumeration for convenient iteration
-- Preserves all user arguments while adding `paginationOpts`
-
-## State Management
-- **_loadedItems**: List of all items loaded across pages
-- **_continueCursor**: Cursor for next page
-- **_hasMore**: Whether more pages are available
-- **_loadedPageCount**: Total number of pages loaded
-- All state changes are thread-safe using lock
+- Convention-based extractors are cached for performance
+- Supports UI thread marshalling for WPF/WinForms/Blazor
 
 ## Error Handling
 - Invalid page size → ArgumentOutOfRangeException
+- No ID extractor found → InvalidOperationException with helpful message
 - Query failure → ConvexPaginationException with function name
 - Deserialization failure → ConvexPaginationException
 - Network errors → ConvexPaginationException with inner exception
 
-## Pagination Flow
-1. User creates paginator with builder
-2. First LoadNextAsync creates PaginationOptions with cursor=null
-3. Merges user args with paginationOpts
-4. Makes HTTP POST to /api/query
-5. Receives PaginationResult with page + continueCursor
-6. Updates state (cursor, hasMore, loadedItems)
-7. Subsequent LoadNextAsync uses continueCursor
-8. Continues until isDone=true
-
 ## Thread Safety
-All pagination state is protected by `_paginationLock`:
+All pagination state is protected by locks:
 - HasMore, LoadedPageCount, LoadedItems are safe to read
 - LoadNextAsync safely updates state
 - Reset safely clears all state
 - Multiple concurrent calls to LoadNextAsync are serialized
 
 ## Limitations
-- Live subscriptions (LivePaginatedSubscription) not yet migrated
 - No support for split cursors (splitCursor in response)
 - No automatic page size adjustment based on PageStatus
 

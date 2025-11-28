@@ -263,8 +263,7 @@ var observable = client.Observe<List<Todo>, object>("todos:search", new { term }
 
 2. **Use pagination for large datasets:**
    ```csharp
-   var paginatedQuery = await client.CreatePaginatedQuery<Todo>("todos:list")
-       .WithPageSize(20)
+   var paginatedQuery = await client.Paginate<Todo>("todos:list", pageSize: 20)
        .InitializeAsync();
    ```
 

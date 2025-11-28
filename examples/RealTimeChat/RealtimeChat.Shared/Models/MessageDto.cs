@@ -1,12 +1,14 @@
 using System.Text.Json.Serialization;
+using Convex.Client.Features.RealTime.Pagination;
 
 namespace RealtimeChat.Shared.Models;
 
 /// <summary>
 /// Data Transfer Object for a chat message.
 /// Maps directly from Convex backend response.
+/// Implements <see cref="IHasId"/> and <see cref="IHasSortKey"/> for automatic pagination support.
 /// </summary>
-public class MessageDto
+public class MessageDto : IHasId, IHasSortKey
 {
     /// <summary>
     /// Unique message ID (assigned by Convex).
@@ -31,6 +33,12 @@ public class MessageDto
     /// </summary>
     [JsonPropertyName("timestamp")]
     public long Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets the sort key for pagination ordering (uses Timestamp).
+    /// </summary>
+    [JsonIgnore]
+    public IComparable SortKey => Timestamp;
 
     /// <summary>
     /// Optional: ID of parent message (for threads/replies).

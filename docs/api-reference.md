@@ -177,32 +177,39 @@ Task<(T1, T2, T3, T4, T5, T6, T7, T8)> ExecuteAsync<T1, T2, T3, T4, T5, T6, T7, 
 ### Pagination
 
 ```csharp
-// Access pagination slice
-IConvexPagination PaginationSlice { get; }
+// Convention interfaces for automatic ID/sort key extraction
+public interface IHasId { string Id { get; } }
+public interface IHasSortKey { IComparable SortKey { get; } }
 
-// Create paginated query
-IPaginationBuilder<T> Query<T>(string functionName);
+// Extension methods (recommended entry points)
+PaginatedQueryHelperBuilder<T> Paginate<T>(string functionName, int pageSize = 25);
+PaginatedQueryHelperBuilder<T> Paginate<T, TArgs>(string functionName, TArgs args, int pageSize = 25);
+Task<PaginatedQueryHelper<T>> PaginateAsync<T>(string functionName, int pageSize = 25, ...);
+Task<PaginatedQueryHelper<T>> PaginateAsync<T, TArgs>(string functionName, TArgs args, int pageSize = 25, ...);
 
-// Pagination builder methods
-IPaginationBuilder<T> WithPageSize(int pageSize);
-IPaginationBuilder<T> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
-IPaginationBuilder<T> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
-IPaginator<T> Build();
+// Builder methods
+PaginatedQueryHelperBuilder<T> WithPageSize(int pageSize);
+PaginatedQueryHelperBuilder<T> WithArgs<TArgs>(TArgs args);
+PaginatedQueryHelperBuilder<T> WithIdExtractor(Func<T, string> getId);      // Optional with conventions
+PaginatedQueryHelperBuilder<T> WithSortKey(Func<T, IComparable> getSortKey); // Optional with conventions
+PaginatedQueryHelperBuilder<T> WithSubscriptionExtractor<TResponse>(Func<TResponse, IEnumerable<T>> extract);
+PaginatedQueryHelperBuilder<T> WithUIThreadMarshalling();
+PaginatedQueryHelperBuilder<T> OnItemsUpdated(Action<IReadOnlyList<T>, IReadOnlyList<int>> callback);
+PaginatedQueryHelperBuilder<T> OnError(Action<string> callback);
+Task<PaginatedQueryHelper<T>> InitializeAsync(bool enableSubscription = true, ...);
 
-// Paginator methods
-bool HasMore { get; }
-int LoadedPageCount { get; }
-IReadOnlyList<T> LoadedItems { get; }
+// Helper properties and methods
+IReadOnlyList<T> CurrentItems { get; }
 IReadOnlyList<int> PageBoundaries { get; }
-event Action<int>? PageBoundaryAdded;
-int GetPageIndex(int itemIndex);
+bool HasMore { get; }
 Task<IReadOnlyList<T>> LoadNextAsync(CancellationToken cancellationToken = default);
 void Reset();
+
+// Low-level access (optional)
+IConvexPagination PaginationSlice { get; }
+IPaginationBuilder<T> Query<T>(string functionName);
+IPaginator<T> Build();
 IAsyncEnumerable<T> AsAsyncEnumerable(CancellationToken cancellationToken = default);
-MergedPaginationResult<T> MergeWithSubscription(
-    IEnumerable<T> subscriptionItems,
-    Func<T, string> getId,
-    Func<T, IComparable>? getSortKey = null);
 ```
 
 ### Authentication
