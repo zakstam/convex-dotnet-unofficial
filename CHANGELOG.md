@@ -5,6 +5,33 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v1.0.0-alpha...v2.0.0-alpha) (2025-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* resolve race condition in WebSocket subscription reconnection
+
+### Features
+
+* add Convex.SchemaGenerator project to solution ([94d6a8d](https://github.com/zakstam/convex-dotnet-unofficial/commit/94d6a8d9ea42a1b0e68a890ab90b6b9eefcdb023))
+* add SchemaGenerator for type-safe C# models from schema.ts ([4c1a2ec](https://github.com/zakstam/convex-dotnet-unofficial/commit/4c1a2ecf5db0b4f1a73270b8e89a5eea3421f9b5))
+* enhance API documentation for ConvexClient and related features ([bd1703b](https://github.com/zakstam/convex-dotnet-unofficial/commit/bd1703bf32ab2c71893fa17d6b14046ae9c5b02d))
+* enhance Cursor Playground UI and functionality ([cc2f757](https://github.com/zakstam/convex-dotnet-unofficial/commit/cc2f75716554fa152d340b15f20d6021e1127449))
+* enhance logging capabilities across various components with optional debug logging ([a6b8d02](https://github.com/zakstam/convex-dotnet-unofficial/commit/a6b8d02e8e1fc89a9a67c3f6f6e7f1a1875815c6))
+* introduce BatchValidationException for improved error handling in event batching ([064627e](https://github.com/zakstam/convex-dotnet-unofficial/commit/064627e2b262e114bb91643469a685f625c5a20f))
+* refactor ConvexFunctionGenerator to support TypeScript files and improve constant generation ([f2e16e7](https://github.com/zakstam/convex-dotnet-unofficial/commit/f2e16e731ecf99a3969221cd41a1c0e6123c8db4))
+* refactor TicTacToe service and configuration for improved clarity and functionality ([aa18191](https://github.com/zakstam/convex-dotnet-unofficial/commit/aa18191ee7e4e95b3a23210edec7357eb333887b))
+* simplify ReplyService initialization by removing redundant sendReplyFunctionName parameter ([8cc294e](https://github.com/zakstam/convex-dotnet-unofficial/commit/8cc294effab117c4b3e58227e3818ba3a1e2b53f))
+* update CursorService to use generated types and improve method signatures ([2154e42](https://github.com/zakstam/convex-dotnet-unofficial/commit/2154e4254e89503d6f472735e01c1119fa86e1c6))
+* update project files to include TypeScript function files for type-safe constant generation ([1cff415](https://github.com/zakstam/convex-dotnet-unofficial/commit/1cff415c4163c69ec66242482334f3dd6f80415e))
+
+
+### Bug Fixes
+
+* remove obsolete Convex authentication configuration file ([d72ebe1](https://github.com/zakstam/convex-dotnet-unofficial/commit/d72ebe160281ff9c9ebf456885646faa4901206c))
+* resolve race condition in WebSocket subscription reconnection ([2298c35](https://github.com/zakstam/convex-dotnet-unofficial/commit/2298c35dd605fddbddd210ba8b4e0f24e278404d))
+
 ## [1.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v0.4.0-alpha...v1.0.0-alpha) (2025-11-26)
 
 
