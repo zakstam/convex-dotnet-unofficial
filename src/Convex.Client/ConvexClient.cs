@@ -307,9 +307,14 @@ public sealed class ConvexClient : IConvexClient
         options?.Validate();
 
         DeploymentUrl = deploymentUrl;
-        QualityMonitor = new ConnectionQualityMonitor();
-        CachingSlice = new Features.DataAccess.Caching.CachingSlice();
-        HealthSlice = new Features.Observability.Health.HealthSlice();
+
+        // Get logger and debug settings early for all components
+        var logger = options?.Logger;
+        var enableDebugLogging = options?.EnableDebugLogging ?? false;
+
+        QualityMonitor = new ConnectionQualityMonitor(logger, enableDebugLogging);
+        CachingSlice = new Features.DataAccess.Caching.CachingSlice(logger, enableDebugLogging);
+        HealthSlice = new Features.Observability.Health.HealthSlice(logger, enableDebugLogging);
         DiagnosticsSlice = new Features.Observability.Diagnostics.DiagnosticsSlice();
         _dependencyRegistry = new QueryDependencyRegistry();
 
@@ -326,10 +331,8 @@ public sealed class ConvexClient : IConvexClient
         _httpClient.Timeout = _timeout;
 
         // Initialize Shared infrastructure for slices
-        _httpProvider = new DefaultHttpClientProvider(httpClient, deploymentUrl);
+        _httpProvider = new DefaultHttpClientProvider(httpClient, deploymentUrl, logger, enableDebugLogging);
         _serializer = new DefaultConvexSerializer();
-        var logger = options?.Logger;
-        var enableDebugLogging = options?.EnableDebugLogging ?? false;
         ResilienceSlice = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
         _queries = new QueriesSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         _mutations = new MutationsSlice(_httpProvider, _serializer, CachingSlice, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);

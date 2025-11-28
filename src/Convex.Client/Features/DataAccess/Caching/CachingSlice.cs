@@ -1,4 +1,5 @@
 using Convex.Client.Infrastructure.Caching;
+using Microsoft.Extensions.Logging;
 
 namespace Convex.Client.Features.DataAccess.Caching;
 
@@ -10,7 +11,8 @@ public class CachingSlice : IConvexCache
 {
     private readonly CacheImplementation _implementation;
 
-    public CachingSlice() => _implementation = new CacheImplementation();
+    public CachingSlice(ILogger? logger = null, bool enableDebugLogging = false)
+        => _implementation = new CacheImplementation(logger, enableDebugLogging);
 
     public bool TryGet<T>(string queryName, out T? value)
         => _implementation.TryGet(queryName, out value);

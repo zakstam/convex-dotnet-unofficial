@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
+using Convex.Client.Infrastructure.Telemetry;
 
 namespace Convex.Client.Infrastructure.Quality;
 
@@ -6,7 +8,7 @@ namespace Convex.Client.Infrastructure.Quality;
 /// Monitors connection quality in real-time by tracking latency, errors, reconnections,
 /// and connection stability. Provides quality assessments and adaptive behavior recommendations.
 /// </summary>
-internal sealed class ConnectionQualityMonitor
+internal sealed class ConnectionQualityMonitor(ILogger? logger = null, bool enableDebugLogging = false)
 {
     private const int MaxLatencySamples = 100;
     private const int MaxErrorSamples = 20;
@@ -17,6 +19,8 @@ internal sealed class ConnectionQualityMonitor
     private readonly ConcurrentQueue<ConnectionEvent> _connectionEvents = new();
 
     private readonly object _lock = new();
+    private readonly ILogger? _logger = logger;
+    private readonly bool _enableDebugLogging = enableDebugLogging;
 
     private ConnectionQuality _currentQuality = ConnectionQuality.Unknown;
     private DateTimeOffset? _lastMessageTime;
@@ -228,7 +232,40 @@ internal sealed class ConnectionQualityMonitor
                 timeSinceLastMessage);
 
             // Update current quality
+            var previousQuality = _currentQuality;
             _currentQuality = quality;
+
+            // Log quality assessment
+            if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+            {
+                _logger!.LogDebug(
+                    "[Quality] Assessment: Quality={Quality}, Score={Score}, AvgLatency={AvgLatency}ms, Errors={ErrorCount}, Reconnections={Reconnections}",
+                    quality, score, avgLatency ?? 0, errorCount, recentReconnections);
+            }
+
+            // Always log quality degradation (not just debug)
+            if (quality < previousQuality && previousQuality != ConnectionQuality.Unknown)
+            {
+                _logger?.LogWarning(
+                    "[Quality] Quality degraded: From={PreviousQuality} To={CurrentQuality}, Score={Score}, Description={Description}",
+                    previousQuality, quality, score, description);
+            }
+
+            // Log significant issues
+            if (avgLatency.HasValue && avgLatency.Value > 1000)
+            {
+                _logger?.LogWarning("[Quality] High latency detected: AvgLatency={AvgLatency}ms", avgLatency.Value);
+            }
+
+            if (packetLossRate.HasValue && packetLossRate.Value > 5.0)
+            {
+                _logger?.LogWarning("[Quality] Packet loss detected: PacketLossRate={PacketLossRate}%", packetLossRate.Value);
+            }
+
+            if (recentReconnections > 5)
+            {
+                _logger?.LogWarning("[Quality] Frequent reconnections: Count={ReconnectionCount}", recentReconnections);
+            }
 
             // Build additional data
             var additionalData = new Dictionary<string, object>

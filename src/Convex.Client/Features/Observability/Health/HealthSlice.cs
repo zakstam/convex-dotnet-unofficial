@@ -1,4 +1,5 @@
 using Convex.Client.Infrastructure.Connection;
+using Microsoft.Extensions.Logging;
 
 namespace Convex.Client.Features.Observability.Health;
 
@@ -10,7 +11,8 @@ public class HealthSlice : IConvexHealth
 {
     private readonly HealthMonitor _implementation;
 
-    public HealthSlice() => _implementation = new HealthMonitor();
+    public HealthSlice(ILogger? logger = null, bool enableDebugLogging = false)
+        => _implementation = new HealthMonitor(logger, enableDebugLogging);
 
     public void RecordMessageReceived()
         => _implementation.RecordMessageReceived();

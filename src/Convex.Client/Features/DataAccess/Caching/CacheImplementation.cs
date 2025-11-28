@@ -1,14 +1,18 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Convex.Client.Infrastructure.Telemetry;
 
 namespace Convex.Client.Features.DataAccess.Caching;
 
 /// <summary>
 /// Thread-safe in-memory cache implementation for query results.
 /// </summary>
-internal sealed class CacheImplementation
+internal sealed class CacheImplementation(ILogger? logger = null, bool enableDebugLogging = false)
 {
     private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
+    private readonly ILogger? _logger = logger;
+    private readonly bool _enableDebugLogging = enableDebugLogging;
 
     // Static cache for compiled regex patterns to avoid recompilation on repeated RemovePattern calls
     private static readonly ConcurrentDictionary<string, Regex> _regexCache = new();
@@ -23,10 +27,25 @@ internal sealed class CacheImplementation
         if (_cache.TryGetValue(queryName, out var entry) && entry.Value is T typedValue)
         {
             value = typedValue;
+
+            if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+            {
+                var ageMs = (DateTimeOffset.UtcNow - entry.Timestamp).TotalMilliseconds;
+                _logger!.LogDebug("[Cache] Hit: Key={QueryName}, Type={Type}, Age={AgeMs}ms",
+                    queryName, typeof(T).Name, ageMs);
+            }
+
             return true;
         }
 
         value = default;
+
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Cache] Miss: Key={QueryName}, Type={Type}",
+                queryName, typeof(T).Name);
+        }
+
         return false;
     }
 
@@ -38,6 +57,12 @@ internal sealed class CacheImplementation
         }
 
         _cache[queryName] = new CacheEntry(value, typeof(T), DateTimeOffset.UtcNow);
+
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Cache] Set: Key={QueryName}, Type={Type}, CacheSize={CacheSize}",
+                queryName, typeof(T).Name, _cache.Count);
+        }
     }
 
     public bool TryUpdate<T>(string queryName, Func<T, T> updateFn)
@@ -55,11 +80,20 @@ internal sealed class CacheImplementation
         // Check if key exists and value is of correct type
         if (!_cache.TryGetValue(queryName, out var existingEntry))
         {
+            if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+            {
+                _logger!.LogDebug("[Cache] TryUpdate failed - key not found: Key={QueryName}", queryName);
+            }
             return false;
         }
 
         if (existingEntry.Value is not T typedValue)
         {
+            if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+            {
+                _logger!.LogWarning("[Cache] TryUpdate failed - type mismatch: Key={QueryName}, Expected={Expected}, Actual={Actual}",
+                    queryName, typeof(T).Name, existingEntry.ValueType.Name);
+            }
             return false;
         }
 
@@ -79,6 +113,12 @@ internal sealed class CacheImplementation
                 }
                 return oldEntry; // Type mismatch, don't update
             });
+
+        if (updated && ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Cache] TryUpdate success: Key={QueryName}, Type={Type}",
+                queryName, typeof(T).Name);
+        }
 
         return updated;
     }
@@ -118,6 +158,12 @@ internal sealed class CacheImplementation
             {
                 removedCount++;
             }
+        }
+
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Cache] RemovePattern: Pattern={Pattern}, Matched={MatchedCount}, Removed={RemovedCount}",
+                pattern, keysToRemove.Count, removedCount);
         }
 
         return removedCount;

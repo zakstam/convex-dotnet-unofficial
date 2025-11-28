@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Convex.Client.Infrastructure.Connection;
+using Microsoft.Extensions.Logging;
+using Convex.Client.Infrastructure.Telemetry;
 
 namespace Convex.Client.Features.Observability.Health;
 
@@ -7,13 +9,15 @@ namespace Convex.Client.Features.Observability.Health;
 /// Internal implementation of health monitoring.
 /// Tracks connection metrics and determines health status based on configurable thresholds.
 /// </summary>
-internal sealed class HealthMonitor
+internal sealed class HealthMonitor(ILogger? logger = null, bool enableDebugLogging = false)
 {
     private readonly object _metricsLock = new();
     private readonly ConcurrentQueue<double> _latencySamples = new();
     private readonly ConcurrentQueue<Exception> _recentErrors = new();
     private readonly int _maxLatencySamples = 100;
     private readonly int _maxRecentErrors = 10;
+    private readonly ILogger? _logger = logger;
+    private readonly bool _enableDebugLogging = enableDebugLogging;
 
     private long _messagesReceived;
     private long _messagesSent;
@@ -56,6 +60,12 @@ internal sealed class HealthMonitor
         while (_recentErrors.Count > _maxRecentErrors)
         {
             _ = _recentErrors.TryDequeue(out _);
+        }
+
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug("[Health] Error recorded: ErrorType={ErrorType}, RecentErrorCount={Count}",
+                error.GetType().Name, _recentErrors.Count);
         }
     }
 
@@ -126,6 +136,24 @@ internal sealed class HealthMonitor
         // Determine health status
         var (status, description) = DetermineHealthStatus(connectionState, activeSubscriptions);
         _ = builder.WithStatus(status).WithDescription(description);
+
+        // Log health check result
+        if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
+        {
+            _logger!.LogDebug(
+                "[Health] Check created: Status={Status}, State={ConnectionState}, ActiveSubs={ActiveSubscriptions}, AvgLatency={AvgLatency}ms, Errors={ErrorCount}",
+                status, connectionState, activeSubscriptions, GetAverageLatency() ?? 0, _recentErrors.Count);
+        }
+
+        // Always log non-healthy states (not just debug)
+        if (status == ConvexHealthStatus.Unhealthy)
+        {
+            _logger?.LogWarning("[Health] Status UNHEALTHY: Description={Description}", description);
+        }
+        else if (status == ConvexHealthStatus.Degraded)
+        {
+            _logger?.LogWarning("[Health] Status DEGRADED: Description={Description}", description);
+        }
 
         return builder.Build();
     }
