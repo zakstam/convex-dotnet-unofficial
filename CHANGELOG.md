@@ -5,6 +5,23 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v2.0.0-alpha...v3.0.0-alpha) (2025-11-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* simplified the paginator API
+
+### Features
+
+* simplified the paginator API ([8f9e011](https://github.com/zakstam/convex-dotnet-unofficial/commit/8f9e01163238f5f30a93c77ff09dc4a980d72f2b))
+
+
+### Bug Fixes
+
+* deadlock CreateResilientSubscription was waiting for Connected state before calling Observe(), but Observe() is what triggers the connection. Now it calls Observe() directly, which handles connection internally. ([3e74d9a](https://github.com/zakstam/convex-dotnet-unofficial/commit/3e74d9a51a3af06b7d2ea77cf096cf537cc47618))
+* update QueryBuilder_ExecuteAsync test to return null for null deserialized result instead of throwing an exception ([9faa4c1](https://github.com/zakstam/convex-dotnet-unofficial/commit/9faa4c180e6f3475f331b8bee20e6c1382d76811))
+
 ## [2.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v1.0.0-alpha...v2.0.0-alpha) (2025-11-28)
 
 
