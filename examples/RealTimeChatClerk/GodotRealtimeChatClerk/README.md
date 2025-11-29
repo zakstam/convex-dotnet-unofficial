@@ -220,7 +220,7 @@ private void UpdateUI(SomeData data) {
 To load message history in pages:
 
 ```csharp
-var paginator = client.PaginationSlice
+var paginator = client.Pagination
     .Query<MessageDto>("functions/getMessages")
     .WithPageSize(20)
     .Build();
@@ -333,7 +333,7 @@ ConnectionState ConnectionState { get; }
 IObservable<ConnectionState> ConnectionStateChanges { get; }
 
 // Authentication
-IAuthenticationSlice AuthenticationSlice { get; }
+IConvexAuthentication Auth { get; }
 ```
 
 ### ConnectionState Enum

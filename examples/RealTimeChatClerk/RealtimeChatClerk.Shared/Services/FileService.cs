@@ -14,7 +14,7 @@ public class FileService(IConvexClient convexClient) : IFileService
 
     public async Task<List<Attachment>> UploadFilesAsync(List<PendingFile> pendingFiles)
     {
-        if (pendingFiles.Count == 0 || _convexClient is not ConvexClient client)
+        if (pendingFiles.Count == 0)
         {
             return [];
         }
@@ -32,7 +32,7 @@ public class FileService(IConvexClient convexClient) : IFileService
                         pendingFile.Content.Position = 0;
                     }
 
-                    var storageId = await client.FileStorageSlice.UploadFileAsync(
+                    var storageId = await _convexClient.Files.UploadFileAsync(
                         pendingFile.Content,
                         pendingFile.ContentType,
                         pendingFile.Filename
@@ -79,31 +79,27 @@ public class FileService(IConvexClient convexClient) : IFileService
 
         try
         {
-            if (_convexClient is ConvexClient client)
+            var url = await _convexClient.Files.GetDownloadUrlAsync(storageId);
+
+            if (!string.IsNullOrEmpty(url))
             {
-                var url = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
-
-                if (!string.IsNullOrEmpty(url))
-                {
-                    _attachmentUrlCache[storageId] = url;
-                }
-
-                return url;
+                _attachmentUrlCache[storageId] = url;
             }
+
+            return url;
         }
         catch (ConvexException ex)
         {
             Console.Error.WriteLine($"Error getting download URL for {storageId}: {ex.Message}");
+            return "";
         }
-
-        return "";
     }
 
     public string GetAttachmentUrlSync(string storageId) => _attachmentUrlCache.TryGetValue(storageId, out var url) ? url : "";
 
     public async Task LoadAttachmentUrlsForMessagesAsync(List<Message> messages)
     {
-        if (messages == null || _convexClient is not ConvexClient client)
+        if (messages == null)
         {
             return;
         }
@@ -125,7 +121,7 @@ public class FileService(IConvexClient convexClient) : IFileService
         {
             try
             {
-                var url = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+                var url = await _convexClient.Files.GetDownloadUrlAsync(storageId);
                 if (!string.IsNullOrEmpty(url))
                 {
                     _attachmentUrlCache[storageId] = url;

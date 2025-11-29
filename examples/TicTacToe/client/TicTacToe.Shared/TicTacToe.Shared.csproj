@@ -12,8 +12,18 @@
     <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
   </ItemGroup>
 
+  <!-- Include TypeScript files for source generator -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\backend\convex\functions\**\*.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\schema.ts" />
+  </ItemGroup>
+
   <!-- Include source generator and analyzers when using ProjectReference -->
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.SchemaGenerator\Convex.SchemaGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
     <ProjectReference Include="..\..\..\..\src\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"

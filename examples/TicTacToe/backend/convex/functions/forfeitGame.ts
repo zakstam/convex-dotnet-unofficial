@@ -33,7 +33,7 @@ export default mutation({
     // If game is still waiting (no opponent), mark as abandoned (no winner)
     // Otherwise, the other player wins by forfeit
     const winner = game.status === "waiting"
-      ? null
+      ? undefined
       : (player === "X" ? "O" : "X");
 
     await ctx.db.patch(gameId, {
