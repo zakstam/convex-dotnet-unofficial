@@ -206,7 +206,7 @@ Task<IReadOnlyList<T>> LoadNextAsync(CancellationToken cancellationToken = defau
 void Reset();
 
 // Low-level access (optional)
-IConvexPagination PaginationSlice { get; }
+IConvexPagination Pagination { get; }
 IPaginationBuilder<T> Query<T>(string functionName);
 IPaginator<T> Build();
 IAsyncEnumerable<T> AsAsyncEnumerable(CancellationToken cancellationToken = default);
@@ -215,8 +215,8 @@ IAsyncEnumerable<T> AsAsyncEnumerable(CancellationToken cancellationToken = defa
 ### Authentication
 
 ```csharp
-// Access authentication slice
-AuthenticationSlice AuthenticationSlice { get; }
+// Access authentication service
+IConvexAuthentication Auth { get; }
 
 // Authentication methods (via IConvexAuthentication)
 AuthenticationState AuthenticationState { get; }
@@ -236,8 +236,8 @@ IObservable<AuthenticationState> AuthenticationStateChanges { get; }
 ### File Storage
 
 ```csharp
-// Access file storage slice
-FileStorageSlice FileStorageSlice { get; }
+// Access file storage service
+IConvexFileStorage Files { get; }
 
 // File storage methods (via IConvexFileStorage)
 Task<ConvexUploadUrlResponse> GenerateUploadUrlAsync(string? filename = null, CancellationToken cancellationToken = default);
@@ -252,8 +252,8 @@ Task<bool> DeleteFileAsync(string storageId, CancellationToken cancellationToken
 ### Vector Search
 
 ```csharp
-// Access vector search slice
-VectorSearchSlice VectorSearchSlice { get; }
+// Access vector search service
+IConvexVectorSearch VectorSearch { get; }
 
 // Vector search methods (via IConvexVectorSearch)
 Task<IEnumerable<VectorSearchResult<T>>> SearchAsync<T>(string indexName, float[] vector, int limit = 10, CancellationToken cancellationToken = default);
@@ -269,8 +269,8 @@ Task<IEnumerable<VectorIndexInfo>> ListIndicesAsync(CancellationToken cancellati
 ### Scheduling
 
 ```csharp
-// Access scheduling slice
-SchedulingSlice SchedulingSlice { get; }
+// Access scheduling service
+IConvexScheduler Scheduler { get; }
 
 // Scheduling methods (via IConvexScheduler)
 Task<string> ScheduleAsync(string functionName, TimeSpan delay, CancellationToken cancellationToken = default);
@@ -290,8 +290,8 @@ Task<bool> UpdateScheduleAsync(string jobId, ConvexScheduleConfig newSchedule, C
 ### HTTP Actions
 
 ```csharp
-// Access HTTP actions slice
-HttpActionsSlice HttpActionsSlice { get; }
+// Access HTTP actions service
+IConvexHttpActions Http { get; }
 
 // HTTP action methods (via IConvexHttpActions)
 Task<ConvexHttpActionResponse<T>> GetAsync<T>(string actionPath, Dictionary<string, string>? queryParameters = null, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default);
@@ -323,8 +323,8 @@ Task<ConnectionQualityInfo> GetConnectionQualityAsync();
 ### Health Monitoring
 
 ```csharp
-// Access health slice
-HealthSlice HealthSlice { get; }
+// Access health service
+IConvexHealth Health { get; }
 
 // Get health status
 Task<ConvexHealthCheck> GetHealthAsync();
@@ -333,8 +333,8 @@ Task<ConvexHealthCheck> GetHealthAsync();
 ### Caching
 
 ```csharp
-// Access caching slice
-CachingSlice CachingSlice { get; }
+// Access caching service
+IConvexCache Cache { get; }
 
 // Cache invalidation
 void DefineQueryDependency(string mutationName, params string[] invalidates);

@@ -495,7 +495,7 @@ class EmailService
 
 **Problem:** You need to upload and serve files (images, documents, etc.).
 
-**Solution:** Use `FileStorageSlice` for file operations.
+**Solution:** Use `Files` for file operations.
 
 **Complete Example:** Upload profile picture and display it
 
@@ -504,9 +504,9 @@ using Convex.Client;
 
 class ProfileService
 {
-    private readonly ConvexClient _client;
+    private readonly IConvexClient _client;
 
-    public ProfileService(ConvexClient client)
+    public ProfileService(IConvexClient client)
     {
         _client = client;
     }
@@ -514,7 +514,7 @@ class ProfileService
     public async Task<string> UploadProfilePictureAsync(Stream imageStream, string filename)
     {
         // Upload file
-        var storageId = await _client.FileStorageSlice.UploadFileAsync(
+        var storageId = await _client.Files.UploadFileAsync(
             imageStream,
             contentType: "image/jpeg",
             filename: filename
@@ -527,14 +527,14 @@ class ProfileService
     public async Task<string> GetProfilePictureUrlAsync(string storageId)
     {
         // Get download URL
-        var url = await _client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+        var url = await _client.Files.GetDownloadUrlAsync(storageId);
         return url;
     }
 
     public async Task<Stream> DownloadProfilePictureAsync(string storageId)
     {
         // Download file directly
-        return await _client.FileStorageSlice.DownloadFileAsync(storageId);
+        return await _client.Files.DownloadFileAsync(storageId);
     }
 }
 ```
@@ -551,7 +551,7 @@ class ProfileService
 
 **Problem:** You need AI-powered semantic search over your data.
 
-**Solution:** Use `VectorSearchSlice` for similarity search.
+**Solution:** Use `VectorSearch` for similarity search.
 
 **Complete Example:** Product search with embeddings
 
@@ -560,9 +560,9 @@ using Convex.Client;
 
 class ProductSearchService
 {
-    private readonly ConvexClient _client;
+    private readonly IConvexClient _client;
 
-    public ProductSearchService(ConvexClient client)
+    public ProductSearchService(IConvexClient client)
     {
         _client = client;
     }
@@ -571,7 +571,7 @@ class ProductSearchService
     {
         try
         {
-            var results = await _client.VectorSearchSlice.SearchAsync<Product>(
+            var results = await _client.VectorSearch.SearchAsync<Product>(
                 indexName: "product_embeddings",
                 vector: queryEmbedding,
                 limit: 10
@@ -607,7 +607,7 @@ class ProductSearchService
 
 **Problem:** You need to run functions at specific times or intervals.
 
-**Solution:** Use `SchedulingSlice` for delayed and recurring jobs.
+**Solution:** Use `Scheduler` for delayed and recurring jobs.
 
 **Complete Example:** Reminder system
 
@@ -616,9 +616,9 @@ using Convex.Client;
 
 class ReminderService
 {
-    private readonly ConvexClient _client;
+    private readonly IConvexClient _client;
 
-    public ReminderService(ConvexClient client)
+    public ReminderService(IConvexClient client)
     {
         _client = client;
     }
@@ -628,7 +628,7 @@ class ReminderService
         var delay = reminderTime - DateTime.UtcNow;
 
         // Schedule one-time reminder
-        var jobId = await _client.SchedulingSlice.ScheduleAsync(
+        var jobId = await _client.Scheduler.ScheduleAsync(
             functionName: "reminders:send",
             delay: delay,
             args: new { userId }
@@ -641,7 +641,7 @@ class ReminderService
     public async Task<string> ScheduleDailyDigestAsync(string userId)
     {
         // Schedule recurring daily digest at 9 AM
-        var jobId = await _client.SchedulingSlice.ScheduleRecurringAsync(
+        var jobId = await _client.Scheduler.ScheduleRecurringAsync(
             functionName: "emails:sendDailyDigest",
             cronExpression: "0 9 * * *", // Daily at 9 AM
             timezone: "America/New_York",
@@ -653,7 +653,7 @@ class ReminderService
 
     public async Task CancelReminderAsync(string jobId)
     {
-        var cancelled = await _client.SchedulingSlice.CancelAsync(jobId);
+        var cancelled = await _client.Scheduler.CancelAsync(jobId);
         if (cancelled)
         {
             Console.WriteLine($"Reminder cancelled: {jobId}");
@@ -674,7 +674,7 @@ class ReminderService
 
 **Problem:** You need to call REST endpoints built with Convex HTTP Actions.
 
-**Solution:** Use `HttpActionsSlice` for HTTP requests.
+**Solution:** Use `Http` for HTTP requests.
 
 **Complete Example:** REST API integration
 
@@ -684,9 +684,9 @@ using System.Collections.Generic;
 
 class ApiClient
 {
-    private readonly ConvexClient _client;
+    private readonly IConvexClient _client;
 
-    public ApiClient(ConvexClient client)
+    public ApiClient(IConvexClient client)
     {
         _client = client;
     }
@@ -694,7 +694,7 @@ class ApiClient
     public async Task<User?> GetUserAsync(string userId)
     {
         // GET request
-        var response = await _client.HttpActionsSlice.GetAsync<User>(
+        var response = await _client.Http.GetAsync<User>(
             actionPath: $"users/{userId}",
             queryParameters: new Dictionary<string, string> { ["include"] = "profile" }
         );
@@ -711,7 +711,7 @@ class ApiClient
     public async Task<User> CreateUserAsync(User newUser)
     {
         // POST request with body
-        var response = await _client.HttpActionsSlice.PostAsync<User, User>(
+        var response = await _client.Http.PostAsync<User, User>(
             actionPath: "users",
             body: newUser
         );
@@ -934,14 +934,14 @@ app.Run();
 
 ```csharp
 using Convex.Client;
-using Convex.Client.Slices.Authentication;
+using Convex.Client.Features.Security.Authentication;
 
 class AuthService
 {
-    private readonly ConvexClient _client;
+    private readonly IConvexClient _client;
     private readonly IAuthenticationService _authService;
 
-    public AuthService(ConvexClient client, IAuthenticationService authService)
+    public AuthService(IConvexClient client, IAuthenticationService authService)
     {
         _client = client;
         _authService = authService;
@@ -951,13 +951,13 @@ class AuthService
     {
         // Use token provider for automatic refresh
         var provider = new AuthTokenProvider(_authService);
-        await _client.AuthenticationSlice.SetAuthTokenProviderAsync(provider);
+        await _client.Auth.SetAuthTokenProviderAsync(provider);
     }
 
     // For simple apps or testing
     public async Task SetStaticTokenAsync(string token)
     {
-        await _client.AuthenticationSlice.SetAuthTokenAsync(token);
+        await _client.Auth.SetAuthTokenAsync(token);
     }
 }
 

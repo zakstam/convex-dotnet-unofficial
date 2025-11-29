@@ -42,7 +42,7 @@ Main interface for interacting with Convex backend.
 - `ConnectionState ConnectionState { get; }` - Gets the current WebSocket connection state
 - `IObservable<ConnectionState> ConnectionStateChanges { get; }` - Observable stream of connection state changes
 - `IObservable<ConnectionQuality> ConnectionQualityChanges { get; }` - Observable stream of connection quality changes
-- `IConvexPagination PaginationSlice { get; }` - Gets the pagination slice for cursor-based pagination
+- `IConvexPagination Pagination { get; }` - Gets the pagination service for cursor-based pagination
 
 **Methods:**
 
@@ -78,16 +78,16 @@ Unified Convex client implementation.
 - `IObservable<ConnectionQuality> ConnectionQualityChanges { get; }` - Observable stream of connection quality changes
 - `IObservable<AuthenticationState> AuthenticationStateChanges { get; }` - Observable stream of authentication state changes
 - `Exception? PreConnectError { get; }` - Gets the error that occurred during PreConnect, if any
-- `FileStorageSlice FileStorageSlice { get; }` - Gets the FileStorage slice
-- `VectorSearchSlice VectorSearchSlice { get; }` - Gets the VectorSearch slice
-- `HttpActionsSlice HttpActionsSlice { get; }` - Gets the HTTP actions slice
-- `SchedulingSlice SchedulingSlice { get; }` - Gets the scheduling slice
-- `IConvexPagination PaginationSlice { get; }` - Gets the pagination slice
-- `CachingSlice CachingSlice { get; }` - Gets the caching slice
-- `AuthenticationSlice AuthenticationSlice { get; }` - Gets the Authentication slice
-- `HealthSlice HealthSlice { get; }` - Gets the Health slice
-- `DiagnosticsSlice DiagnosticsSlice { get; }` - Gets the Diagnostics slice
-- `ResilienceSlice ResilienceSlice { get; }` - Gets the Resilience slice
+- `IConvexFileStorage Files { get; }` - Gets the file storage service
+- `IConvexVectorSearch VectorSearch { get; }` - Gets the vector search service
+- `IConvexHttpActions Http { get; }` - Gets the HTTP actions service
+- `IConvexScheduler Scheduler { get; }` - Gets the scheduling service
+- `IConvexPagination Pagination { get; }` - Gets the pagination service
+- `IConvexCache Cache { get; }` - Gets the caching service
+- `IConvexAuthentication Auth { get; }` - Gets the authentication service
+- `IConvexHealth Health { get; }` - Gets the health monitoring service
+- `IConvexDiagnostics Diagnostics { get; }` - Gets the diagnostics service
+- `IConvexResilience Resilience { get; }` - Gets the resilience service
 - `TimestampManager TimestampManager { get; }` - Gets the timestamp manager
 
 **Methods:**
@@ -2080,7 +2080,7 @@ catch (ConvexException ex)
 
 ```csharp
 // Create paginated query
-var paginator = client.PaginationSlice
+var paginator = client.Pagination
     .Query<Message>("messages:list")
     .WithPageSize(25)
     .WithArgs(new { roomId = "room-1" })
