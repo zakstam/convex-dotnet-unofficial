@@ -142,13 +142,15 @@ namespace Convex.Generated
                 };
 
                 var fullPath = $"{modulePath}:{functionName}";
+                var arguments = ParseArguments(content, match.Index);
 
                 functions.Add(new ConvexFunction
                 {
                     Path = fullPath,
                     Name = ToPascalCase(functionName),
                     ModulePath = modulePath,
-                    Type = functionType
+                    Type = functionType,
+                    Arguments = arguments
                 });
             }
         }
@@ -176,13 +178,15 @@ namespace Convex.Generated
             // Extract function name from module path (e.g., "functions/getMessages" -> "GetMessages")
             var parts = modulePath.Split('/');
             var functionName = ToPascalCase(parts.Last());
+            var arguments = ParseArguments(content, defaultMatch.Index);
 
             functions.Add(new ConvexFunction
             {
                 Path = fullPath,
                 Name = functionName,
                 ModulePath = modulePath,
-                Type = functionType
+                Type = functionType,
+                Arguments = arguments
             });
         }
 
@@ -223,6 +227,122 @@ namespace Convex.Generated
         return ToPascalCase(lastPart);
     }
 
+    private static List<FunctionArgument> ParseArguments(string content, int startIndex)
+    {
+        var arguments = new List<FunctionArgument>();
+
+        // Find the args object: args: { ... }
+        var argsPattern = @"args\s*:\s*\{([^}]*)\}";
+        var argsMatch = Regex.Match(content.Substring(startIndex), argsPattern, RegexOptions.Singleline);
+
+        if (!argsMatch.Success)
+        {
+            return arguments;
+        }
+
+        var argsContent = argsMatch.Groups[1].Value;
+
+        // Parse individual arguments: name: v.type() or name: v.optional(v.type())
+        var argPattern = @"(\w+)\s*:\s*(v\.(?:optional\s*\(\s*)?(v\.)?(id|string|number|boolean|float64|int64|bytes|null|any|array|object|union|literal)\s*\([^)]*\)\s*\)?|v\.(?:optional\s*\(\s*)?(v\.)?(id|string|number|boolean|float64|int64|bytes|null|any)\s*\(\s*[^)]*\s*\)\s*\)?)";
+        var argMatches = Regex.Matches(argsContent, argPattern);
+
+        foreach (Match argMatch in argMatches)
+        {
+            var argName = argMatch.Groups[1].Value;
+            var fullValidator = argMatch.Value.Substring(argMatch.Value.IndexOf(':') + 1).Trim();
+            var isOptional = fullValidator.Contains("v.optional");
+
+            var csharpType = MapValidatorToCSharpType(fullValidator, isOptional);
+
+            arguments.Add(new FunctionArgument
+            {
+                Name = argName,
+                CSharpType = csharpType,
+                IsOptional = isOptional
+            });
+        }
+
+        return arguments;
+    }
+
+    private static string MapValidatorToCSharpType(string validator, bool isOptional)
+    {
+        // Extract the inner type for optional validators
+        var innerValidator = validator;
+        if (validator.Contains("v.optional"))
+        {
+            var optionalPattern = @"v\.optional\s*\(\s*(.+)\s*\)$";
+            var optionalMatch = Regex.Match(validator, optionalPattern);
+            if (optionalMatch.Success)
+            {
+                innerValidator = optionalMatch.Groups[1].Value.Trim();
+            }
+        }
+
+        string baseType;
+
+        if (innerValidator.Contains("v.id"))
+        {
+            baseType = "string";
+        }
+        else if (innerValidator.Contains("v.string"))
+        {
+            baseType = "string";
+        }
+        else if (innerValidator.Contains("v.number") || innerValidator.Contains("v.float64"))
+        {
+            baseType = "double";
+        }
+        else if (innerValidator.Contains("v.int64"))
+        {
+            baseType = "long";
+        }
+        else if (innerValidator.Contains("v.boolean"))
+        {
+            baseType = "bool";
+        }
+        else if (innerValidator.Contains("v.bytes"))
+        {
+            baseType = "byte[]";
+        }
+        else if (innerValidator.Contains("v.null"))
+        {
+            baseType = "object";
+        }
+        else if (innerValidator.Contains("v.any"))
+        {
+            baseType = "object";
+        }
+        else if (innerValidator.Contains("v.array"))
+        {
+            baseType = "object[]";
+        }
+        else if (innerValidator.Contains("v.object"))
+        {
+            baseType = "object";
+        }
+        else if (innerValidator.Contains("v.union") || innerValidator.Contains("v.literal"))
+        {
+            baseType = "string";
+        }
+        else
+        {
+            baseType = "object";
+        }
+
+        // Add nullable marker for optional reference types or value types
+        if (isOptional)
+        {
+            if (baseType == "string" || baseType == "object" || baseType == "byte[]" || baseType == "object[]")
+            {
+                return baseType + "?";
+            }
+            return baseType + "?";
+        }
+
+        return baseType;
+    }
+
     private static string Pluralize(string word)
     {
         if (string.IsNullOrEmpty(word))
@@ -240,6 +360,50 @@ namespace Convex.Generated
         return word + "s";
     }
 
+    private static void GenerateArgumentClasses(StringBuilder sb, IEnumerable<ConvexFunction> functions)
+    {
+        // Only generate argument classes for functions that have arguments
+        var functionsWithArgs = functions.Where(f => f.Arguments.Count > 0).ToList();
+
+        if (functionsWithArgs.Count == 0)
+        {
+            return;
+        }
+
+        _ = sb.AppendLine("    #region Argument Classes");
+        _ = sb.AppendLine();
+
+        foreach (var func in functionsWithArgs.OrderBy(f => f.Name))
+        {
+            var className = $"{func.Name}Args";
+
+            _ = sb.AppendLine($"    /// <summary>");
+            _ = sb.AppendLine($"    /// Arguments for the {func.Name} {func.Type.ToLowerInvariant()}.");
+            _ = sb.AppendLine($"    /// </summary>");
+            _ = sb.AppendLine($"    public class {className}");
+            _ = sb.AppendLine($"    {{");
+
+            foreach (var arg in func.Arguments)
+            {
+                var pascalName = ToPascalCase(arg.Name);
+                var requiredAttr = arg.IsOptional ? "" : "required ";
+
+                _ = sb.AppendLine($"        /// <summary>");
+                _ = sb.AppendLine($"        /// The {arg.Name} parameter.");
+                _ = sb.AppendLine($"        /// </summary>");
+                _ = sb.AppendLine($"        [JsonPropertyName(\"{arg.Name}\")]");
+                _ = sb.AppendLine($"        public {requiredAttr}{arg.CSharpType} {pascalName} {{ get; set; }}");
+                _ = sb.AppendLine();
+            }
+
+            _ = sb.AppendLine($"    }}");
+            _ = sb.AppendLine();
+        }
+
+        _ = sb.AppendLine("    #endregion");
+        _ = sb.AppendLine();
+    }
+
     private static string GenerateConstants(IEnumerable<ConvexFunction> functions)
     {
         var sb = new StringBuilder();
@@ -251,8 +415,14 @@ namespace Convex.Generated
         _ = sb.AppendLine();
         _ = sb.AppendLine("#nullable enable");
         _ = sb.AppendLine();
+        _ = sb.AppendLine("using System.Text.Json.Serialization;");
+        _ = sb.AppendLine();
         _ = sb.AppendLine("namespace Convex.Generated");
         _ = sb.AppendLine("{");
+
+        // Generate argument classes first
+        GenerateArgumentClasses(sb, functions);
+
         _ = sb.AppendLine("    /// <summary>");
         _ = sb.AppendLine("    /// Type-safe constants for Convex function names.");
         _ = sb.AppendLine("    /// </summary>");
@@ -335,9 +505,17 @@ namespace Convex.Generated
         public string Name { get; set; } = string.Empty;
         public string ModulePath { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
+        public List<FunctionArgument> Arguments { get; set; } = [];
 
         public override bool Equals(object? obj) => obj is ConvexFunction other && Path == other.Path;
 
         public override int GetHashCode() => Path.GetHashCode();
+    }
+
+    private class FunctionArgument
+    {
+        public string Name { get; set; } = string.Empty;
+        public string CSharpType { get; set; } = string.Empty;
+        public bool IsOptional { get; set; }
     }
 }

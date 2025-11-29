@@ -556,6 +556,83 @@ public class SchemaParser
             }
         }
 
-        return result.ToString();
+        // Singularize the result (table names are typically plural)
+        return Singularize(result.ToString());
+    }
+
+    private static string Singularize(string word)
+    {
+        if (string.IsNullOrEmpty(word) || word.Length < 3)
+        {
+            return word;
+        }
+
+        // Common irregular plurals
+        var irregulars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "People", "Person" },
+            { "Men", "Man" },
+            { "Women", "Woman" },
+            { "Children", "Child" },
+            { "Mice", "Mouse" },
+            { "Geese", "Goose" },
+            { "Teeth", "Tooth" },
+            { "Feet", "Foot" },
+            { "Data", "Data" }, // Data is often used as singular in tech
+            { "Media", "Media" },
+            { "Criteria", "Criterion" },
+        };
+
+        if (irregulars.TryGetValue(word, out var irregular))
+        {
+            return irregular;
+        }
+
+        // Words ending in -ies -> -y (e.g., "Stories" -> "Story")
+        if (word.EndsWith("ies", StringComparison.OrdinalIgnoreCase) && word.Length > 4)
+        {
+            return word.Substring(0, word.Length - 3) + "y";
+        }
+
+        // Words ending in -es after s, x, z, ch, sh -> remove -es (e.g., "Boxes" -> "Box")
+        if (word.EndsWith("ses", StringComparison.OrdinalIgnoreCase) ||
+            word.EndsWith("xes", StringComparison.OrdinalIgnoreCase) ||
+            word.EndsWith("zes", StringComparison.OrdinalIgnoreCase) ||
+            word.EndsWith("ches", StringComparison.OrdinalIgnoreCase) ||
+            word.EndsWith("shes", StringComparison.OrdinalIgnoreCase))
+        {
+            return word.Substring(0, word.Length - 2);
+        }
+
+        // Words ending in -ves -> -f or -fe (e.g., "Wolves" -> "Wolf", "Lives" -> "Life", "Knives" -> "Knife")
+        // Only apply for known -f/-fe plural patterns, not words like "moves" or "proves"
+        var knownVesWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Wolves", "Lives", "Knives", "Wives", "Leaves", "Halves", "Calves", "Selves",
+            "Shelves", "Thieves", "Loaves", "Scarves", "Hooves", "Elves"
+        };
+        if (word.EndsWith("ves", StringComparison.OrdinalIgnoreCase) && knownVesWords.Contains(word))
+        {
+            var stem = word.Substring(0, word.Length - 3);
+            // Words like "lives", "knives", "wives" -> "life", "knife", "wife"
+            if (word.EndsWith("ives", StringComparison.OrdinalIgnoreCase))
+            {
+                return stem + "ife";
+            }
+            // Words like "wolves", "halves" -> "wolf", "half"
+            return stem + "f";
+        }
+
+        // Words ending in -s (but not -ss) -> remove -s (e.g., "Games" -> "Game", "Moves" -> "Move")
+        if (word.EndsWith("s", StringComparison.OrdinalIgnoreCase) &&
+            !word.EndsWith("ss", StringComparison.OrdinalIgnoreCase) &&
+            !word.EndsWith("us", StringComparison.OrdinalIgnoreCase) &&
+            !word.EndsWith("is", StringComparison.OrdinalIgnoreCase))
+        {
+            return word.Substring(0, word.Length - 1);
+        }
+
+        // No transformation needed
+        return word;
     }
 }

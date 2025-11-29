@@ -168,9 +168,44 @@ public static class TypeMapper
             }
         }
 
+        // Check if all members are string literals - use string type
+        if (validator.UnionMembers.All(m => m.Kind == ValidatorKind.Literal && IsStringLiteral(m.LiteralValue)))
+        {
+            return "string";
+        }
+
+        // Check if all non-null members are string literals (nullable string union)
+        var nonNullMembers = validator.UnionMembers.Where(m => m.Kind != ValidatorKind.Null).ToList();
+        var hasNullMember = validator.UnionMembers.Any(m => m.Kind == ValidatorKind.Null);
+        if (nonNullMembers.All(m => m.Kind == ValidatorKind.Literal && IsStringLiteral(m.LiteralValue)))
+        {
+            return hasNullMember ? "string?" : "string";
+        }
+
         // For complex unions, we use object
         // A more sophisticated implementation could use discriminated unions
         return "object";
+    }
+
+    private static bool IsStringLiteral(string? value)
+    {
+        if (value == null)
+        {
+            return false;
+        }
+
+        // If it's not a number or boolean, treat it as a string literal
+        if (bool.TryParse(value, out _))
+        {
+            return false;
+        }
+
+        if (double.TryParse(value, out _))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static string MapRecordType(
