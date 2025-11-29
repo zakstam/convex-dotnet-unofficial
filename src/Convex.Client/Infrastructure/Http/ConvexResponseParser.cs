@@ -38,6 +38,12 @@ public static class ConvexResponseParser
             var statusValue = status.GetString();
             if (statusValue == "success" && root.TryGetProperty("value", out var value))
             {
+                // null is a valid return value from Convex functions
+                if (value.ValueKind == JsonValueKind.Null)
+                {
+                    return default!;
+                }
+
                 var result = serializer.Deserialize<TResult>(value.GetRawText());
                 return result == null
                     ? throw new InvalidOperationException(

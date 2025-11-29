@@ -88,6 +88,12 @@ public sealed class ConvexResponse
             return typedValue;
         }
 
+        // null is a valid return value for reference types and nullable value types
+        if (Value is null && default(T) is null)
+        {
+            return default!;
+        }
+
         throw new InvalidCastException(
             $"Cannot cast response value of type {Value?.GetType()?.Name ?? "null"} to {typeof(T).Name}");
     }
@@ -101,6 +107,13 @@ public sealed class ConvexResponse
         if (IsSuccess && Value is T typedValue)
         {
             value = typedValue;
+            return true;
+        }
+
+        // null is a valid return value for reference types and nullable value types
+        if (IsSuccess && Value is null && default(T) is null)
+        {
+            value = default;
             return true;
         }
 

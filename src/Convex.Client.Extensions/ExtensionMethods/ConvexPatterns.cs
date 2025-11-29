@@ -471,17 +471,14 @@ public static class ConvexPatterns
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(subscriptionFunction);
 
-        // Check if already connected - if so, start subscription immediately
-        var currentState = client.ConnectionState;
-        var connectionStream = currentState == ConnectionState.Connected
-            ? Observable.Return(ConnectionState.Connected).Concat(client.ConnectionStateChanges.Where(state => state == ConnectionState.Connected))
-            : client.ConnectionStateChanges.Where(state => state == ConnectionState.Connected);
+        // Start the subscription directly - Observe() will handle connection internally
+        // The LiveQuery inside Observe calls EnsureConnectedAsync which triggers the connection
+        var subscription = args != null
+            ? client.Observe<T, object>(subscriptionFunction, args)
+            : client.Observe<T>(subscriptionFunction);
 
-        return connectionStream
-            .SelectMany(_ => args != null
-                ? client.Observe<T, object>(subscriptionFunction, args)
-                : client.Observe<T>(subscriptionFunction))
-            .Retry() // Retry on errors
+        return subscription
+            .Retry() // Retry on errors (e.g., connection drops)
             .Publish()
             .RefCount(); // Share subscription among multiple subscribers
     }

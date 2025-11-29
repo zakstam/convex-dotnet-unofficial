@@ -193,6 +193,7 @@ public class TimeBasedBatcher<TEvent> : IDisposable
             // Log error but don't throw - allow batching to continue
             // In a production scenario, you might want to raise an event or use a logger
             System.Diagnostics.Debug.WriteLine($"Batch flush error: {ex.Message}");
+            Console.WriteLine($"Batch flush error: {ex.Message}");
         }
     }
 
