@@ -25,18 +25,18 @@ namespace Convex.Client.Features.Storage.Files;
 /// <code>
 /// // Upload a file
 /// using var fileStream = File.OpenRead("image.jpg");
-/// var storageId = await client.FileStorageSlice.UploadFileAsync(
+/// var storageId = await client.Files.UploadFileAsync(
 ///     fileStream,
 ///     contentType: "image/jpeg",
 ///     filename: "image.jpg"
 /// );
 ///
 /// // Get download URL for browser display
-/// var downloadUrl = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+/// var downloadUrl = await client.Files.GetDownloadUrlAsync(storageId);
 /// Console.WriteLine($"File URL: {downloadUrl}");
 ///
 /// // Download file
-/// var downloadedStream = await client.FileStorageSlice.DownloadFileAsync(storageId);
+/// var downloadedStream = await client.Files.DownloadFileAsync(storageId);
 /// </code>
 /// </example>
 /// <seealso cref="FileStorageSlice"/>
@@ -88,7 +88,7 @@ public interface IConvexFileStorage
     /// <code>
     /// // Upload an image file
     /// using var imageStream = File.OpenRead("profile.jpg");
-    /// var storageId = await client.FileStorageSlice.UploadFileAsync(
+    /// var storageId = await client.Files.UploadFileAsync(
     ///     imageStream,
     ///     contentType: "image/jpeg",
     ///     filename: "profile.jpg"
@@ -102,7 +102,7 @@ public interface IConvexFileStorage
     /// // Upload from memory
     /// var textBytes = Encoding.UTF8.GetBytes("Hello, World!");
     /// using var textStream = new MemoryStream(textBytes);
-    /// var textStorageId = await client.FileStorageSlice.UploadFileAsync(
+    /// var textStorageId = await client.Files.UploadFileAsync(
     ///     textStream,
     ///     contentType: "text/plain",
     ///     filename: "hello.txt"
@@ -145,7 +145,7 @@ public interface IConvexFileStorage
     /// <code>
     /// // Get download URL for displaying in browser
     /// var storageId = "storage123"; // Retrieved from database
-    /// var downloadUrl = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
+    /// var downloadUrl = await client.Files.GetDownloadUrlAsync(storageId);
     ///
     /// // Use in HTML
     /// Console.WriteLine($"&lt;img src=\"{downloadUrl}\" /&gt;");

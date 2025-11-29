@@ -424,16 +424,19 @@ internal class MockConvexClient(
     public void DefineQueryDependency(string mutationName, params string[] invalidates) { }
     public Task InvalidateQueryAsync(string queryName) => Task.CompletedTask;
     public Task InvalidateQueriesAsync(string pattern) => Task.CompletedTask;
-    public Convex.Client.Features.RealTime.Pagination.IConvexPagination PaginationSlice => throw new NotImplementedException("Pagination is not implemented in MockConvexClient");
     public void Dispose() { }
 
-    // Features not implemented in mock
-    // TODO: Restore when vertical slice migration is complete
-    // public Convex.Client.FileStorage.Contracts.IConvexFileStorage FileStorage => throw new NotImplementedException();
-    // public Convex.Client.VectorSearch.Contracts.IConvexVectorSearch VectorSearch => throw new NotImplementedException();
-    // public Convex.Client.HttpActions.Contracts.IConvexHttpActions HttpActions => throw new NotImplementedException();
-    // public Convex.Client.Scheduling.Contracts.IConvexScheduler Scheduler => throw new NotImplementedException();
-    // public Convex.Client.CoreOperations.ConsistentQueries.TimestampManager TimestampManager => throw new NotImplementedException();
+    // Feature services (not implemented in mock)
+    public Convex.Client.Features.Storage.Files.IConvexFileStorage Files => throw new NotImplementedException("Files is not implemented in MockConvexClient");
+    public Convex.Client.Features.Storage.VectorSearch.IConvexVectorSearch VectorSearch => throw new NotImplementedException("VectorSearch is not implemented in MockConvexClient");
+    public Convex.Client.Features.Operational.HttpActions.IConvexHttpActions Http => throw new NotImplementedException("Http is not implemented in MockConvexClient");
+    public Convex.Client.Features.Operational.Scheduling.IConvexScheduler Scheduler => throw new NotImplementedException("Scheduler is not implemented in MockConvexClient");
+    public Convex.Client.Features.Security.Authentication.IConvexAuthentication Auth => throw new NotImplementedException("Auth is not implemented in MockConvexClient");
+    public Convex.Client.Infrastructure.Caching.IConvexCache Cache => throw new NotImplementedException("Cache is not implemented in MockConvexClient");
+    public Convex.Client.Features.Observability.Health.IConvexHealth Health => throw new NotImplementedException("Health is not implemented in MockConvexClient");
+    public Convex.Client.Features.Observability.Diagnostics.IConvexDiagnostics Diagnostics => throw new NotImplementedException("Diagnostics is not implemented in MockConvexClient");
+    public Convex.Client.Features.Observability.Resilience.IConvexResilience Resilience => throw new NotImplementedException("Resilience is not implemented in MockConvexClient");
+    public Convex.Client.Features.RealTime.Pagination.IConvexPagination Pagination => throw new NotImplementedException("Pagination is not implemented in MockConvexClient");
 }
 
 /// <summary>

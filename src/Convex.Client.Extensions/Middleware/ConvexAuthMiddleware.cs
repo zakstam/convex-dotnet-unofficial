@@ -36,10 +36,7 @@ public class ConvexAuthMiddleware(
                 {
                     try
                     {
-                        if (convexClient is ConvexClient client)
-                        {
-                            await client.AuthenticationSlice.SetAuthTokenAsync(token);
-                        }
+                        await convexClient.Auth.SetAuthTokenAsync(token);
 
                         if (_options.LogAuthenticationChanges)
                         {
@@ -70,9 +67,9 @@ public class ConvexAuthMiddleware(
                     try
                     {
                         var extractedToken = _options.CustomTokenExtractor(token);
-                        if (!string.IsNullOrEmpty(extractedToken) && convexClient is ConvexClient client)
+                        if (!string.IsNullOrEmpty(extractedToken))
                         {
-                            await client.AuthenticationSlice.SetAuthTokenAsync(extractedToken);
+                            await convexClient.Auth.SetAuthTokenAsync(extractedToken);
                         }
                     }
                     catch (Exception ex)
@@ -90,10 +87,7 @@ public class ConvexAuthMiddleware(
             {
                 try
                 {
-                    if (convexClient is ConvexClient client)
-                    {
-                        await client.AuthenticationSlice.SetAuthTokenAsync(customToken);
-                    }
+                    await convexClient.Auth.SetAuthTokenAsync(customToken);
 
                     if (_options.LogAuthenticationChanges)
                     {
@@ -109,10 +103,7 @@ public class ConvexAuthMiddleware(
         // Clear auth if no token found and configured to do so
         else if (_options.ClearAuthIfNoToken)
         {
-            if (convexClient is ConvexClient client)
-            {
-                await client.AuthenticationSlice.ClearAuthAsync();
-            }
+            await convexClient.Auth.ClearAuthAsync();
 
             if (_options.LogAuthenticationChanges)
             {

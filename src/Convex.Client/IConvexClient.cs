@@ -1,8 +1,17 @@
 using Convex.Client.Infrastructure.Builders;
+using Convex.Client.Infrastructure.Caching;
 using Convex.Client.Infrastructure.Connection;
 using Convex.Client.Infrastructure.Quality;
-using Convex.Client.Features.RealTime.Pagination;
 using Convex.Client.Features.DataAccess.Queries;
+using Convex.Client.Features.Observability.Diagnostics;
+using Convex.Client.Features.Observability.Health;
+using Convex.Client.Features.Observability.Resilience;
+using Convex.Client.Features.Operational.HttpActions;
+using Convex.Client.Features.Operational.Scheduling;
+using Convex.Client.Features.RealTime.Pagination;
+using Convex.Client.Features.Security.Authentication;
+using Convex.Client.Features.Storage.Files;
+using Convex.Client.Features.Storage.VectorSearch;
 
 namespace Convex.Client;
 
@@ -344,9 +353,9 @@ public interface IConvexClient : IDisposable
     /// </code>
     /// </example>
     /// <seealso cref="IConvexPagination"/>
-    IConvexPagination PaginationSlice { get; }
+    IConvexPagination Pagination { get; }
 
-    #endregion
+    #endregion Pagination
 
     #region Cache & Dependency Tracking
 
@@ -410,5 +419,120 @@ public interface IConvexClient : IDisposable
     /// <seealso cref="DefineQueryDependency(string, string[])"/>
     Task InvalidateQueriesAsync(string pattern);
 
-    #endregion
+    #endregion Cache & Dependency Tracking
+
+    #region Feature Services
+
+    /// <summary>
+    /// File storage operations including upload, download, and metadata management.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// // Upload a file
+    /// var storageId = await client.Files.UploadFileAsync(stream, "image/png", "photo.png");
+    ///
+    /// // Download a file
+    /// var fileStream = await client.Files.DownloadFileAsync(storageId);
+    /// </code>
+    /// </example>
+    IConvexFileStorage Files { get; }
+
+    /// <summary>
+    /// Vector similarity search operations for semantic search and embeddings.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// // Search by text (auto-generates embedding)
+    /// var results = await client.VectorSearch.SearchByTextAsync&lt;Document&gt;("indexName", "search query");
+    /// </code>
+    /// </example>
+    IConvexVectorSearch VectorSearch { get; }
+
+    /// <summary>
+    /// HTTP action operations for calling Convex HTTP endpoints directly.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// var response = await client.Http.PostAsync&lt;MyResponse, MyRequest&gt;("/api/endpoint", request);
+    /// </code>
+    /// </example>
+    IConvexHttpActions Http { get; }
+
+    /// <summary>
+    /// Function scheduling for delayed, recurring, and interval-based execution.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// // Schedule a function to run in 5 minutes
+    /// var jobId = await client.Scheduler.ScheduleAsync("functions/sendReminder", TimeSpan.FromMinutes(5));
+    ///
+    /// // Schedule a recurring function with cron expression
+    /// var recurringJobId = await client.Scheduler.ScheduleRecurringAsync("functions/dailyReport", "0 9 * * *");
+    /// </code>
+    /// </example>
+    IConvexScheduler Scheduler { get; }
+
+    /// <summary>
+    /// Authentication and token management for secure API access.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// // Set authentication token
+    /// await client.Auth.SetAuthTokenAsync(jwtToken);
+    ///
+    /// // Clear authentication
+    /// await client.Auth.ClearAuthAsync();
+    /// </code>
+    /// </example>
+    IConvexAuthentication Auth { get; }
+
+    /// <summary>
+    /// Query result caching for improved performance.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// // Check if a value is cached
+    /// if (client.Cache.TryGet&lt;User&gt;("functions/getUser", out var user))
+    /// {
+    ///     Console.WriteLine($"Cached user: {user.Name}");
+    /// }
+    /// </code>
+    /// </example>
+    IConvexCache Cache { get; }
+
+    /// <summary>
+    /// Health monitoring and connection metrics.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// var healthCheck = client.Health.CreateHealthCheck(client.ConnectionState, activeSubscriptions);
+    /// Console.WriteLine($"Average latency: {client.Health.GetAverageLatency()}ms");
+    /// </code>
+    /// </example>
+    IConvexHealth Health { get; }
+
+    /// <summary>
+    /// Performance diagnostics and tracking for debugging and optimization.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// var mark = client.Diagnostics.Performance.Mark("operation-start");
+    /// // ... perform operation ...
+    /// var measure = client.Diagnostics.Performance.Measure("operation", "operation-start");
+    /// </code>
+    /// </example>
+    IConvexDiagnostics Diagnostics { get; }
+
+    /// <summary>
+    /// Resilience patterns including retry policies and circuit breakers.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// client.Resilience.RetryPolicy = RetryPolicy.Aggressive();
+    /// var result = await client.Resilience.ExecuteAsync(() => SomeOperationAsync());
+    /// </code>
+    /// </example>
+    IConvexResilience Resilience { get; }
+
+    #endregion Feature Services
 }

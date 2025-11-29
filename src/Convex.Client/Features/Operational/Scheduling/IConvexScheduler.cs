@@ -23,14 +23,14 @@ namespace Convex.Client.Features.Operational.Scheduling;
 /// <example>
 /// <code>
 /// // Schedule a one-time job
-/// var jobId = await client.SchedulingSlice.ScheduleAsync(
+/// var jobId = await client.Scheduler.ScheduleAsync(
 ///     functionName: "functions/sendReminder",
 ///     delay: TimeSpan.FromHours(24),
 ///     args: new { userId = "user123" }
 /// );
 ///
 /// // Schedule a recurring daily job
-/// var dailyJobId = await client.SchedulingSlice.ScheduleRecurringAsync(
+/// var dailyJobId = await client.Scheduler.ScheduleRecurringAsync(
 ///     functionName: "functions/sendDailyDigest",
 ///     cronExpression: "0 9 * * *", // Daily at 9 AM
 ///     timezone: "America/New_York",
@@ -60,13 +60,13 @@ public interface IConvexScheduler
     /// <example>
     /// <code>
     /// // Schedule a reminder to send in 1 hour
-    /// var jobId = await client.SchedulingSlice.ScheduleAsync(
+    /// var jobId = await client.Scheduler.ScheduleAsync(
     ///     functionName: "functions/sendReminder",
     ///     delay: TimeSpan.FromHours(1)
     /// );
     ///
     /// // Schedule an email to send tomorrow
-    /// var emailJobId = await client.SchedulingSlice.ScheduleAsync(
+    /// var emailJobId = await client.Scheduler.ScheduleAsync(
     ///     functionName: "functions/sendEmail",
     ///     delay: TimeSpan.FromDays(1)
     /// );

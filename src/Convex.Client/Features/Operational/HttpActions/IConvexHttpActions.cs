@@ -26,7 +26,7 @@ namespace Convex.Client.Features.Operational.HttpActions;
     /// <example>
     /// <code>
     /// // GET request
-    /// var response = await client.HttpActionsSlice.GetAsync&lt;User&gt;(
+    /// var response = await client.Http.GetAsync&lt;User&gt;(
     ///     actionPath: "users/123",
     ///     queryParameters: new Dictionary&lt;string, string&gt; { ["include"] = "profile" }
     /// );
@@ -38,7 +38,7 @@ namespace Convex.Client.Features.Operational.HttpActions;
     /// }
     ///
     /// // POST request with body
-    /// var createResponse = await client.HttpActionsSlice.PostAsync&lt;User, CreateUserRequest&gt;(
+    /// var createResponse = await client.Http.PostAsync&lt;User, CreateUserRequest&gt;(
     ///     actionPath: "users",
     ///     body: new CreateUserRequest { Name = "John", Email = "john@example.com" }
     /// );

@@ -201,16 +201,7 @@ public static class ClerkServiceCollectionExtensions
             var tokenProvider = sp.GetRequiredService<ClerkAuthTokenProvider>();
 
             // Configure client with Clerk authentication
-            if (client is ConvexClient convexClient)
-            {
-                convexClient.AuthenticationSlice.SetAuthTokenProviderAsync(tokenProvider).GetAwaiter().GetResult();
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    "Clerk authentication requires ConvexClient. " +
-                    "The factory returned a client that does not support AuthenticationSlice.");
-            }
+            client.Auth.SetAuthTokenProviderAsync(tokenProvider).GetAwaiter().GetResult();
 
             return client;
         });

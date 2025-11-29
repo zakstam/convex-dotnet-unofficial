@@ -70,6 +70,15 @@ public sealed class ConvexClient : IConvexClient
     private readonly ActionsSlice _actions;
     private TimeSpan _timeout;
     private readonly Features.RealTime.Pagination.PaginationSlice _pagination;
+    private readonly Features.Storage.Files.FileStorageSlice _fileStorage;
+    private readonly Features.Storage.VectorSearch.VectorSearchSlice _vectorSearch;
+    private readonly Features.Operational.HttpActions.HttpActionsSlice _httpActions;
+    private readonly Features.Operational.Scheduling.SchedulingSlice _scheduling;
+    private readonly Features.DataAccess.Caching.CachingSlice _caching;
+    private readonly Features.Security.Authentication.AuthenticationSlice _authentication;
+    private readonly Features.Observability.Health.HealthSlice _health;
+    private readonly Features.Observability.Diagnostics.DiagnosticsSlice _diagnostics;
+    private readonly Features.Observability.Resilience.ResilienceSlice _resilience;
     private readonly ConcurrentDictionary<string, object?> _cachedValues = new();
     private readonly object _connectionStateLock = new();
     private readonly QueryDependencyRegistry _dependencyRegistry;
@@ -313,9 +322,9 @@ public sealed class ConvexClient : IConvexClient
         var enableDebugLogging = options?.EnableDebugLogging ?? false;
 
         QualityMonitor = new ConnectionQualityMonitor(logger, enableDebugLogging);
-        CachingSlice = new Features.DataAccess.Caching.CachingSlice(logger, enableDebugLogging);
-        HealthSlice = new Features.Observability.Health.HealthSlice(logger, enableDebugLogging);
-        DiagnosticsSlice = new Features.Observability.Diagnostics.DiagnosticsSlice();
+        _caching = new Features.DataAccess.Caching.CachingSlice(logger, enableDebugLogging);
+        _health = new Features.Observability.Health.HealthSlice(logger, enableDebugLogging);
+        _diagnostics = new Features.Observability.Diagnostics.DiagnosticsSlice();
         _dependencyRegistry = new QueryDependencyRegistry();
         _middlewarePipeline = new MiddlewarePipeline(logger, enableDebugLogging);
 
@@ -334,24 +343,24 @@ public sealed class ConvexClient : IConvexClient
         // Initialize Shared infrastructure for slices
         _httpProvider = new DefaultHttpClientProvider(httpClient, deploymentUrl, logger, enableDebugLogging);
         _serializer = new DefaultConvexSerializer();
-        ResilienceSlice = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
+        _resilience = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
         _queries = new QueriesSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        _mutations = new MutationsSlice(_httpProvider, _serializer, CachingSlice, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
+        _mutations = new MutationsSlice(_httpProvider, _serializer, _caching, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
         _actions = new ActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         TimestampManager = new TimestampManager(httpClient, deploymentUrl);
-        FileStorageSlice = new Features.Storage.Files.FileStorageSlice(_httpProvider, _serializer, httpClient, logger, enableDebugLogging);
-        VectorSearchSlice = new Features.Storage.VectorSearch.VectorSearchSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        HttpActionsSlice = new Features.Operational.HttpActions.HttpActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        SchedulingSlice = new Features.Operational.Scheduling.SchedulingSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        _fileStorage = new Features.Storage.Files.FileStorageSlice(_httpProvider, _serializer, httpClient, logger, enableDebugLogging);
+        _vectorSearch = new Features.Storage.VectorSearch.VectorSearchSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        _httpActions = new Features.Operational.HttpActions.HttpActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
+        _scheduling = new Features.Operational.Scheduling.SchedulingSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         _pagination = new Features.RealTime.Pagination.PaginationSlice(_httpProvider, _serializer, logger, enableDebugLogging);
 
         // Initialize authentication slice with logger and debug logging
-        AuthenticationSlice = new Features.Security.Authentication.AuthenticationSlice(logger, enableDebugLogging);
+        _authentication = new Features.Security.Authentication.AuthenticationSlice(logger, enableDebugLogging);
 
         // Wire up authentication to HTTP provider (slice coordination through facade)
         if (_httpProvider is DefaultHttpClientProvider defaultProvider)
         {
-            defaultProvider.SetAuthHeadersProvider(ct => AuthenticationSlice.GetAuthHeadersAsync(ct));
+            defaultProvider.SetAuthHeadersProvider(ct => _authentication.GetAuthHeadersAsync(ct));
         }
 
         // Lazy initialization of WebSocket client (only connects on first subscription)
@@ -362,7 +371,7 @@ public sealed class ConvexClient : IConvexClient
             var client = new ConvexWebSocketClient(deploymentUrl, _syncContext, reconnectionPolicy, logger);
 
             // Wire up authentication to WebSocket client (slice coordination through facade)
-            client.SetAuthTokenProvider(ct => AuthenticationSlice.GetAuthTokenAsync(ct));
+            client.SetAuthTokenProvider(ct => _authentication.GetAuthTokenAsync(ct));
 
             // Create and store event handler for proper cleanup later
             _connectionStateChangedHandler = (s, state) =>
@@ -437,7 +446,7 @@ public sealed class ConvexClient : IConvexClient
             _httpProvider,
             _serializer,
             functionName,
-            CachingSlice,
+            _caching,
             InvalidateDependentQueriesAsync,
             ExecuteThroughMiddleware<TResult>,
             _syncContext);
@@ -515,196 +524,46 @@ public sealed class ConvexClient : IConvexClient
 
     #endregion
 
-    #region Feature Access
-
-    /// <summary>
-    /// Gets the FileStorage slice for file upload and download operations.
-    /// Provides methods for uploading files, downloading files, getting download URLs, and managing file metadata.
-    /// </summary>
-    /// <value>The file storage slice implementing <see cref="Features.Storage.Files.IConvexFileStorage"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Upload a file
-    /// using var fileStream = File.OpenRead("image.jpg");
-    /// var storageId = await client.FileStorageSlice.UploadFileAsync(
-    ///     fileStream,
-    ///     contentType: "image/jpeg",
-    ///     filename: "image.jpg"
-    /// );
-    ///
-    /// // Get download URL
-    /// var downloadUrl = await client.FileStorageSlice.GetDownloadUrlAsync(storageId);
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Storage.Files.IConvexFileStorage"/>
-    public Features.Storage.Files.FileStorageSlice FileStorageSlice { get; }
-
-    /// <summary>
-    /// Gets the VectorSearch slice for vector similarity search operations.
-    /// Provides AI-powered semantic search capabilities using vector embeddings.
-    /// </summary>
-    /// <value>The vector search slice implementing <see cref="Features.Storage.VectorSearch.IConvexVectorSearch"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Search by text (automatically creates embedding)
-    /// var results = await client.VectorSearchSlice.SearchByTextAsync&lt;Product&gt;(
-    ///     indexName: "product_embeddings",
-    ///     text: "laptop computer",
-    ///     limit: 10
-    /// );
-    ///
-    /// // Create custom embedding
-    /// var embedding = await client.VectorSearchSlice.CreateEmbeddingAsync("search query");
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Storage.VectorSearch.IConvexVectorSearch"/>
-    public Features.Storage.VectorSearch.VectorSearchSlice VectorSearchSlice { get; }
-
-    /// <summary>
-    /// Gets the HTTP actions slice for building REST APIs directly in Convex.
-    /// Provides methods for calling HTTP endpoints, handling webhooks, and file uploads.
-    /// </summary>
-    /// <value>The HTTP actions slice implementing <see cref="Features.Operational.HttpActions.IConvexHttpActions"/>.</value>
-    /// <example>
-    /// <code>
-    /// // GET request
-    /// var response = await client.HttpActionsSlice.GetAsync&lt;User&gt;("users/123");
-    ///
-    /// // POST request with body
-    /// var createResponse = await client.HttpActionsSlice.PostAsync&lt;User, CreateUserRequest&gt;(
-    ///     actionPath: "users",
-    ///     body: new CreateUserRequest { Name = "John" }
-    /// );
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Operational.HttpActions.IConvexHttpActions"/>
-    public Features.Operational.HttpActions.HttpActionsSlice HttpActionsSlice { get; }
-
-    /// <summary>
-    /// Gets the scheduling slice for scheduling functions to run at specific times or intervals.
-    /// Supports one-time jobs, recurring cron jobs, and interval-based tasks.
-    /// </summary>
-    /// <value>The scheduling slice implementing <see cref="Features.Operational.Scheduling.IConvexScheduler"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Schedule a one-time job
-    /// var jobId = await client.SchedulingSlice.ScheduleAsync(
-    ///     functionName: "functions/sendReminder",
-    ///     delay: TimeSpan.FromHours(24)
-    /// );
-    ///
-    /// // Schedule recurring daily job
-    /// var dailyJobId = await client.SchedulingSlice.ScheduleRecurringAsync(
-    ///     functionName: "functions/sendDailyDigest",
-    ///     cronExpression: "0 9 * * *" // Daily at 9 AM
-    /// );
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Operational.Scheduling.IConvexScheduler"/>
-    public Features.Operational.Scheduling.SchedulingSlice SchedulingSlice { get; }
-
-    /// <summary>
-    /// Gets the new pagination slice (migrated to vertical slice architecture).
-    /// Provides cursor-based pagination for Convex queries.
-    /// </summary>
-    public Features.RealTime.Pagination.IConvexPagination PaginationSlice => _pagination;
-
-    /// <summary>
-    /// Gets the caching slice for in-memory caching with optimistic updates and pattern-based invalidation.
-    /// Provides query result caching to reduce network requests and improve performance.
-    /// </summary>
-    /// <value>The caching slice implementing <see cref="Infrastructure.Caching.IConvexCache"/>.</value>
-    /// <remarks>
-    /// <para>
-    /// The cache automatically invalidates queries when related mutations execute (if dependencies are configured).
-    /// You can also manually invalidate queries using <see cref="InvalidateQueryAsync(string)"/> or <see cref="InvalidateQueriesAsync(string)"/>.
-    /// </para>
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// // Query with caching
-    /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos")
-    ///     .Cached(TimeSpan.FromMinutes(5))
-    ///     .ExecuteAsync();
-    ///
-    /// // Manually invalidate cache
-    /// await client.InvalidateQueryAsync("functions/listTodos");
-    /// </code>
-    /// </example>
-    /// <seealso cref="Infrastructure.Caching.IConvexCache"/>
-    /// <seealso cref="InvalidateQueryAsync(string)"/>
-    public Features.DataAccess.Caching.CachingSlice CachingSlice { get; }
-
-    /// <summary>
-    /// Gets the Authentication slice for managing authentication state and tokens.
-    /// Supports static tokens, admin keys, and token providers with automatic refresh.
-    /// </summary>
-    /// <value>The authentication slice implementing <see cref="Features.Security.Authentication.IConvexAuthentication"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Set authentication token
-    /// await client.AuthenticationSlice.SetAuthTokenAsync("your-jwt-token");
-    ///
-    /// // Monitor authentication state
-    /// client.AuthenticationSlice.AuthenticationStateChanged += (sender, e) => {
-    ///     Console.WriteLine($"Auth state: {e.State}");
-    /// };
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Security.Authentication.IConvexAuthentication"/>
-    public Features.Security.Authentication.AuthenticationSlice AuthenticationSlice { get; }
-
-    /// <summary>
-    /// Gets the Health slice for monitoring connection health and metrics.
-    /// Provides health check information including connection state and subscription counts.
-    /// </summary>
-    /// <value>The health slice implementing <see cref="Features.Observability.Health.IConvexHealth"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Check client health
-    /// var health = await client.HealthSlice.GetHealthAsync();
-    /// Console.WriteLine($"Is healthy: {health.IsHealthy}");
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Observability.Health.IConvexHealth"/>
-    public Features.Observability.Health.HealthSlice HealthSlice { get; }
-
-    /// <summary>
-    /// Gets the Diagnostics slice for performance tracking and disconnection monitoring.
-    /// Provides metrics and diagnostics for troubleshooting connection and performance issues.
-    /// </summary>
-    /// <value>The diagnostics slice implementing <see cref="Features.Observability.Diagnostics.IConvexDiagnostics"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Get performance metrics
-    /// var metrics = await client.DiagnosticsSlice.GetPerformanceMetricsAsync();
-    /// Console.WriteLine($"Average latency: {metrics.AverageLatencyMs}ms");
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Observability.Diagnostics.IConvexDiagnostics"/>
-    public Features.Observability.Diagnostics.DiagnosticsSlice DiagnosticsSlice { get; }
-
-    /// <summary>
-    /// Gets the Resilience slice for retry and circuit breaker patterns.
-    /// Provides advanced resilience patterns for handling transient failures and circuit breaking.
-    /// </summary>
-    /// <value>The resilience slice implementing <see cref="Features.Observability.Resilience.IConvexResilience"/>.</value>
-    /// <example>
-    /// <code>
-    /// // Configure retry policy
-    /// var retryPolicy = client.ResilienceSlice.CreateRetryPolicy()
-    ///     .MaxRetries(3)
-    ///     .ExponentialBackoff(TimeSpan.FromSeconds(1))
-    ///     .Build();
-    /// </code>
-    /// </example>
-    /// <seealso cref="Features.Observability.Resilience.IConvexResilience"/>
-    public Features.Observability.Resilience.ResilienceSlice ResilienceSlice { get; }
+    #region Infrastructure
 
     /// <inheritdoc/>
     public TimestampManager TimestampManager { get; }
 
-    #endregion
+    #endregion Infrastructure
+
+    #region IConvexClient Feature Service Implementations
+
+    /// <inheritdoc/>
+    public Features.Storage.Files.IConvexFileStorage Files => _fileStorage;
+
+    /// <inheritdoc/>
+    public Features.Storage.VectorSearch.IConvexVectorSearch VectorSearch => _vectorSearch;
+
+    /// <inheritdoc/>
+    public Features.Operational.HttpActions.IConvexHttpActions Http => _httpActions;
+
+    /// <inheritdoc/>
+    public Features.Operational.Scheduling.IConvexScheduler Scheduler => _scheduling;
+
+    /// <inheritdoc/>
+    public Features.Security.Authentication.IConvexAuthentication Auth => _authentication;
+
+    /// <inheritdoc/>
+    public IConvexCache Cache => _caching;
+
+    /// <inheritdoc/>
+    public Features.Observability.Health.IConvexHealth Health => _health;
+
+    /// <inheritdoc/>
+    public Features.Observability.Diagnostics.IConvexDiagnostics Diagnostics => _diagnostics;
+
+    /// <inheritdoc/>
+    public Features.Observability.Resilience.IConvexResilience Resilience => _resilience;
+
+    /// <inheritdoc/>
+    public Features.RealTime.Pagination.IConvexPagination Pagination => _pagination;
+
+    #endregion IConvexClient Feature Service Implementations
 
     #region Cache & Dependency Tracking
 
@@ -719,7 +578,7 @@ public sealed class ConvexClient : IConvexClient
             throw new ArgumentNullException(nameof(queryName));
         }
 
-        _ = CachingSlice.Remove(queryName);
+        _ = _caching.Remove(queryName);
         await Task.CompletedTask;
     }
 
@@ -731,7 +590,7 @@ public sealed class ConvexClient : IConvexClient
             throw new ArgumentNullException(nameof(pattern));
         }
 
-        _ = CachingSlice.RemovePattern(pattern);
+        _ = _caching.RemovePattern(pattern);
         await Task.CompletedTask;
     }
 
@@ -748,11 +607,11 @@ public sealed class ConvexClient : IConvexClient
             // Support both exact matches and patterns
             if (queryPattern.Contains('*') || queryPattern.Contains('?'))
             {
-                _ = CachingSlice.RemovePattern(queryPattern);
+                _ = _caching.RemovePattern(queryPattern);
             }
             else
             {
-                _ = CachingSlice.Remove(queryPattern);
+                _ = _caching.Remove(queryPattern);
             }
         }
 
@@ -787,7 +646,7 @@ public sealed class ConvexClient : IConvexClient
     /// });
     /// </code>
     /// </example>
-    /// <seealso cref="HealthSlice"/>
+    /// <seealso cref="Health"/>
     /// <seealso cref="ConnectionState"/>
     public Task<Features.Observability.Health.ConvexHealthCheck> GetHealthAsync()
     {
@@ -804,7 +663,7 @@ public sealed class ConvexClient : IConvexClient
         }
 
         // Create health check from new health slice
-        var healthCheck = HealthSlice.CreateHealthCheck(connectionState, activeSubscriptions);
+        var healthCheck = _health.CreateHealthCheck(connectionState, activeSubscriptions);
 
         return Task.FromResult(healthCheck);
     }

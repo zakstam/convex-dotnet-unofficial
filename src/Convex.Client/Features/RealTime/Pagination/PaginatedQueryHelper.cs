@@ -256,7 +256,7 @@ public class PaginatedQueryHelper<T> : IDisposable
             }
 
             // Create paginator
-            var builder = _client.PaginationSlice.Query<T>(_functionName).WithPageSize(_pageSize);
+            var builder = _client.Pagination.Query<T>(_functionName).WithPageSize(_pageSize);
             if (_args != null)
             {
                 builder = builder.WithArgs(_args);

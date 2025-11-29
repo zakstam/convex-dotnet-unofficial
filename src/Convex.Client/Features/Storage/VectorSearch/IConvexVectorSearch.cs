@@ -30,7 +30,7 @@ namespace Convex.Client.Features.Storage.VectorSearch;
 /// <example>
 /// <code>
 /// // Search by text (automatically creates embedding)
-/// var results = await client.VectorSearchSlice.SearchByTextAsync&lt;Product&gt;(
+/// var results = await client.VectorSearch.SearchByTextAsync&lt;Product&gt;(
 ///     indexName: "product_embeddings",
 ///     text: "laptop computer",
 ///     limit: 10
@@ -42,8 +42,8 @@ namespace Convex.Client.Features.Storage.VectorSearch;
 /// }
 ///
 /// // Search with custom vector
-/// var queryVector = await client.VectorSearchSlice.CreateEmbeddingAsync("laptop computer");
-/// var vectorResults = await client.VectorSearchSlice.SearchAsync&lt;Product&gt;(
+/// var queryVector = await client.VectorSearch.CreateEmbeddingAsync("laptop computer");
+/// var vectorResults = await client.VectorSearch.SearchAsync&lt;Product&gt;(
 ///     indexName: "product_embeddings",
 ///     vector: queryVector,
 ///     limit: 10
@@ -91,7 +91,7 @@ public interface IConvexVectorSearch
     /// <example>
     /// <code>
     /// // Search for similar products by description
-    /// var results = await client.VectorSearchSlice.SearchByTextAsync&lt;Product&gt;(
+    /// var results = await client.VectorSearch.SearchByTextAsync&lt;Product&gt;(
     ///     indexName: "product_embeddings",
     ///     text: "wireless headphones with noise cancellation",
     ///     limit: 5
@@ -103,7 +103,7 @@ public interface IConvexVectorSearch
     /// }
     ///
     /// // Search documents by query
-    /// var documentResults = await client.VectorSearchSlice.SearchByTextAsync&lt;Document&gt;(
+    /// var documentResults = await client.VectorSearch.SearchByTextAsync&lt;Document&gt;(
     ///     indexName: "document_embeddings",
     ///     text: "machine learning algorithms",
     ///     embeddingModel: "text-embedding-ada-002",

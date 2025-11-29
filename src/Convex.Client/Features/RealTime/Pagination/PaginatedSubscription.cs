@@ -123,7 +123,7 @@ public class PaginatedSubscription<T> : IDisposable
             }
 
             // Create paginator
-            _paginator = _client.PaginationSlice
+            _paginator = _client.Pagination
                 .Query<T>(_functionName)
                 .WithPageSize(_pageSize)
                 .WithArgs(_subscriptionArgs ?? new { })

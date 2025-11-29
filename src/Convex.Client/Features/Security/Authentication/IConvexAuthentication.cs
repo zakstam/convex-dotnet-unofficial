@@ -24,14 +24,14 @@ namespace Convex.Client.Features.Security.Authentication;
 /// <example>
 /// <code>
 /// // Set static token
-/// await client.AuthenticationSlice.SetAuthTokenAsync("your-jwt-token");
+/// await client.Auth.SetAuthTokenAsync("your-jwt-token");
 ///
 /// // Use token provider for automatic refresh
 /// var provider = new MyTokenProvider();
-/// await client.AuthenticationSlice.SetAuthTokenProviderAsync(provider);
+/// await client.Auth.SetAuthTokenProviderAsync(provider);
 ///
 /// // Monitor authentication state
-/// client.AuthenticationSlice.AuthenticationStateChanged += (sender, e) => {
+/// client.Auth.AuthenticationStateChanged += (sender, e) => {
 ///     Console.WriteLine($"Auth state: {e.State}");
 ///     if (e.State == AuthenticationState.TokenExpired)
 ///     {
@@ -75,10 +75,10 @@ public interface IConvexAuthentication
     /// <example>
     /// <code>
     /// // Set authentication token
-    /// await client.AuthenticationSlice.SetAuthTokenAsync("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
+    /// await client.Auth.SetAuthTokenAsync("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
     ///
     /// // Check authentication state
-    /// if (client.AuthenticationSlice.AuthenticationState == AuthenticationState.Authenticated)
+    /// if (client.Auth.AuthenticationState == AuthenticationState.Authenticated)
     /// {
     ///     Console.WriteLine("Successfully authenticated");
     /// }
@@ -114,7 +114,7 @@ public interface IConvexAuthentication
     /// <example>
     /// <code>
     /// // Set admin key (server-side only!)
-    /// await client.AuthenticationSlice.SetAdminAuthAsync("your-admin-key");
+    /// await client.Auth.SetAdminAuthAsync("your-admin-key");
     ///
     /// // Now you can perform privileged operations
     /// var allUsers = await client.Query&lt;List&lt;User&gt;&gt;("admin:getAllUsers").ExecuteAsync();
@@ -159,7 +159,7 @@ public interface IConvexAuthentication
     /// }
     ///
     /// // Set the provider
-    /// await client.AuthenticationSlice.SetAuthTokenProviderAsync(new MyTokenProvider());
+    /// await client.Auth.SetAuthTokenProviderAsync(new MyTokenProvider());
     ///
     /// // Token will be automatically retrieved when needed
     /// var todos = await client.Query&lt;List&lt;Todo&gt;&gt;("functions/listTodos").ExecuteAsync();

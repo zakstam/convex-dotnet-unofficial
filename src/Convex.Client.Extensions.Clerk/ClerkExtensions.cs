@@ -35,16 +35,7 @@ public static class ClerkExtensions
             throw new ArgumentNullException(nameof(tokenProvider));
         }
 
-        if (client is ConvexClient convexClient)
-        {
-            await convexClient.AuthenticationSlice.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                "Clerk authentication can only be configured on ConvexClient instances. " +
-                "The provided client does not support AuthenticationSlice.");
-        }
+        await client.Auth.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
     }
 
     /// <summary>
@@ -83,16 +74,7 @@ public static class ClerkExtensions
 
         var tokenProvider = new ClerkAuthTokenProvider(clerkTokenService, options);
 
-        if (client is ConvexClient convexClient)
-        {
-            await convexClient.AuthenticationSlice.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                "Clerk authentication can only be configured on ConvexClient instances. " +
-                "The provided client does not support AuthenticationSlice.");
-        }
+        await client.Auth.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
     }
 }
 

@@ -59,27 +59,15 @@ public static class ClerkGodotExtensions
         Debug.WriteLine(typeMsg);
         Console.WriteLine(typeMsg);
 
-        if (client is ConvexClient convexClient)
-        {
-            var callMsg = $"[ClerkGodotExtensions] Calling SetAuthTokenProviderAsync...";
-            Debug.WriteLine(callMsg);
-            Console.WriteLine(callMsg);
+        var callMsg = $"[ClerkGodotExtensions] Calling SetAuthTokenProviderAsync...";
+        Debug.WriteLine(callMsg);
+        Console.WriteLine(callMsg);
 
-            await convexClient.AuthenticationSlice.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
+        await client.Auth.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
 
-            var completeMsg = $"[ClerkGodotExtensions] SetAuthTokenProviderAsync completed!";
-            Debug.WriteLine(completeMsg);
-            Console.WriteLine(completeMsg);
-        }
-        else
-        {
-            var errMsg = $"[ClerkGodotExtensions] ERROR: Client is not ConvexClient!";
-            Debug.WriteLine(errMsg);
-            Console.WriteLine(errMsg);
-            throw new InvalidOperationException(
-                "Clerk authentication can only be configured on ConvexClient instances. " +
-                "The provided client does not support AuthenticationSlice.");
-        }
+        var completeMsg = $"[ClerkGodotExtensions] SetAuthTokenProviderAsync completed!";
+        Debug.WriteLine(completeMsg);
+        Console.WriteLine(completeMsg);
 
         var endMsg = "[ClerkGodotExtensions] AddClerkAuthToConvexClientAsync COMPLETE";
         Debug.WriteLine(endMsg);
