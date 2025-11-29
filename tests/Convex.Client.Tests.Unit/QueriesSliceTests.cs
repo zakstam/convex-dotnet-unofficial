@@ -413,10 +413,11 @@ public class QueriesSliceTests : IDisposable
 
     [Fact]
     [Trait("Category", "EdgeCase")]
-    public async Task QueryBuilder_ExecuteAsync_WithNullDeserializedResult_ThrowsInvalidOperationException()
+    public async Task QueryBuilder_ExecuteAsync_WithNullDeserializedResult_ReturnsNull()
     {
         // Arrange
         // ConvexResponseParser expects wrapped format, and null value should still be wrapped
+        // null is a valid return value from Convex functions
         var responseJson = "{\"status\":\"success\",\"value\":null}";
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -424,18 +425,16 @@ public class QueriesSliceTests : IDisposable
         };
 
         _mockSerializer.Setup(s => s.Serialize(It.IsAny<object>())).Returns("{}");
-        // ConvexResponseParser deserializes the value field, which is null
-        _mockSerializer.Setup(s => s.Deserialize<string>(It.Is<string>(json => json == "null"))).Returns((string?)null);
         _mockHttpProvider.Setup(p => p.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
 
         var builder = _queriesSlice.Query<string>(TestFunctionName);
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            builder.ExecuteAsync());
+        // Act
+        var result = await builder.ExecuteAsync();
 
-        Assert.Contains(TestFunctionName, ex.Message);
+        // Assert - null is a valid return value for reference types
+        Assert.Null(result);
     }
 
     [Fact]
