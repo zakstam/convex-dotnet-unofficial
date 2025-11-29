@@ -76,6 +76,7 @@ appsettings.Production.json
 # Convex
 convex/_generated/
 auth.config.ts
+**/_generated/
 
 # Auto-generated C# files
 **/Scripts/Generated/
