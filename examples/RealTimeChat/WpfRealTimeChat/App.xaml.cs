@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Windows;
 using Convex.Client;
+using Microsoft.Extensions.Logging;
 using RealtimeChat.Shared.Configuration;
 
 namespace WpfRealTimeChat;
@@ -21,6 +22,11 @@ public partial class App : Application
     /// </summary>
     public static ChatConfiguration ChatConfig { get; private set; } = null!;
 
+    /// <summary>
+    /// Logger factory for debug logging.
+    /// </summary>
+    private static ILoggerFactory? _loggerFactory;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -39,7 +45,21 @@ public partial class App : Application
                 defaultDeploymentUrl: "https://your-deployment.convex.cloud");
 
             ChatConfig = config;
-            ConvexClient = config.CreateClient();
+
+            // Create logger factory for debug output (visible in Visual Studio Output window)
+            _loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.SetMinimumLevel(LogLevel.Debug);
+                builder.AddDebug(); // Outputs to Debug window in Visual Studio
+            });
+
+            var logger = _loggerFactory.CreateLogger<ConvexClient>();
+
+            // Create client with logging enabled
+            ConvexClient = config.CreateClientBuilder()
+                .WithLogging(logger)
+                .EnableDebugLogging(true)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -63,6 +83,9 @@ public partial class App : Application
         {
             disposable.Dispose();
         }
+
+        // Dispose logger factory
+        _loggerFactory?.Dispose();
 
         base.OnExit(e);
     }

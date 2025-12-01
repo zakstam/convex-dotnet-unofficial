@@ -30,10 +30,10 @@ public class CursorService(IConvexClient client) : IDisposable
     private readonly List<IDisposable> _subscriptions = [];
 
     // Events - using generated types from schema
-    public event EventHandler<List<Users>>? ActiveUsersUpdated;
-    public event EventHandler<List<CursorBatches>>? CursorBatchesUpdated;
-    public event EventHandler<List<Reactions>>? ReactionsUpdated;
-    public event EventHandler<List<ClickEffects>>? ClickEffectsUpdated;
+    public event EventHandler<List<User>>? ActiveUsersUpdated;
+    public event EventHandler<List<CursorBatch>>? CursorBatchesUpdated;
+    public event EventHandler<List<Reaction>>? ReactionsUpdated;
+    public event EventHandler<List<ClickEffect>>? ClickEffectsUpdated;
 
     /// <summary>
     /// Gets the Convex client for direct access.
@@ -44,7 +44,7 @@ public class CursorService(IConvexClient client) : IDisposable
     public void SubscribeToActiveUsers()
     {
         var subscription = Client
-            .CreateResilientSubscription<List<Users>>(ConvexFunctions.Queries.Users.ListActive)
+            .CreateResilientSubscription<List<User>>(ConvexFunctions.Queries.Users.ListActive)
             .Subscribe(
                 users => ActiveUsersUpdated?.Invoke(this, users ?? []),
                 error => Console.WriteLine($"Active users subscription error: {error.Message}")
@@ -57,7 +57,7 @@ public class CursorService(IConvexClient client) : IDisposable
     public void SubscribeToCursorBatches()
     {
         var subscription = Client
-            .CreateResilientSubscription<List<CursorBatches>>(ConvexFunctions.Queries.CursorBatches.List)
+            .CreateResilientSubscription<List<CursorBatch>>(ConvexFunctions.Queries.CursorBatches.List)
             .Subscribe(
                 batches => CursorBatchesUpdated?.Invoke(this, batches ?? []),
                 error => Console.WriteLine($"Cursor batches subscription error: {error.Message}")
@@ -70,7 +70,7 @@ public class CursorService(IConvexClient client) : IDisposable
     public void SubscribeToReactions()
     {
         var subscription = Client
-            .CreateResilientSubscription<List<Reactions>>(ConvexFunctions.Queries.Reactions.ListRecent)
+            .CreateResilientSubscription<List<Reaction>>(ConvexFunctions.Queries.Reactions.ListRecent)
             .Subscribe(
                 reactions => ReactionsUpdated?.Invoke(this, reactions ?? []),
                 error => Console.WriteLine($"Reactions subscription error: {error.Message}")
@@ -83,7 +83,7 @@ public class CursorService(IConvexClient client) : IDisposable
     public void SubscribeToClickEffects()
     {
         var subscription = Client
-            .CreateResilientSubscription<List<ClickEffects>>(ConvexFunctions.Queries.ClickEffects.ListRecent)
+            .CreateResilientSubscription<List<ClickEffect>>(ConvexFunctions.Queries.ClickEffects.ListRecent)
             .Subscribe(
                 effects => ClickEffectsUpdated?.Invoke(this, effects ?? []),
                 error => Console.WriteLine($"Click effects subscription error: {error.Message}")

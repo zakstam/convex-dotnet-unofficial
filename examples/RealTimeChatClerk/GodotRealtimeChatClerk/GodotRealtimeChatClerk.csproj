@@ -16,7 +16,7 @@
 
   <!-- Include source generator and analyzers when using ProjectReference -->
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
+    <ProjectReference Include="..\..\..\src\Convex.SourceGenerator\Convex.SourceGenerator.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer" />

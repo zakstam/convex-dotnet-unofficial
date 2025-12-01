@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>$(NoWarn);CA1716</NoWarn>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,9 +13,15 @@
     <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
   </ItemGroup>
 
+  <!-- Add TypeScript files for source generator -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\backend\convex\functions\*.ts" />
+    <AdditionalFiles Include="..\..\backend\convex\schema.ts" />
+  </ItemGroup>
+
   <!-- Include source generator and analyzers when using ProjectReference -->
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
+    <ProjectReference Include="..\..\..\..\src\Convex.SourceGenerator\Convex.SourceGenerator.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer" />

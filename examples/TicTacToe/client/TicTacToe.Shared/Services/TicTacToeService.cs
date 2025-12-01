@@ -3,7 +3,6 @@ using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
 using Convex.Client.Infrastructure.ErrorHandling;
 using Convex.Generated;
-using Convex.Generated.Models;
 
 namespace TicTacToe.Shared.Services;
 

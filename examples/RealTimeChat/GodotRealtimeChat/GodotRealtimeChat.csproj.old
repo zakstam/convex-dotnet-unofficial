@@ -1,14 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Godot.NET.Sdk/4.5.0">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Convex.Client\Convex.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
     <ProjectReference Include="..\RealtimeChat.Shared\RealtimeChat.Shared.csproj" />
   </ItemGroup>
 
@@ -28,5 +28,8 @@
                       OutputItemType="Analyzer" />
   </ItemGroup>
 
+  <!-- Add TypeScript function files for type-safe function constants generation -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\backend\convex\functions\*.ts" />
+  </ItemGroup>
 </Project>
-

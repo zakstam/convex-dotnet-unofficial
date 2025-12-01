@@ -187,8 +187,8 @@
     private System.Timers.Timer? fpsTimer;
 
     // Using generated types from Convex schema
-    private List<Users> ActiveUsers = new();
-    private Dictionary<string, CursorBatches> RemoteCursors = new();
+    private List<User> ActiveUsers = new();
+    private Dictionary<string, CursorBatch> RemoteCursors = new();
 
     private int WindowWidth = 1920;
     private int WindowHeight = 1080;
@@ -276,7 +276,7 @@
         await CursorService.CreateReactionAsync(UserId, emoji, x, y);
     }
 
-    private async void OnReactionsUpdated(object? sender, List<Reactions> reactions)
+    private async void OnReactionsUpdated(object? sender, List<Reaction> reactions)
     {
         // Render recent reactions (from last 5 seconds)
         var recentReactions = reactions.Where(r =>
@@ -298,7 +298,7 @@
         }
     }
 
-    private async void OnClickEffectsUpdated(object? sender, List<ClickEffects> effects)
+    private async void OnClickEffectsUpdated(object? sender, List<ClickEffect> effects)
     {
         // Render recent click effects (from last 2 seconds)
         var recentEffects = effects.Where(e =>
@@ -320,13 +320,13 @@
         }
     }
 
-    private void OnActiveUsersUpdated(object? sender, List<Users> users)
+    private void OnActiveUsersUpdated(object? sender, List<User> users)
     {
         ActiveUsers = users;
         InvokeAsync(StateHasChanged);
     }
 
-    private async void OnCursorBatchesUpdated(object? sender, List<CursorBatches> batches)
+    private async void OnCursorBatchesUpdated(object? sender, List<CursorBatch> batches)
     {
         foreach (var batch in batches)
         {
