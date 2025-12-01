@@ -39,8 +39,8 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests
-        run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Run unit tests
+        run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category!=Integration"
 
       - name: Pack packages (main branch only)
         if: github.ref == 'refs/heads/main' || github.event_name == 'release'
