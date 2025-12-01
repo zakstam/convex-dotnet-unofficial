@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 
-namespace Convex.SchemaGenerator.Models;
+namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
 /// Represents the kind of Convex validator.
@@ -27,7 +27,7 @@ public enum ValidatorKind
 }
 
 /// <summary>
-/// Represents a Convex validator type parsed from schema.ts.
+/// Represents a Convex validator type parsed from TypeScript files.
 /// </summary>
 public class ValidatorType
 {

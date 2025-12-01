@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 
-namespace Convex.SchemaGenerator.Models;
+namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
 /// Represents an index definition on a Convex table.

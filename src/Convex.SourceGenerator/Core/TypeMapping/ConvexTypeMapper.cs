@@ -3,23 +3,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Convex.SchemaGenerator.Models;
+using Convex.SourceGenerator.Core.Models;
+using Convex.SourceGenerator.Core.Utilities;
 
-namespace Convex.SchemaGenerator.CodeGen;
+namespace Convex.SourceGenerator.Core.TypeMapping;
 
 /// <summary>
 /// Maps Convex validator types to C# types.
 /// </summary>
-public static class TypeMapper
+public static class ConvexTypeMapper
 {
     /// <summary>
     /// Maps a ValidatorType to its C# type string.
     /// </summary>
-    /// <param name="validator">The validator type to map.</param>
-    /// <param name="nestedTypeCallback">Callback to register nested types that need to be generated.</param>
-    /// <param name="parentName">The name of the parent type (for generating nested type names).</param>
-    /// <param name="fieldName">The name of the field (for generating nested type names).</param>
-    /// <returns>The C# type string.</returns>
     public static string MapToCSharpType(
         ValidatorType validator,
         Action<string, List<FieldDefinition>>? nestedTypeCallback = null,
@@ -36,7 +32,7 @@ public static class TypeMapper
             ValidatorKind.Bytes => "byte[]",
             ValidatorKind.Null => "object",
             ValidatorKind.Any => "System.Text.Json.JsonElement",
-            ValidatorKind.Id => "string", // IDs are strings
+            ValidatorKind.Id => "string",
             ValidatorKind.Literal => MapLiteralType(validator.LiteralValue),
             ValidatorKind.Array => MapArrayType(validator, nestedTypeCallback, parentName, fieldName),
             ValidatorKind.Object => MapObjectType(validator, nestedTypeCallback, parentName, fieldName),
@@ -71,7 +67,6 @@ public static class TypeMapper
             return "object";
         }
 
-        // Try to determine the literal type
         if (bool.TryParse(value, out _))
         {
             return "bool";
@@ -87,7 +82,6 @@ public static class TypeMapper
             return "double";
         }
 
-        // Default to string for string literals
         return "string";
     }
 
@@ -117,10 +111,7 @@ public static class TypeMapper
             return "object";
         }
 
-        // Generate a nested type name
         var nestedTypeName = GenerateNestedTypeName(parentName, fieldName);
-
-        // Register the nested type for generation
         nestedTypeCallback?.Invoke(nestedTypeName, validator.Fields);
 
         return nestedTypeName;
@@ -139,13 +130,12 @@ public static class TypeMapper
 
         var innerType = MapToCSharpType(validator.InnerType, nestedTypeCallback, parentName, fieldName);
 
-        // Add ? for value types, reference types are already nullable with #nullable enable
-        if (IsValueType(innerType))
+        if (!innerType.EndsWith("?"))
         {
             return $"{innerType}?";
         }
 
-        return $"{innerType}?";
+        return innerType;
     }
 
     private static string MapUnionType(ValidatorType validator)
@@ -164,17 +154,17 @@ public static class TypeMapper
             if (hasNull && nonNullMember != null)
             {
                 var innerType = MapToCSharpType(nonNullMember);
-                return IsValueType(innerType) ? $"{innerType}?" : $"{innerType}?";
+                return $"{innerType}?";
             }
         }
 
-        // Check if all members are string literals - use string type
+        // Check if all members are string literals
         if (validator.UnionMembers.All(m => m.Kind == ValidatorKind.Literal && IsStringLiteral(m.LiteralValue)))
         {
             return "string";
         }
 
-        // Check if all non-null members are string literals (nullable string union)
+        // Check if all non-null members are string literals
         var nonNullMembers = validator.UnionMembers.Where(m => m.Kind != ValidatorKind.Null).ToList();
         var hasNullMember = validator.UnionMembers.Any(m => m.Kind == ValidatorKind.Null);
         if (nonNullMembers.All(m => m.Kind == ValidatorKind.Literal && IsStringLiteral(m.LiteralValue)))
@@ -182,8 +172,6 @@ public static class TypeMapper
             return hasNullMember ? "string?" : "string";
         }
 
-        // For complex unions, we use object
-        // A more sophisticated implementation could use discriminated unions
         return "object";
     }
 
@@ -194,7 +182,6 @@ public static class TypeMapper
             return false;
         }
 
-        // If it's not a number or boolean, treat it as a string literal
         if (bool.TryParse(value, out _))
         {
             return false;
@@ -232,35 +219,7 @@ public static class TypeMapper
             return "NestedType";
         }
 
-        // Convert field name to PascalCase and combine with parent name
-        // fieldName is guaranteed non-null here due to the check above
-        var pascalFieldName = ToPascalCase(fieldName!);
+        var pascalFieldName = NamingConventions.ToPascalCase(fieldName!);
         return $"{parentName}{pascalFieldName}";
-    }
-
-    private static string ToPascalCase(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-        {
-            return input;
-        }
-
-        // Handle snake_case and ensure first letter is uppercase
-        var words = input.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
-        var result = new System.Text.StringBuilder();
-
-        foreach (var word in words)
-        {
-            if (word.Length > 0)
-            {
-                result.Append(char.ToUpperInvariant(word[0]));
-                if (word.Length > 1)
-                {
-                    result.Append(word.Substring(1));
-                }
-            }
-        }
-
-        return result.ToString();
     }
 }

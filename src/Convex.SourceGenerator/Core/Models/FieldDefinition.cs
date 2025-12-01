@@ -1,14 +1,14 @@
 #nullable enable
 
-namespace Convex.SchemaGenerator.Models;
+namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents a field definition in a Convex table.
+/// Represents a field definition in a Convex table or argument object.
 /// </summary>
 public class FieldDefinition
 {
     /// <summary>
-    /// The name of the field as it appears in the schema.
+    /// The name of the field as it appears in the schema/function.
     /// </summary>
     public string Name { get; set; } = string.Empty;
 

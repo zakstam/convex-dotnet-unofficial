@@ -478,8 +478,8 @@ internal sealed class ConvexWebSocketClient(
             ConnectionCount = _connectionCount,
             LastCloseReason = _lastCloseReason,
             MaxObservedTimestamp = null, // TODO: Implement resumption with maxObservedTimestamp
-            ClientTs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            BaseVersion = _querySetVersion // Query set version (not identity version)
+            ClientTs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            // Note: Connect message does NOT have baseVersion - that's only for ModifyQuerySet and Authenticate
         };
 
         var messageBytes = ConvexWebSocketProtocol.EncodeClientMessage(connectMessage);
@@ -969,7 +969,9 @@ internal sealed class ConvexWebSocketClient(
                     break;
 
                 case "Ping":
-                    // TODO: Handle ping/pong for keepalive
+                    // Ping's only purpose is to reset the server inactivity timer
+                    // No response is needed - just receiving the message resets our activity
+                    _logger?.LogDebug("[WebSocket] Received Ping (no response needed)");
                     break;
 
                 default:

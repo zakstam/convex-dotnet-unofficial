@@ -35,11 +35,7 @@
 
   <!-- Source generator and analyzers - always use ProjectReference (they're not published as separate packages) -->
   <ItemGroup>
-    <ProjectReference Include="..\Convex.FunctionGenerator\Convex.FunctionGenerator.csproj"
-                      PrivateAssets="all"
-                      ReferenceOutputAssembly="false"
-                      OutputItemType="Analyzer" />
-    <ProjectReference Include="..\Convex.SchemaGenerator\Convex.SchemaGenerator.csproj"
+    <ProjectReference Include="..\Convex.SourceGenerator\Convex.SourceGenerator.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer" />
@@ -65,11 +61,7 @@
     <None Include="build\$(BasePackageId).targets" Pack="true" PackagePath="$(TargetsFilePackagePath)" Condition="Exists('build\$(BasePackageId).targets')" />
 
     <!-- Pack analyzer and source generator DLLs into the NuGet package -->
-    <None Include="..\Convex.FunctionGenerator\bin\$(Configuration)\netstandard2.0\Convex.FunctionGenerator.dll"
-          Pack="true"
-          PackagePath="analyzers/dotnet/cs"
-          Visible="false" />
-    <None Include="..\Convex.SchemaGenerator\bin\$(Configuration)\netstandard2.0\Convex.SchemaGenerator.dll"
+    <None Include="..\Convex.SourceGenerator\bin\$(Configuration)\netstandard2.0\Convex.SourceGenerator.dll"
           Pack="true"
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />

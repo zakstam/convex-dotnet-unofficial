@@ -33,7 +33,7 @@ public static class ConvexWebSocketProtocol
                     writer.WriteString("lastCloseReason", connect.LastCloseReason);
                 }
 
-                writer.WriteNumber("baseVersion", connect.BaseVersion);
+                // Note: Connect message does NOT have baseVersion - that's only for ModifyQuerySet and Authenticate
                 if (connect.MaxObservedTimestamp.HasValue)
                 {
                     writer.WriteString("maxObservedTimestamp", connect.MaxObservedTimestamp.Value.ToBase64String());
@@ -274,11 +274,7 @@ public record ConnectMessage : ClientMessage
     /// Gets the client timestamp when sending this message.
     /// </summary>
     public long ClientTs { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-    /// <summary>
-    /// Gets the base version for query synchronization (not identity version).
-    /// </summary>
-    public int BaseVersion { get; init; } = 0;
+    // Note: Connect message does NOT have baseVersion - that's only for ModifyQuerySet and Authenticate
 }
 
 /// <summary>

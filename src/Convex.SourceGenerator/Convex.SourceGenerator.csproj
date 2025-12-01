@@ -10,10 +10,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591;NU5128;NU5017</NoWarn>
     <Deterministic>true</Deterministic>
-    <BasePackageId>Convex.SchemaGenerator</BasePackageId>
-    <Product>Convex .NET Schema Generator</Product>
-    <Description>Roslyn source generator that creates type-safe C# classes from your Convex schema.ts file.</Description>
-    <PackageTags>convex;source-generator;roslyn;codegen;schema;netstandard20</PackageTags>
+    <BasePackageId>Convex.SourceGenerator</BasePackageId>
+    <Product>Convex .NET Source Generator</Product>
+    <Description>Unified Roslyn source generator for Convex .NET SDK. Generates type-safe function constants, model classes, argument types, and service wrappers from your Convex backend.</Description>
+    <PackageTags>convex;source-generator;roslyn;codegen;schema;functions;netstandard20</PackageTags>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
@@ -34,6 +34,10 @@
 
   <!-- Include build targets for consumers -->
   <ItemGroup>
+    <None Include="build\*.props"
+          Pack="true"
+          PackagePath="build"
+          Visible="false" />
     <None Include="build\*.targets"
           Pack="true"
           PackagePath="build"
