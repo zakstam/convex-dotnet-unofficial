@@ -73,6 +73,10 @@ appsettings.Production.json
 **/appsettings.json
 !**/appsettings.example.json
 
+# Integration test config (track placeholder, ignore local config with credentials)
+!tests/Convex.Client.Tests.Integration/appsettings.json
+tests/Convex.Client.Tests.Integration/appsettings.Development.json
+
 # Convex
 convex/_generated/
 auth.config.ts
