@@ -117,8 +117,10 @@ public class TimestampManager(HttpClient httpClient, string deploymentUrl)
     {
         var url = $"{_deploymentUrl}/api/query_ts";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Add("Content-Type", "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json")
+        };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
 
