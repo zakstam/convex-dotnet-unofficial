@@ -5,6 +5,13 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v4.0.0-alpha...v4.0.1-alpha) (2025-12-02)
+
+
+### Bug Fixes
+
+* update documentation to clarify TypeScript file usage and source generator setup ([b94b197](https://github.com/zakstam/convex-dotnet-unofficial/commit/b94b197ed85555dbf0414892b1a16322f0c71fcd))
+
 ## [4.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v3.0.0-alpha...v4.0.0-alpha) (2025-12-02)
 
 
