@@ -116,6 +116,44 @@ public static class ConvexTypeMapper
     }
 
     /// <summary>
+    /// Determines if a field name represents a timestamp based on naming conventions.
+    /// Matches: timestamp, *At (createdAt, updatedAt), *Time (startTime, endTime), *Date (createdDate).
+    /// </summary>
+    public static bool IsTimestampField(string? fieldName)
+    {
+        if (string.IsNullOrEmpty(fieldName))
+        {
+            return false;
+        }
+
+        // Exact match for "timestamp"
+        if (fieldName!.Equals("timestamp", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Ends with "At" (createdAt, updatedAt, editedAt, finishedAt, deletedAt, etc.)
+        if (fieldName.EndsWith("At", StringComparison.Ordinal) && fieldName.Length > 2)
+        {
+            return true;
+        }
+
+        // Ends with "Time" (creationTime, startTime, endTime, etc.)
+        if (fieldName.EndsWith("Time", StringComparison.Ordinal) && fieldName.Length > 4)
+        {
+            return true;
+        }
+
+        // Ends with "Date" (createdDate, updatedDate, etc.)
+        if (fieldName.EndsWith("Date", StringComparison.Ordinal) && fieldName.Length > 4)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Determines if a C# type is a value type (needs ? for nullable).
     /// </summary>
     public static bool IsValueType(string csharpType)
@@ -128,6 +166,8 @@ public static class ConvexTypeMapper
             "int" => true,
             "float" => true,
             "decimal" => true,
+            "DateTimeOffset" => true,
+            "DateTime" => true,
             _ => false
         };
     }
