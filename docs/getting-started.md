@@ -85,7 +85,7 @@ For type-safe function names, point the source generator to your `api.d.ts` file
 Build your project - the generator creates C# constants from your TypeScript functions:
 
 ```csharp
-// Auto-generated in obj/Debug/generated/Convex.FunctionGenerator/ConvexFunctions.g.cs
+// Auto-generated in obj/Debug/generated/Convex.SourceGenerator/ConvexFunctions.g.cs
 namespace Convex.Generated
 {
     public static class ConvexFunctions

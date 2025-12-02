@@ -81,12 +81,12 @@ Common issues and solutions when using the Convex .NET SDK.
 
 **Cause:** Function name format is incorrect
 
-**Solution:** Function names use **colon format**: `"todos:list"` not `"TodosList"`
+**Solution:** Function names use **path format** matching your file structure: `"functions/list"` not `"TodosList"`
 
 ```csharp
-// ✅ Correct
-client.Query<List<Todo>>("todos:list")
-client.Query<List<Todo>>("users:getById")
+// ✅ Correct - matches file path (convex/functions/list.ts → "functions/list")
+client.Query<List<Todo>>("functions/list")
+client.Query<List<Todo>>("functions/getById")
 
 // ❌ Wrong
 client.Query<List<Todo>>("TodosList")
@@ -113,7 +113,7 @@ client.Query<List<Todo>>("todos.list")
 
 3. **Check function names:**
    - Ensure function is exported in your TypeScript file
-   - Verify function name matches what you're calling in C# (e.g., `"functions/todos:list"`)
+   - Verify function name matches what you're calling in C# (e.g., `"functions/list"`)
 
 ## Source Generator Issues
 
@@ -143,7 +143,7 @@ client.Query<List<Todo>>("todos.list")
 
 4. **Check build output:**
    - Look for generator messages in build output
-   - Generated files are in `obj/Debug/generated/Convex.FunctionGenerator/`
+   - Generated files are in `obj/Debug/generated/Convex.SourceGenerator/`
 
 ### Wrong Function Type
 
@@ -358,7 +358,7 @@ var observable = client.Observe<List<Todo>, object>("todos:search", new { term }
 ## Still Having Issues?
 
 - Check the [API Reference](api-reference.md) for correct usage
-- Review [Transpiler Limitations](transpiler-limitations.md) for code generation issues
+- Review [Source Generator documentation](source-generator.md) for code generation details
 - [Report a bug](https://github.com/zakstam/convex-dotnet-unofficial/issues) with details:
   - Error message and stack trace
   - Code that reproduces the issue

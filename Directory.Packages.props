@@ -65,7 +65,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" />
     <!-- Convex .NET Client Packages - GitHub Packages versions -->
-    <!-- Note: Convex.Client.Attributes, Convex.FunctionGenerator, Convex.Client.Analyzer, and Convex.Client.Analyzer.CodeFixes -->
+    <!-- Note: Convex.Client.Attributes, Convex.SourceGenerator, Convex.Client.Analyzer, and Convex.Client.Analyzer.CodeFixes -->
     <!-- are bundled into Convex.Client and should not be referenced as separate packages -->
     <PackageVersion Include="Convex.Client" Version="1.0.0" />
     <PackageVersion Include="Convex.Client.Extensions" Version="1.0.0" />
