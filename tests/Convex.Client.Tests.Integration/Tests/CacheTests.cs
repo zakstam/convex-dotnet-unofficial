@@ -26,7 +26,7 @@ public class CacheTests
     }
 
     [Fact]
-    public async Task GetCachedValue_BeforeQuery_ShouldReturnDefault()
+    public void GetCachedValue_BeforeQuery_ShouldReturnDefault()
     {
         // Before any query, cached value should be default/null
         var cached = _fixture.Client.GetCachedValue<TestItem[]>("testQueries:nonCachedQuery");
@@ -34,7 +34,7 @@ public class CacheTests
     }
 
     [Fact]
-    public async Task TryGetCachedValue_BeforeQuery_ShouldReturnFalse()
+    public void TryGetCachedValue_BeforeQuery_ShouldReturnFalse()
     {
         var found = _fixture.Client.TryGetCachedValue<TestItem[]>("testQueries:anotherNonCachedQuery", out var value);
         Assert.False(found);
