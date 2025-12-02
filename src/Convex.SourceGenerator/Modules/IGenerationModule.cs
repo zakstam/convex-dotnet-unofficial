@@ -55,4 +55,5 @@ public class GeneratorOptions
     public bool GenerateArgs { get; set; } = true;
     public bool GenerateServices { get; set; } = false;
     public bool GenerateDI { get; set; } = false;
+    public bool GenerateTypedIds { get; set; } = false;
 }

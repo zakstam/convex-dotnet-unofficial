@@ -1,6 +1,7 @@
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
 using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Generated;
 using RealtimeChat.Shared.Models;
 
 namespace RealtimeChat.Shared.Services;
@@ -65,7 +66,7 @@ public class PresenceService : IPresenceService, IDisposable
         try
         {
             _ = await _convexClient.Mutate<object>(_updatePresenceFunctionName)
-                .WithArgs(new UpdatePresenceArgs { Username = username })
+                .WithArgs(new Convex.Generated.UpdatePresenceArgs { Username = username })
                 .SkipQueue()
                 .ExecuteAsync();
         }
@@ -109,7 +110,7 @@ public class PresenceService : IPresenceService, IDisposable
         try
         {
             _ = await _convexClient.Mutate<object>(_setTypingFunctionName)
-                .WithArgs(new SetTypingArgs
+                .WithArgs(new Convex.Generated.SetTypingArgs
                 {
                     Username = username,
                     IsTyping = isTyping

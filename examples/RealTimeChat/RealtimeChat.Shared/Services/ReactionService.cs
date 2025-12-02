@@ -2,6 +2,7 @@ using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
 using Convex.Client.Infrastructure.ErrorHandling;
 using System.Text.Json;
+using Convex.Generated;
 using RealtimeChat.Shared.Models;
 using Microsoft.Extensions.Logging;
 
@@ -42,7 +43,7 @@ public class ReactionService : IReactionService, IDisposable
         try
         {
             _ = await _convexClient.Mutate<object>(_toggleReactionFunctionName)
-                .WithArgs(new ToggleReactionArgs
+                .WithArgs(new Convex.Generated.ToggleReactionArgs
                 {
                     MessageId = messageId,
                     Username = username,
@@ -131,7 +132,7 @@ public class ReactionService : IReactionService, IDisposable
         try
         {
             _ = await _convexClient.Mutate<object>(_toggleReactionFunctionName)
-                .WithArgs(new ToggleReactionArgs
+                .WithArgs(new Convex.Generated.ToggleReactionArgs
                 {
                     MessageId = messageId,
                     Username = username,
@@ -240,7 +241,7 @@ public class ReactionService : IReactionService, IDisposable
         try
         {
             var result = await _convexClient.Query<JsonElement>(_getReactionsFunctionName)
-                .WithArgs(new GetReactionsArgs { MessageIds = messageIds })
+                .WithArgs(new Convex.Generated.GetReactionsArgs { MessageIds = messageIds })
                 .ExecuteAsync();
 
             if (result.IsNullOrUndefined())
@@ -306,7 +307,7 @@ public class ReactionService : IReactionService, IDisposable
         _isFirstSubscriptionUpdate = true;
 
         _reactionsSubscriptionDisposable = _convexClient
-            .CreateResilientSubscription<JsonElement>(_getReactionsFunctionName, new GetReactionsArgs { MessageIds = messageIds })
+            .CreateResilientSubscription<JsonElement>(_getReactionsFunctionName, new Convex.Generated.GetReactionsArgs { MessageIds = messageIds })
             .Subscribe(
                 result =>
                 {

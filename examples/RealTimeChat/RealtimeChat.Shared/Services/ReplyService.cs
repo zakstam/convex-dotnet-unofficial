@@ -1,6 +1,8 @@
 using Convex.Client;
 using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Generated;
 using RealtimeChat.Shared.Models;
+using Message = RealtimeChat.Shared.Models.Message;
 
 namespace RealtimeChat.Shared.Services;
 
@@ -20,12 +22,12 @@ public class ReplyService : IReplyService
         _sendReplyFunctionName = sendReplyFunctionName;
     }
 
-    public async Task<List<Message>> LoadRepliesAsync(string parentMessageId)
+    public async Task<List<Message>> LoadRepliesAsync(MessageId parentMessageId)
     {
         try
         {
             var replies = await _convexClient.Query<List<MessageDto>>(_getRepliesFunctionName)
-                .WithArgs(new GetRepliesArgs
+                .WithArgs(new Convex.Generated.GetRepliesArgs
                 {
                     ParentMessageId = parentMessageId
                 })

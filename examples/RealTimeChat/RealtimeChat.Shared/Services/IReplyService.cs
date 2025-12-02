@@ -1,4 +1,6 @@
+using Convex.Generated;
 using RealtimeChat.Shared.Models;
+using Message = RealtimeChat.Shared.Models.Message;
 
 namespace RealtimeChat.Shared.Services;
 
@@ -10,7 +12,7 @@ public interface IReplyService
     /// <summary>
     /// Loads replies for a parent message.
     /// </summary>
-    Task<List<Message>> LoadRepliesAsync(string parentMessageId);
+    Task<List<Message>> LoadRepliesAsync(MessageId parentMessageId);
 
     /// <summary>
     /// Checks if a message has replies.

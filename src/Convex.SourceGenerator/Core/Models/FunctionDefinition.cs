@@ -35,6 +35,11 @@ public class FunctionDefinition
     public List<ArgumentDefinition> Arguments { get; set; } = new();
 
     /// <summary>
+    /// The return type of this function, if explicitly declared with a `returns:` validator.
+    /// </summary>
+    public ValidatorType? ReturnType { get; set; }
+
+    /// <summary>
     /// Whether this is a default export.
     /// </summary>
     public bool IsDefaultExport { get; set; }

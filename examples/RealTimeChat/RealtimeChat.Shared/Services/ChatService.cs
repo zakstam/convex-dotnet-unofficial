@@ -2,7 +2,9 @@ using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
 using Convex.Client.Infrastructure.ErrorHandling;
 using Convex.Client.Features.RealTime.Pagination;
+using Convex.Generated;
 using RealtimeChat.Shared.Models;
+using Message = RealtimeChat.Shared.Models.Message;
 
 namespace RealtimeChat.Shared.Services;
 
@@ -143,7 +145,7 @@ public class ChatService : IDisposable
             // The subscription returns GetMessagesResponse wrapper, so we still need WithSubscriptionExtractor.
             _paginationHelper = await _client
                 .Paginate<MessageDto>(_getMessagesFunctionName, PageSize)
-                .WithArgs(new GetMessagesArgs { Limit = _initialMessageLimit })
+                .WithArgs(new Convex.Generated.GetMessagesArgs { Limit = _initialMessageLimit })
                 .WithSubscriptionExtractor<GetMessagesResponse>(response => response.Messages ?? [])
                 .WithUIThreadMarshalling()
                 .OnItemsUpdated(OnPaginationItemsUpdated)
@@ -268,11 +270,11 @@ public class ChatService : IDisposable
             var messageText = text?.Trim() ?? "";
 
             var result = await _client.Mutate<object>(_sendMessageFunctionName)
-                .WithArgs(new SendMessageArgs
+                .WithArgs(new Convex.Generated.SendMessageArgs
                 {
                     Username = Username,
                     Text = messageText,
-                    Attachments = attachments?.Select(a => new AttachmentDto
+                    Attachments = attachments?.Select(a => new SendMessageArgsAttachments
                     {
                         StorageId = a.StorageId,
                         Filename = a.Filename,
@@ -294,7 +296,7 @@ public class ChatService : IDisposable
     /// <summary>
     /// Send a reply to a message.
     /// </summary>
-    public async Task SendReplyAsync(string text, string parentMessageId, List<Attachment>? attachments = null)
+    public async Task SendReplyAsync(string text, MessageId parentMessageId, List<Attachment>? attachments = null)
     {
         if (string.IsNullOrWhiteSpace(text) && (attachments == null || attachments.Count == 0))
         {
@@ -308,12 +310,12 @@ public class ChatService : IDisposable
             // Use sendMessage with parentMessageId, or a dedicated sendReply function if available
             // For now, we'll use sendMessage with parentMessageId
             _ = await _client.Mutate<object>(_sendMessageFunctionName)
-                .WithArgs(new SendMessageArgs
+                .WithArgs(new Convex.Generated.SendMessageArgs
                 {
                     Username = Username,
                     Text = messageText,
                     ParentMessageId = parentMessageId,
-                    Attachments = attachments?.Select(a => new AttachmentDto
+                    Attachments = attachments?.Select(a => new SendMessageArgsAttachments
                     {
                         StorageId = a.StorageId,
                         Filename = a.Filename,
@@ -346,7 +348,7 @@ public class ChatService : IDisposable
         try
         {
             _ = await _client.Mutate<object>(_editMessageFunctionName)
-                .WithArgs(new EditMessageArgs
+                .WithArgs(new Convex.Generated.EditMessageArgs
                 {
                     Id = messageId,
                     Text = newText.Trim()
@@ -373,7 +375,7 @@ public class ChatService : IDisposable
         try
         {
             _ = await _client.Mutate<object>(_deleteMessageFunctionName)
-                .WithArgs(new DeleteMessageArgs
+                .WithArgs(new Convex.Generated.DeleteMessageArgs
                 {
                     Id = messageId
                 })

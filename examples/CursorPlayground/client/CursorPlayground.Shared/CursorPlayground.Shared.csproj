@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Import source generator props for ProjectReference usage -->
+  <Import Project="..\..\..\..\src\Convex.SourceGenerator\build\Convex.SourceGenerator.props" />
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -34,11 +37,6 @@
   <PropertyGroup>
     <ConvexGeneratedNamespace>CursorPlayground.Shared.Generated</ConvexGeneratedNamespace>
   </PropertyGroup>
-
-  <!-- Make property visible to analyzers -->
-  <ItemGroup>
-    <CompilerVisibleProperty Include="ConvexGeneratedNamespace" />
-  </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="..\..\backend\convex\schema.ts" />

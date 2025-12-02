@@ -1,5 +1,7 @@
+using Convex.Generated;
 using RealtimeChat.Shared.Models;
 using Convex.Client.Features.RealTime.Pagination;
+using Message = RealtimeChat.Shared.Models.Message;
 
 namespace RealtimeChat.Shared.Services;
 
@@ -26,7 +28,7 @@ public interface IChatService
     /// <summary>
     /// Sends a reply to a message.
     /// </summary>
-    Task SendReplyAsync(string text, string parentMessageId, List<Attachment>? attachments = null);
+    Task SendReplyAsync(string text, MessageId parentMessageId, List<Attachment>? attachments = null);
 
     /// <summary>
     /// Edits an existing message.

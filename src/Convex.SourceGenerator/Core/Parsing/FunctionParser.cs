@@ -76,7 +76,9 @@ public class FunctionParser : TypeScriptParserBase
                 };
 
                 var fullPath = $"{modulePath}:{functionName}";
-                var arguments = ParseArguments(content, match.Index);
+                var functionContent = ExtractFunctionContent(content, match.Index);
+                var arguments = ParseArguments(functionContent);
+                var returnType = ParseReturnType(functionContent);
 
                 functions.Add(new FunctionDefinition
                 {
@@ -85,6 +87,7 @@ public class FunctionParser : TypeScriptParserBase
                     ModulePath = modulePath,
                     Type = functionType,
                     Arguments = arguments,
+                    ReturnType = returnType,
                     IsDefaultExport = false
                 });
             }
@@ -109,7 +112,9 @@ public class FunctionParser : TypeScriptParserBase
             var fullPath = modulePath;
             var parts = modulePath.Split('/');
             var functionName = NamingConventions.ToPascalCase(parts.Last());
-            var arguments = ParseArguments(content, defaultMatch.Index);
+            var functionContent = ExtractFunctionContent(content, defaultMatch.Index);
+            var arguments = ParseArguments(functionContent);
+            var returnType = ParseReturnType(functionContent);
 
             functions.Add(new FunctionDefinition
             {
@@ -118,6 +123,7 @@ public class FunctionParser : TypeScriptParserBase
                 ModulePath = modulePath,
                 Type = functionType,
                 Arguments = arguments,
+                ReturnType = returnType,
                 IsDefaultExport = true
             });
         }
@@ -125,20 +131,48 @@ public class FunctionParser : TypeScriptParserBase
         return functions;
     }
 
-    private List<ArgumentDefinition> ParseArguments(string content, int startIndex)
+    /// <summary>
+    /// Extracts the content of a function definition (the parentheses content after query/mutation/action).
+    /// </summary>
+    private static string ExtractFunctionContent(string content, int startIndex)
+    {
+        // Find the opening parenthesis after query/mutation/action
+        var parenIndex = content.IndexOf('(', startIndex);
+        if (parenIndex < 0)
+        {
+            return string.Empty;
+        }
+
+        return ExtractBalancedContent(content, parenIndex, '(', ')');
+    }
+
+    private List<ArgumentDefinition> ParseArguments(string functionContent)
     {
         var arguments = new List<ArgumentDefinition>();
 
-        // Find the args object: args: { ... }
-        var argsPattern = @"args\s*:\s*\{([^}]*)\}";
-        var argsMatch = Regex.Match(content.Substring(startIndex), argsPattern, RegexOptions.Singleline);
-
-        if (!argsMatch.Success)
+        if (string.IsNullOrEmpty(functionContent))
         {
             return arguments;
         }
 
-        var argsContent = argsMatch.Groups[1].Value;
+        // Find the args object: args: { ... }
+        // Use a more robust approach to handle nested braces
+        var argsStartMatch = Regex.Match(functionContent, @"args\s*:\s*\{");
+        if (!argsStartMatch.Success)
+        {
+            return arguments;
+        }
+
+        var braceStart = argsStartMatch.Index + argsStartMatch.Length - 1;
+        var argsObjectContent = ExtractBalancedContent(functionContent, braceStart, '{', '}');
+
+        if (string.IsNullOrEmpty(argsObjectContent) || argsObjectContent.Length < 2)
+        {
+            return arguments;
+        }
+
+        // Remove outer braces
+        var argsContent = argsObjectContent.Substring(1, argsObjectContent.Length - 2);
         var fields = _validatorParser.ParseFields(argsContent);
 
         foreach (var field in fields)
@@ -155,5 +189,35 @@ public class FunctionParser : TypeScriptParserBase
         }
 
         return arguments;
+    }
+
+    /// <summary>
+    /// Parses the return type from a function definition.
+    /// Looks for `returns: v.xxx()` pattern.
+    /// </summary>
+    private ValidatorType? ParseReturnType(string functionContent)
+    {
+        if (string.IsNullOrEmpty(functionContent))
+        {
+            return null;
+        }
+
+        // Find the returns property: returns: v.xxx(...)
+        var returnsMatch = Regex.Match(functionContent, @"returns\s*:\s*(v\.[^,}]+)");
+        if (!returnsMatch.Success)
+        {
+            return null;
+        }
+
+        // Extract the full validator expression
+        var validatorStart = returnsMatch.Groups[1].Index;
+        var validatorExpr = ExtractFullValidator(functionContent, validatorStart);
+
+        if (string.IsNullOrEmpty(validatorExpr))
+        {
+            return null;
+        }
+
+        return _validatorParser.Parse(validatorExpr);
     }
 }

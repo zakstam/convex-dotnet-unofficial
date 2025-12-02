@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Convex.SourceGenerator.Core.Models;
+using Convex.SourceGenerator.Core.TypeMapping;
 using Convex.SourceGenerator.Core.Utilities;
 
 namespace Convex.SourceGenerator.Modules;
@@ -112,10 +113,11 @@ public class ServiceModule : IGenerationModule
         sb.AppendLine("{");
         sb.Indent();
 
+        var genericType = GetGenericReturnType(func);
+
         if (func.Arguments.Count > 0)
         {
-            var argsClassName = $"{options.ArgsNamespace}.{moduleClassName}{func.Name}Args";
-            sb.AppendLine($"return _client.{clientMethod}<object>({functionConstant})");
+            sb.AppendLine($"return _client.{clientMethod}<{genericType}>({functionConstant})");
             sb.Indent();
             sb.AppendLine(".WithArgs(args)");
             sb.AppendLine(".ExecuteAsync(ct);");
@@ -123,7 +125,7 @@ public class ServiceModule : IGenerationModule
         }
         else
         {
-            sb.AppendLine($"return _client.{clientMethod}<object>({functionConstant})");
+            sb.AppendLine($"return _client.{clientMethod}<{genericType}>({functionConstant})");
             sb.Indent();
             sb.AppendLine(".ExecuteAsync(ct);");
             sb.Outdent();
@@ -136,8 +138,34 @@ public class ServiceModule : IGenerationModule
 
     private static string GetReturnType(FunctionDefinition func)
     {
-        // TODO: Infer return types from TypeScript if available
+        if (func.ReturnType != null)
+        {
+            var csharpType = ConvexTypeMapper.MapToCSharpType(func.ReturnType);
+            // Ensure return type is nullable for queries that might return null
+            if (!csharpType.EndsWith("?") && !csharpType.StartsWith("System.Collections"))
+            {
+                csharpType += "?";
+            }
+            return $"Task<{csharpType}>";
+        }
+
         return "Task<object?>";
+    }
+
+    private static string GetGenericReturnType(FunctionDefinition func)
+    {
+        if (func.ReturnType != null)
+        {
+            var csharpType = ConvexTypeMapper.MapToCSharpType(func.ReturnType);
+            // Ensure return type is nullable for queries that might return null
+            if (!csharpType.EndsWith("?") && !csharpType.StartsWith("System.Collections"))
+            {
+                csharpType += "?";
+            }
+            return csharpType;
+        }
+
+        return "object?";
     }
 
     private static string GetParameters(FunctionDefinition func, GeneratorOptions options)

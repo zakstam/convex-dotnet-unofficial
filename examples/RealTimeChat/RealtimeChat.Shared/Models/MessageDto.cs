@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Convex.Client.Features.RealTime.Pagination;
+using Convex.Generated;
 
 namespace RealtimeChat.Shared.Models;
 
@@ -44,7 +45,7 @@ public class MessageDto : IHasId, IHasSortKey
     /// Optional: ID of parent message (for threads/replies).
     /// </summary>
     [JsonPropertyName("parentMessageId")]
-    public string? ParentMessageId { get; set; }
+    public MessageId? ParentMessageId { get; set; }
 
     /// <summary>
     /// Optional: When message was last edited (ms since epoch).

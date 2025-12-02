@@ -33,6 +33,8 @@ namespace Convex.Generated
 
     private readonly List<IGenerationModule> _modules = new()
     {
+        new EnumModule(),
+        new IdModule(),
         new SchemaModule(),
         new FunctionsModule(),
         new ArgumentsModule(),
@@ -104,6 +106,11 @@ namespace Convex.Generated
             options.GenerateDI = string.Equals(genDI, "true", StringComparison.OrdinalIgnoreCase);
         }
 
+        if (globalOptions.TryGetValue("build_property.ConvexGenerateTypedIds", out var genTypedIds))
+        {
+            options.GenerateTypedIds = string.Equals(genTypedIds, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
         return options;
     }
 
@@ -156,13 +163,7 @@ namespace Convex.Generated
             catch (Exception ex)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CVX101",
-                        "Parse Error",
-                        "Failed to parse {0}: {1}",
-                        "Convex.SourceGenerator",
-                        DiagnosticSeverity.Warning,
-                        isEnabledByDefault: true),
+                    Diagnostics.ParseError,
                     Location.None,
                     file.Path,
                     ex.Message));
@@ -188,13 +189,7 @@ namespace Convex.Generated
             catch (Exception ex)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CVX102",
-                        "Generation Error",
-                        "Module {0} failed: {1}",
-                        "Convex.SourceGenerator",
-                        DiagnosticSeverity.Warning,
-                        isEnabledByDefault: true),
+                    Diagnostics.ModuleGenerationError,
                     Location.None,
                     module.Name,
                     ex.Message));

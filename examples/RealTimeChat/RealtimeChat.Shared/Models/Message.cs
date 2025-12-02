@@ -1,3 +1,5 @@
+using Convex.Generated;
+
 namespace RealtimeChat.Shared.Models;
 
 /// <summary>
@@ -5,12 +7,12 @@ namespace RealtimeChat.Shared.Models;
 /// This is a domain model used for business logic, separate from the DTO used for serialization.
 /// </summary>
 public record Message(
-    string Id,
+    MessageId Id,
     string Username,
     string Text,
     long Timestamp,
     long? EditedAt,
-    string? ParentMessageId = null,
+    MessageId? ParentMessageId = null,
     List<Attachment>? Attachments = null
 );
 

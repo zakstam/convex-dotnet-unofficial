@@ -8,7 +8,7 @@
     <!-- Not packable - bundled into Convex.Client package -->
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;NU5128;NU5017</NoWarn>
+    <NoWarn>$(NoWarn);1591;NU5128;NU5017;RS2008;RS1032</NoWarn>
     <Deterministic>true</Deterministic>
     <BasePackageId>Convex.SourceGenerator</BasePackageId>
     <Product>Convex .NET Source Generator</Product>
