@@ -5,6 +5,31 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v3.0.0-alpha...v4.0.0-alpha) (2025-12-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* Package structure has been completely reorganized.
+* unified function generator and source generator into one project
+* Remove old *Slice properties from ConvexClient. All features are now accessible only through IConvexClient interface.
+
+### Features
+
+* add argument parsing and class generation for Convex functions ([eff1aac](https://github.com/zakstam/convex-dotnet-unofficial/commit/eff1aac1c54682bfd28106626aa03a67036a3876))
+* add comprehensive unit tests for Convex client components ([d2452b5](https://github.com/zakstam/convex-dotnet-unofficial/commit/d2452b5cf28ea89833bf7ab98f8ac08ef56b1306))
+* consolidate packages from 8 to 3 ([4780a59](https://github.com/zakstam/convex-dotnet-unofficial/commit/4780a59cd9bf385902be5d6d6ef6edd0cce85021))
+* enhance Convex.SourceGenerator with new features and diagnostics ([8ca1036](https://github.com/zakstam/convex-dotnet-unofficial/commit/8ca10363ae55358287564f0309ffa810efb4c722))
+* enhance cursor and drawing game functionality with new gaming presets ([9944be4](https://github.com/zakstam/convex-dotnet-unofficial/commit/9944be4574230b282ba3cb399d4a0a5279a8aa72))
+* expose all feature services through IConvexClient interface ([ebec805](https://github.com/zakstam/convex-dotnet-unofficial/commit/ebec8050883004dabfbaf4314e29e01db1ef74c4))
+* unified function generator and source generator into one project ([159d6c2](https://github.com/zakstam/convex-dotnet-unofficial/commit/159d6c24aae287c9103947d0b286b0f02446df81))
+
+
+### Bug Fixes
+
+* change async methods to synchronous in CacheTests ([c82d19b](https://github.com/zakstam/convex-dotnet-unofficial/commit/c82d19b642751e54b03dd85f95c51f68ce504071))
+* update TimestampManager to set request content type correctly ([41dd74c](https://github.com/zakstam/convex-dotnet-unofficial/commit/41dd74cf89d7f034f5bbe94bd2822dd739fdba33))
+
 ## [3.0.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v2.0.0-alpha...v3.0.0-alpha) (2025-11-29)
 
 
