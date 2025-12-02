@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;RS0037;RS0016;RS0017</NoWarn>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <BasePackageId>Convex.Client.AspNetCore</BasePackageId>
+    <Product>Convex .NET Client - ASP.NET Core Extensions</Product>
+    <Description>ASP.NET Core extensions for Convex .NET Client. Includes authentication middleware, health checks, and server-side integration helpers.</Description>
+    <PackageTags>convex;aspnetcore;middleware;healthcheck;authentication;server;net8;net9</PackageTags>
+    <PackageReleaseNotes>Initial release (0.0.1) of ASP.NET Core extensions for Convex .NET SDK. Includes middleware and health checks. See CHANGELOG.md for full details.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- Source Link -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- ASP.NET Core Framework Reference -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <ItemGroup Condition="'$(PackForGitHub)' != 'true'">
+    <ProjectReference Include="..\Convex.Client\Convex.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PackForGitHub)' == 'true'">
+    <PackageReference Include="$(GitHubOwner).Convex.Client" Version="1.0.0" />
+  </ItemGroup>
+
+  <!-- Package Files -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+  </ItemGroup>
+
+</Project>

@@ -1,7 +1,7 @@
 using System.Reflection;
 using Convex.Client.Infrastructure.ErrorHandling;
+using Convex.Generated;
 using RealtimeChat.Shared.Configuration;
-using RealtimeChat.Shared.Models;
 
 namespace SeedDatabase;
 

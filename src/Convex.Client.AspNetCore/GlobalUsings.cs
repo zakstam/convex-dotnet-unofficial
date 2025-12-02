@@ -1,3 +1,4 @@
+// Global using directives for Convex.Client.AspNetCore
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;

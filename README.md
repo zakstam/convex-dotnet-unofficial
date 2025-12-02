@@ -839,7 +839,7 @@ else
 - `BindToForm()` for two-way form binding
 - `ToAsyncEnumerable()` for async streaming
 
-**Learn more:** Install `Convex.Client.Extensions.Blazor` package
+**Learn more:** Install `Convex.Client.Blazor` package
 
 ### WPF / MAUI
 
@@ -902,7 +902,7 @@ class TodoViewModel : INotifyPropertyChanged
 - `ToObservableCollection()` for automatic updates
 - `BindToProperty()` and `BindToCanExecute()` for reactive binding
 
-**Learn more:** Install `Convex.Client.Extensions` package
+**Learn more:** These extensions are included in `Convex.Client`
 
 ### ASP.NET Core
 
@@ -914,8 +914,8 @@ class TodoViewModel : INotifyPropertyChanged
 
 ```csharp
 // Program.cs
-using Convex.Client.Extensions.DependencyInjection;
-using Convex.Client.Extensions.AspNetCore;
+using Convex.Client.DependencyInjection;
+using Convex.Client.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -925,17 +925,14 @@ builder.Services.AddConvex(options =>
     options.DeploymentUrl = builder.Configuration["Convex:DeploymentUrl"];
 });
 
-// Add ASP.NET Core middleware
-builder.Services.AddConvexMiddleware();
-
 // Add health checks
 builder.Services.AddHealthChecks()
     .AddConvexHealthCheck();
 
 var app = builder.Build();
 
-// Use middleware
-app.UseConvexMiddleware();
+// Use Convex auth middleware
+app.UseConvexAuth();
 
 // Use health checks
 app.MapHealthChecks("/health");
@@ -957,7 +954,7 @@ app.Run();
 - Middleware for authentication token handling
 - Health checks for monitoring
 
-**Learn more:** Install `Convex.Client.Extensions.AspNetCore` package
+**Learn more:** Install `Convex.Client.AspNetCore` package
 
 ---
 
@@ -1029,26 +1026,26 @@ class AuthTokenProvider : IAuthTokenProvider
 
 **Problem:** You're using Clerk for authentication and want seamless integration.
 
-**Solution:** Use Clerk extension packages for your platform.
+**Solution:** Use `Convex.Client.Blazor` which includes Clerk authentication support.
 
 **Complete Example:** Blazor app with Clerk
 
 ```bash
-# Install Clerk Blazor package
-dotnet add package Convex.Client.Extensions.Clerk.Blazor
+# Install Blazor package (includes Clerk support)
+dotnet add package Convex.Client.Blazor
 ```
 
 ```csharp
 // Program.cs
-using Convex.Client.Extensions.Clerk.Blazor;
+using Convex.Client.Blazor;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Convex with Clerk integration
-builder.Services.AddConvexWithClerkForBlazor(
-    builder.Configuration.GetSection("Clerk"),
-    builder.Configuration.GetSection("Convex")
-);
+builder.Services.AddConvexWithClerk(options =>
+{
+    options.DeploymentUrl = builder.Configuration["Convex:DeploymentUrl"];
+});
 
 var app = builder.Build();
 app.Run();
@@ -1060,7 +1057,7 @@ app.Run();
 - Automatic JavaScript injection
 - Token management handled automatically
 
-**Learn more:** See [Clerk Extensions documentation](src/Convex.Client.Extensions.Clerk/README.md)
+**Learn more:** See [Convex.Client.Blazor README](src/Convex.Client.Blazor/README.md)
 
 ---
 
@@ -1114,7 +1111,7 @@ class SearchService
 - `RetryWithBackoff()` for automatic retry
 - `ShareReplayLatest()` for multiple subscribers
 
-**Learn more:** Install `Convex.Client.Extensions` package
+**Learn more:** These Rx extensions are included in `Convex.Client`
 
 ### Error Handling
 
@@ -1158,7 +1155,7 @@ class ResilientDataService
 - `WithCircuitBreaker()` prevents cascading failures
 - `CatchAndReport()` for error logging
 
-**Learn more:** [API Reference - Extension Methods](docs/api-reference.md#extension-methods)
+**Learn more:** These error handling extensions are included in `Convex.Client`. See [API Reference - Extension Methods](docs/api-reference.md#extension-methods)
 
 ### Testing
 
@@ -1214,30 +1211,21 @@ public class TodoServiceTests
 - `Record()` to capture observable emissions
 - `WaitForValue()` for async testing
 
-**Learn more:** Install `Convex.Client.Extensions` package
+**Learn more:** These testing utilities are included in `Convex.Client`
 
 ---
 
 ## 📦 Available Packages
 
-The Convex .NET SDK consists of several packages:
+The Convex .NET SDK consists of 3 main packages:
 
-| Package                                          | Purpose                            | When to Use                                                                     |
-| ------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------- |
-| **Convex.Client**                                | Core client library                | Always required - includes real-time client, generators, and analyzers          |
-| **Convex.Client.Extensions**                     | Helper utilities and Rx extensions | For Rx patterns, testing utilities, and UI framework integrations               |
-| **Convex.Client.Extensions.DependencyInjection** | DI extensions                      | For dependency injection configuration in all .NET platforms                    |
-| **Convex.Client.Extensions.Blazor**              | Blazor-specific extensions         | For Blazor WebAssembly/Server apps (StateHasChanged integration, form binding)  |
-| **Convex.Client.Extensions.AspNetCore**          | ASP.NET Core middleware            | For ASP.NET Core server apps (middleware, health checks)                        |
-| **Convex.Client.Extensions.Clerk**               | Clerk authentication (core)        | For Clerk auth in ASP.NET Core or console apps                                  |
-| **Convex.Client.Extensions.Clerk.Blazor**        | Clerk auth for Blazor              | For Clerk auth in Blazor WebAssembly apps                                       |
-| **Convex.Client.Extensions.Clerk.Godot**         | Clerk auth for Godot               | For Clerk auth in Godot desktop apps                                            |
-| **Convex.Client.Analyzer**                       | Roslyn analyzers                   | Bundled in Convex.Client (also available separately for analyzer-only projects) |
-| **Convex.Client.Analyzer.CodeFixes**             | Code fixes for analyzers           | Bundled in Convex.Client (also available separately for analyzer-only projects) |
-| **Convex.Client.Attributes**                     | Attributes for code generation     | Included directly in Convex.Client (no separate package needed)                 |
-| **Convex.SourceGenerator**                       | Source generator                   | Generate C# constants, models, Args types, and typed IDs from Convex backend (bundled in Convex.Client) |
+| Package                    | Purpose                        | When to Use                                                                    |
+| -------------------------- | ------------------------------ | ------------------------------------------------------------------------------ |
+| **Convex.Client**          | Core client library            | Always required - includes real-time client, DI, extensions, Rx patterns, testing utilities, Clerk auth (core + desktop), source generator, and analyzers |
+| **Convex.Client.Blazor**   | Blazor extensions + Clerk      | For Blazor WebAssembly/Server apps (StateHasChanged integration, Clerk JS interop) |
+| **Convex.Client.AspNetCore** | ASP.NET Core middleware      | For ASP.NET Core server apps (middleware, health checks)                       |
 
-**Quick Start:** Most apps only need `Convex.Client`. Add extension packages as needed for your platform.
+**Quick Start:** Most apps only need `Convex.Client`. Add `Convex.Client.Blazor` for Blazor apps or `Convex.Client.AspNetCore` for server apps.
 
 ---
 

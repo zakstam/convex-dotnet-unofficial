@@ -19,7 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Convex.Client\Convex.Client.csproj" />
-    <ProjectReference Include="..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

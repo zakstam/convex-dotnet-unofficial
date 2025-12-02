@@ -39,7 +39,7 @@ internal class ClerkJsInjector(IJSRuntime jsRuntime)
         {
             // Read the embedded JavaScript resource
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = "Convex.Client.Extensions.Clerk.Blazor.Resources.js.clerk.js";
+            var resourceName = "Convex.Client.Blazor.Resources.js.clerk.js";
 
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream == null)

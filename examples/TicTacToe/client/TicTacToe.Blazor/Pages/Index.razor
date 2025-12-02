@@ -1,5 +1,6 @@
 @page "/"
 @using Microsoft.JSInterop
+@using Convex.Generated
 @inject TicTacToeService GameService
 @inject IJSRuntime JS
 @implements IDisposable
@@ -123,7 +124,7 @@
                     await GameService.UpdatePresenceAsync(username, "offline");
 
                     // Forfeit the game if it's not already finished
-                    if (currentGame?.Status != "finished")
+                    if (currentGame?.Status != GameStatus.Finished)
                     {
                         await GameService.ForfeitGameAsync(currentGameId, username);
                     }
@@ -296,7 +297,7 @@
         if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(currentGameId) && currentGame != null)
         {
             // Only forfeit if game is not already finished
-            if (currentGame.Status != "finished")
+            if (currentGame.Status != GameStatus.Finished)
             {
                 try
                 {
@@ -330,7 +331,7 @@
         if (!string.IsNullOrEmpty(username) &&
             !string.IsNullOrEmpty(currentGameId) &&
             game.Id == currentGameId &&
-            game.Status == "finished")
+            game.Status == GameStatus.Finished)
         {
             // Game ended - return to lobby after a brief delay to show result
             _ = Task.Run(async () =>

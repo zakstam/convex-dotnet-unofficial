@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;CA1513;CA2016;CA1716;CA1000</NoWarn>
+    <NoWarn>$(NoWarn);1591;CA1513;CA2016;CA1716;CA1000;CVX001;CVX002</NoWarn>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <BasePackageId>Convex.Client</BasePackageId>
@@ -21,6 +21,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" />
@@ -73,6 +75,13 @@
           Pack="true"
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />
+  </ItemGroup>
+
+  <!-- Exclude net8.0+ only code from netstandard2.1 (they use .NET 6+ APIs) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <Compile Remove="Extensions\**" />
+    <Compile Remove="DependencyInjection\**" />
+    <Compile Remove="Auth\**" />
   </ItemGroup>
 
 </Project>

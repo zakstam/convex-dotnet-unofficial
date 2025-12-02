@@ -13,9 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Convex.Client\Convex.Client.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions\Convex.Client.Extensions.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions.DependencyInjection\Convex.Client.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Convex.Client.Extensions.Blazor\Convex.Client.Extensions.Blazor.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Blazor\Convex.Client.Blazor.csproj" />
     <ProjectReference Include="..\DrawingGame.Shared\DrawingGame.Shared.csproj" />
   </ItemGroup>
 

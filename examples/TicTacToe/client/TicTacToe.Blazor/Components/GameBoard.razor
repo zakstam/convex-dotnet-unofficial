@@ -1,4 +1,5 @@
 @* Game Board Component - Shows the active game and board *@
+@using Convex.Generated
 
 <div class="game-board-container">
     <div class="game-info-panel">
@@ -6,7 +7,7 @@
             <div class="player @(Game.PlayerX == Username ? "current-user" : "")">
                 <span class="symbol">❌</span>
                 <span class="name">@Game.PlayerX</span>
-                @if (Game.CurrentTurn == "X" && Game.Status == "playing")
+                @if (Game.CurrentTurn == GameCurrentTurn.X && Game.Status == GameStatus.Playing)
                 {
                     <span class="turn-indicator">← Your turn</span>
                 }
@@ -15,31 +16,31 @@
             <div class="player @(Game.PlayerO == Username ? "current-user" : "")">
                 <span class="symbol">⭕</span>
                 <span class="name">@(Game.PlayerO ?? "Waiting...")</span>
-                @if (Game.CurrentTurn == "O" && Game.Status == "playing")
+                @if (Game.CurrentTurn == GameCurrentTurn.O && Game.Status == GameStatus.Playing)
                 {
                     <span class="turn-indicator">← Your turn</span>
                 }
             </div>
         </div>
 
-        @if (Game.Status == "waiting")
+        @if (Game.Status == GameStatus.Waiting)
         {
             <div class="game-status waiting">
                 <p>⏳ Waiting for opponent to join...</p>
             </div>
         }
-        else if (Game.Status == "finished")
+        else if (Game.Status == GameStatus.Finished)
         {
             <div class="game-status finished">
-                @if (Game.Winner == "draw")
+                @if (Game.Winner == GameWinner.Draw)
                 {
                     <p class="result">🤝 It's a draw!</p>
                 }
-                else if (Game.Winner == "X")
+                else if (Game.Winner == GameWinner.X)
                 {
                     <p class="result">@(Game.PlayerX == Username ? "🎉 You won!" : $"❌ {Game.PlayerX} wins!")</p>
                 }
-                else if (Game.Winner == "O")
+                else if (Game.Winner == GameWinner.O)
                 {
                     <p class="result">@(Game.PlayerO == Username ? "🎉 You won!" : $"⭕ {Game.PlayerO} wins!")</p>
                 }
@@ -61,14 +62,14 @@
 
     <!-- Game Controls -->
     <div class="game-controls">
-        @if (Game.Status == "finished")
+        @if (Game.Status == GameStatus.Finished)
         {
             <button @onclick="() => OnNewGame.InvokeAsync()"
                     class="btn-primary">
                 New Game
             </button>
         }
-        else if (Game.Status == "playing")
+        else if (Game.Status == GameStatus.Playing)
         {
             <button @onclick="() => OnForfeit.InvokeAsync()"
                     class="btn-danger">
@@ -101,7 +102,7 @@
     private bool IsPositionDisabled(int position)
     {
         // Disable if game not playing
-        if (Game.Status != "playing")
+        if (Game.Status != GameStatus.Playing)
             return true;
 
         // Disable if position already taken
@@ -112,9 +113,9 @@
         var isPlayerX = Game.PlayerX == Username;
         var isPlayerO = Game.PlayerO == Username;
 
-        if (isPlayerX && Game.CurrentTurn != "X")
+        if (isPlayerX && Game.CurrentTurn != GameCurrentTurn.X)
             return true;
-        if (isPlayerO && Game.CurrentTurn != "O")
+        if (isPlayerO && Game.CurrentTurn != GameCurrentTurn.O)
             return true;
 
         // If not a player in this game, disable
