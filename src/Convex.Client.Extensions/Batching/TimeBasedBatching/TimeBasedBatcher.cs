@@ -8,7 +8,7 @@ namespace Convex.Client.Extensions.Batching.TimeBasedBatching;
 /// Implements sampling, spatial filtering, and periodic batching for efficient event processing.
 /// </summary>
 /// <typeparam name="TEvent">The type of events to batch.</typeparam>
-public class TimeBasedBatcher<TEvent> : IDisposable
+public class TimeBasedBatcher<TEvent> : IDisposable, IAsyncDisposable
 {
     private readonly IConvexClient _client;
     private readonly BatchingOptions _options;
@@ -351,7 +351,28 @@ public class TimeBasedBatcher<TEvent> : IDisposable
     }
 
     /// <summary>
-    /// Disposes the batcher and flushes any remaining events.
+    /// Disposes the batcher asynchronously and flushes any remaining events.
+    /// This is the preferred disposal method for WebAssembly and async contexts.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        _flushTimer?.Dispose();
+
+        // Flush remaining events asynchronously
+        await FlushAsync().ConfigureAwait(false);
+
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the batcher synchronously.
+    /// Note: On WebAssembly, remaining events may not be flushed. Use DisposeAsync() instead.
     /// </summary>
     public void Dispose()
     {
@@ -363,8 +384,9 @@ public class TimeBasedBatcher<TEvent> : IDisposable
         _isDisposed = true;
         _flushTimer?.Dispose();
 
-        // Flush remaining events synchronously on dispose
-        FlushAsync().GetAwaiter().GetResult();
+        // Fire-and-forget flush - cannot block on WebAssembly
+        // For guaranteed flush, use DisposeAsync() instead
+        _ = FlushAsync();
 
         GC.SuppressFinalize(this);
     }

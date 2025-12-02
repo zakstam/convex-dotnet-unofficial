@@ -1,8 +1,14 @@
 using Convex.Client;
+using Convex.Client.Extensions.Gaming.Presets;
+using Convex.Client.Extensions.Gaming.Sync;
 using DrawingGame.Shared.Models;
 
 namespace DrawingGame.Shared.Services;
 
+/// <summary>
+/// Service for interacting with the Drawing Game backend.
+/// Provides game sync options for smooth drawing with reduced server calls.
+/// </summary>
 public class DrawingGameService : IDisposable
 {
     private readonly IConvexClient _client;
@@ -22,6 +28,52 @@ public class DrawingGameService : IDisposable
     /// Gets the Convex client for direct batch subscriptions.
     /// </summary>
     public IConvexClient Client => _client;
+
+    /// <summary>
+    /// Gets the game sync options for drawing applications.
+    /// Use these settings for consistent behavior across input batching and subscription throttling.
+    /// </summary>
+    /// <remarks>
+    /// These options provide:
+    /// <list type="bullet">
+    /// <item>33ms input sampling (~30fps - sufficient for drawing)</item>
+    /// <item>500ms batch interval (2 batches/sec - 94% cost reduction)</item>
+    /// <item>2px spatial filtering (reduces micro-jitter)</item>
+    /// <item>50ms interpolation delay for smooth rendering</item>
+    /// <item>100ms max extrapolation for brief network gaps</item>
+    /// </list>
+    /// </remarks>
+    public static GameSyncOptions DrawingSyncOptions => GamePresets.ForDrawing();
+
+    /// <summary>
+    /// Creates an interpolated state for smooth stroke point rendering.
+    /// Use this when you need silky-smooth stroke animations between network updates.
+    /// </summary>
+    /// <param name="options">Optional sync options. Defaults to <see cref="DrawingSyncOptions"/>.</param>
+    /// <returns>An <see cref="InterpolatedState{T}"/> for smooth stroke rendering.</returns>
+    /// <example>
+    /// <code>
+    /// // Create interpolated stroke state
+    /// var interpolated = gameService.CreateInterpolatedStrokeState();
+    ///
+    /// // In your render loop (e.g., animation frame)
+    /// var smoothPoint = interpolated.GetRenderState();
+    /// if (smoothPoint != null)
+    /// {
+    ///     RenderStrokePoint(smoothPoint.X, smoothPoint.Y);
+    /// }
+    /// </code>
+    /// </example>
+    public InterpolatedState<StrokePointData> CreateInterpolatedStrokeState(GameSyncOptions? options = null)
+    {
+        options ??= DrawingSyncOptions;
+
+        return new InterpolatedState<StrokePointData>
+        {
+            InterpolationDelayMs = options.InterpolationDelayMs,
+            MaxExtrapolationMs = options.MaxExtrapolationMs
+        };
+    }
 
     // Subscribe to rooms list updates
     public void SubscribeToRoomsList()

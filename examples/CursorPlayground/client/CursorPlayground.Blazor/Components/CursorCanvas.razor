@@ -62,8 +62,12 @@
                     <span class="stat-value">@RemoteCursors.Count</span>
                 </div>
                 <div class="stat-item">
+                    <span class="stat-label">Events/s:</span>
+                    <span class="stat-value">@EventsPerSecond</span>
+                </div>
+                <div class="stat-item">
                     <span class="stat-label">Batches/s:</span>
-                    <span class="stat-value">@BatchesPerSecond</span>
+                    <span class="stat-value">@EstimatedBatchesPerSecond</span>
                 </div>
             </div>
         }
@@ -193,8 +197,11 @@
     private int WindowWidth = 1920;
     private int WindowHeight = 1080;
     private int Fps = 60;
-    private int BatchesPerSecond = 0;
-    private int batchCount = 0;
+    private int EventsPerSecond = 0;
+    private int eventCount = 0;
+
+    // Estimated batches per second based on BatchIntervalMs setting
+    private int EstimatedBatchesPerSecond => BatchIntervalMs > 0 ? 1000 / BatchIntervalMs : 0;
 
     // Batching settings state
     private bool ShowSettings = false;
@@ -215,7 +222,7 @@
             await JS.InvokeVoidAsync("CursorInterop.initialize", dotNetRef, UserColor, UserName, UserEmoji);
 
             // Create cursor batcher with custom settings
-            CreateCursorBatcher();
+            await CreateCursorBatcherAsync();
 
             // Subscribe to updates
             CursorService.ActiveUsersUpdated += OnActiveUsersUpdated;
@@ -233,12 +240,12 @@
             heartbeatTimer.Elapsed += async (s, e) => await SendHeartbeat();
             heartbeatTimer.Start();
 
-            // Start FPS counter
+            // Start events/sec counter
             fpsTimer = new System.Timers.Timer(1000);
             fpsTimer.Elapsed += (s, e) =>
             {
-                BatchesPerSecond = batchCount;
-                batchCount = 0;
+                EventsPerSecond = eventCount;
+                eventCount = 0;
                 InvokeAsync(StateHasChanged);
             };
             fpsTimer.Start();
@@ -252,7 +259,7 @@
     public void OnCursorMove(double x, double y, double velocity)
     {
         cursorBatcher?.AddPosition(x, y, velocity);
-        batchCount++;
+        eventCount++;
     }
 
     [JSInvokable]
@@ -398,7 +405,7 @@
         ShowUserList = !ShowUserList;
     }
 
-    private void CreateCursorBatcher()
+    private async Task CreateCursorBatcherAsync()
     {
         // Create options with current settings
         var options = new Convex.Client.Extensions.Batching.TimeBasedBatching.BatchingOptions
@@ -417,24 +424,27 @@
         // Create new batcher with custom options BEFORE disposing old one
         cursorBatcher = new CursorBatcher(CursorService.Client, UserId, options);
 
-        // Now dispose the old batcher
-        oldBatcher?.Dispose();
+        // Now dispose the old batcher asynchronously (required for WebAssembly)
+        if (oldBatcher != null)
+        {
+            await oldBatcher.DisposeAsync();
+        }
     }
 
-    private void OnBatchingSettingsChanged()
+    private async Task OnBatchingSettingsChanged()
     {
         // Recreate batcher with new settings
-        CreateCursorBatcher();
+        await CreateCursorBatcherAsync();
         StateHasChanged();
     }
 
-    private void ResetBatchingSettings()
+    private async Task ResetBatchingSettings()
     {
         // Reset to ForCursorTracking() defaults
         SamplingIntervalMs = 16;
         BatchIntervalMs = 200;
         MinEventDistance = 5.0;
-        OnBatchingSettingsChanged();
+        await OnBatchingSettingsChanged();
     }
 
     public async ValueTask DisposeAsync()
@@ -444,7 +454,10 @@
         fpsTimer?.Stop();
         fpsTimer?.Dispose();
 
-        cursorBatcher?.Dispose();
+        if (cursorBatcher != null)
+        {
+            await cursorBatcher.DisposeAsync();
+        }
         dotNetRef?.Dispose();
 
         CursorService.ActiveUsersUpdated -= OnActiveUsersUpdated;

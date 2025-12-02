@@ -1,7 +1,10 @@
 using Convex.Client;
 using Convex.Client.Extensions.ExtensionMethods;
+using Convex.Client.Extensions.Gaming.Presets;
+using Convex.Client.Extensions.Gaming.Sync;
 using Convex.Generated;
 using CursorPlayground.Shared.Generated;
+using CursorPlayground.Shared.Models;
 
 namespace CursorPlayground.Shared.Services;
 
@@ -40,6 +43,22 @@ public class CursorService(IConvexClient client) : IDisposable
     /// </summary>
     public IConvexClient Client { get; } = client ?? throw new ArgumentNullException(nameof(client));
 
+    /// <summary>
+    /// Gets the game sync options for cursor tracking.
+    /// Use these settings for consistent behavior across input batching and subscription throttling.
+    /// </summary>
+    /// <remarks>
+    /// These options provide:
+    /// <list type="bullet">
+    /// <item>16ms input sampling (~60fps)</item>
+    /// <item>200ms batch interval (5 batches/sec)</item>
+    /// <item>5px spatial filtering</item>
+    /// <item>100ms interpolation delay for smooth rendering</item>
+    /// <item>150ms max extrapolation for brief network gaps</item>
+    /// </list>
+    /// </remarks>
+    public static GameSyncOptions CursorSyncOptions => GamePresets.ForCursorTracking();
+
     // Subscribe to active users list
     public void SubscribeToActiveUsers()
     {
@@ -64,6 +83,42 @@ public class CursorService(IConvexClient client) : IDisposable
             );
 
         _subscriptions.Add(subscription);
+    }
+
+    /// <summary>
+    /// Creates an interpolated state for smooth cursor position rendering.
+    /// Use this when you need silky-smooth cursor animations between network updates.
+    /// </summary>
+    /// <param name="options">Optional sync options. Defaults to <see cref="CursorSyncOptions"/>.</param>
+    /// <returns>
+    /// A tuple containing the <see cref="InterpolatedState{T}"/> for smooth rendering
+    /// and the subscription disposable.
+    /// </returns>
+    /// <example>
+    /// <code>
+    /// // Create interpolated cursor state
+    /// var (interpolated, subscription) = cursorService.CreateInterpolatedCursorState();
+    ///
+    /// // In your render loop (e.g., 60fps animation frame)
+    /// var smoothPosition = interpolated.GetRenderState();
+    /// if (smoothPosition != null)
+    /// {
+    ///     RenderCursor(smoothPosition.X, smoothPosition.Y);
+    /// }
+    ///
+    /// // Cleanup when done
+    /// subscription.Dispose();
+    /// </code>
+    /// </example>
+    public InterpolatedState<CursorPosition> CreateInterpolatedCursorState(GameSyncOptions? options = null)
+    {
+        options ??= CursorSyncOptions;
+
+        return new InterpolatedState<CursorPosition>
+        {
+            InterpolationDelayMs = options.InterpolationDelayMs,
+            MaxExtrapolationMs = options.MaxExtrapolationMs
+        };
     }
 
     // Subscribe to recent reactions

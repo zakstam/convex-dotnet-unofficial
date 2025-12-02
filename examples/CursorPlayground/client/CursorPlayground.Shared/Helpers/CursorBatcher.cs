@@ -1,17 +1,31 @@
 using Convex.Client;
 using Convex.Client.Extensions.Batching.TimeBasedBatching;
+using Convex.Client.Extensions.Gaming.Presets;
+using Convex.Client.Extensions.Gaming.Sync;
 using CursorPlayground.Shared.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace CursorPlayground.Shared.Helpers;
 
 /// <summary>
 /// Batches cursor position events using the time-based batching extension.
-/// Uses BatchingOptions.ForCursorTracking() preset for optimal cursor tracking performance.
+/// Uses <see cref="GamePresets.ForCursorTracking"/> settings for optimal cursor tracking performance.
 /// </summary>
-public class CursorBatcher : IDisposable
+/// <remarks>
+/// <para>
+/// This batcher uses gaming-optimized settings from <see cref="GamePresets.ForCursorTracking"/>:
+/// </para>
+/// <list type="bullet">
+/// <item>16ms sampling (~60fps input capture)</item>
+/// <item>200ms batch interval (5 batches/sec - 92% cost reduction)</item>
+/// <item>5px spatial filtering (reduces jitter)</item>
+/// <item>100ms interpolation delay (smooth cursor rendering on receivers)</item>
+/// </list>
+/// <para>
+/// For smooth cursor rendering on the receiving end, use <see cref="InterpolatedState{T}"/>
+/// with the same <see cref="GameSyncOptions"/> settings.
+/// </para>
+/// </remarks>
+public class CursorBatcher : IDisposable, IAsyncDisposable
 {
     private readonly TimeBasedBatcher<CursorPosition> _batcher;
     private readonly string _userId;
@@ -28,11 +42,10 @@ public class CursorBatcher : IDisposable
         _userId = userId ?? throw new ArgumentNullException(nameof(userId));
 
         // Use provided options or default preset optimized for cursor tracking
-        // - 16ms sampling (~60fps)
-        // - 200ms batch interval (low latency)
-        // - 5.0px min distance (cursor precision)
-        // - Independent batches (replaces previous positions)
-        options ??= BatchingOptions.ForCursorTracking();
+        // GamePresets.ForCursorTracking() provides consistent settings for both
+        // input batching and subscription throttling
+        var cursorOptions = GamePresets.ForCursorTracking();
+        options ??= cursorOptions.InputBatching ?? BatchingOptions.ForCursorTracking();
 
         var metadata = new Dictionary<string, object>
         {
@@ -77,6 +90,19 @@ public class CursorBatcher : IDisposable
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
         await _batcher.FlushAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed)
+            return;
+
+        _isDisposed = true;
+        if (_batcher != null)
+        {
+            await _batcher.DisposeAsync();
+        }
+        GC.SuppressFinalize(this);
     }
 
     public void Dispose()

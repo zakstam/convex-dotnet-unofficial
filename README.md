@@ -145,47 +145,82 @@ namespace Convex.Generated
 
 **Note:** Function names match file paths. `convex/functions/createTodo.ts` becomes `"functions/createTodo"`.
 
-### Step 5: Define Your C# Data Models
+### Step 5: Generate Type-Safe C# Models (Recommended)
 
-**Option A: Auto-generate from schema.ts (Recommended)**
+The source generator automatically creates C# classes, function argument types, and strongly-typed document IDs from your Convex backend.
 
-Point the schema generator to your `schema.ts` file for type-safe models:
+**Configure in your `.csproj`:**
 
 ```xml
 <!-- In your .csproj -->
+<PropertyGroup>
+  <!-- Enable strongly-typed document IDs (recommended for maximum type safety) -->
+  <ConvexGenerateTypedIds>true</ConvexGenerateTypedIds>
+</PropertyGroup>
+
 <ItemGroup>
+  <!-- Point to your Convex schema for model generation -->
   <AdditionalFiles Include="../backend/convex/schema.ts" />
 </ItemGroup>
 ```
 
-Build your project - the generator creates C# classes from your schema:
+**Build your project** - the generator creates:
+
+1. **Schema models** (`ConvexSchema.g.cs`) - C# classes for each table
+2. **Function arguments** (`ConvexArgs.g.cs`) - Typed argument classes for mutations/queries
+3. **Typed document IDs** (`ConvexIds.g.cs`) - Strongly-typed ID wrappers per table
 
 ```csharp
-// Auto-generated in obj/Debug/generated/Convex.SchemaGenerator/Todos.g.cs
-namespace Convex.Generated.Models
+// Auto-generated schema model
+namespace Convex.Generated
 {
-    public class Todos
+    public class Message
     {
         [JsonPropertyName("_id")]
-        public string Id { get; init; } = default!;
-
-        [JsonPropertyName("_creationTime")]
-        public double CreationTime { get; init; }
+        public MessageId Id { get; init; }  // Typed ID!
 
         [JsonPropertyName("text")]
         public string Text { get; init; } = default!;
 
-        [JsonPropertyName("isCompleted")]
-        public bool IsCompleted { get; init; }
+        [JsonPropertyName("userId")]
+        public UserId UserId { get; init; }  // References another table's ID
+    }
+
+    // Strongly-typed ID prevents mixing up IDs from different tables
+    public readonly record struct MessageId(string Value)
+    {
+        public static implicit operator string(MessageId id) => id.Value;
+        public static implicit operator MessageId(string value) => new(value);
+    }
+
+    // Auto-generated function arguments
+    public sealed class SendMessageArgs
+    {
+        [JsonPropertyName("text")]
+        public required string Text { get; init; }
+
+        [JsonPropertyName("parentMessageId")]
+        public MessageId? ParentMessageId { get; init; }  // Typed ID in args too!
     }
 }
 ```
 
-See [Schema Generator documentation](src/Convex.SchemaGenerator/README.md) for complete type mapping.
+**Why typed IDs matter:**
 
-**Option B: Manual model definition**
+```csharp
+// Before: string IDs can be mixed up - compiles but wrong!
+public async Task DeleteMessage(string messageId) { ... }
+DeleteMessage(userId); // ⚠️ Compiles, but passes wrong ID type!
 
-Create C# models that match your Convex schema:
+// After: compile-time safety with typed IDs
+public async Task DeleteMessage(MessageId messageId) { ... }
+DeleteMessage(userId); // ❌ Compile error: cannot convert UserId to MessageId
+```
+
+<details>
+<summary><b>Alternative: Manual model definition</b></summary>
+
+If you prefer not to use the generator, create C# models manually:
 
 ```csharp
 public class Todo
@@ -196,6 +231,10 @@ public class Todo
     public DateTime CreatedAt { get; set; }
 }
 ```
+
+Note: Manual models won't benefit from typed IDs or auto-generated argument types.
+
+</details>
 
 ### Step 6: Use Real-Time Client in Your App
 
@@ -1196,8 +1235,7 @@ The Convex .NET SDK consists of several packages:
 | **Convex.Client.Analyzer**                       | Roslyn analyzers                   | Bundled in Convex.Client (also available separately for analyzer-only projects) |
 | **Convex.Client.Analyzer.CodeFixes**             | Code fixes for analyzers           | Bundled in Convex.Client (also available separately for analyzer-only projects) |
 | **Convex.Client.Attributes**                     | Attributes for code generation     | Included directly in Convex.Client (no separate package needed)                 |
-| **Convex.FunctionGenerator**                     | Source generator                   | Bundled into Convex.Client (no separate package needed)                         |
-| **Convex.SchemaGenerator**                       | Schema type generator              | Generate C# models from `schema.ts` (no separate package needed)                |
+| **Convex.SourceGenerator**                       | Source generator                   | Generate C# constants, models, Args types, and typed IDs from Convex backend (bundled in Convex.Client) |
 
 **Quick Start:** Most apps only need `Convex.Client`. Add extension packages as needed for your platform.
 
@@ -1243,8 +1281,7 @@ client.DefineQueryDependency("todos:create", "todos:list", "todos:count");
 - 📖 [Getting Started Guide](docs/getting-started.md) - Detailed walkthrough
 - 📘 [API Reference](docs/api-reference.md) - Complete API documentation
 - 🔧 [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
-- ⚙️ [Function Generator](src/Convex.FunctionGenerator/README.md) - Type-safe function constants from `api.d.ts`
-- 🗂️ [Schema Generator](src/Convex.SchemaGenerator/README.md) - Type-safe C# models from `schema.ts`
+- ⚙️ **Source Generator** - Type-safe function constants, models, Args types, and typed IDs from your Convex backend
 
 ### Troubleshooting
 
@@ -1260,15 +1297,14 @@ client.DefineQueryDependency("todos:create", "todos:list", "todos:count");
 
 **Source Generator Issues?**
 
-- See [Function Generator documentation](src/Convex.FunctionGenerator/README.md)
-- Constants not generating? Check `api.d.ts` path in `.csproj`
+- Constants not generating? Check `api.d.ts` path in `.csproj` as `<AdditionalFiles>`
 - Wrong function type? Constant value is still correct, just categorized differently
 
-**Schema Generator Issues?**
+**Schema/Model Generation Issues?**
 
-- See [Schema Generator documentation](src/Convex.SchemaGenerator/README.md)
-- Models not generating? Check `schema.ts` path in `.csproj`
+- Models not generating? Check `schema.ts` path in `.csproj` as `<AdditionalFiles>`
 - Parse error? Check for syntax errors in `schema.ts` or unsupported TypeScript features
+- Typed IDs not generating? Add `<ConvexGenerateTypedIds>true</ConvexGenerateTypedIds>` to your `.csproj`
 
 **More help:** See [Troubleshooting Guide](docs/troubleshooting.md)
 
