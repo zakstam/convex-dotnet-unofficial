@@ -123,17 +123,18 @@ client.Query<List<Todo>>("todos.list")
 
 **Solutions:**
 
-1. **Verify `api.d.ts` path:**
+1. **Verify TypeScript files are included (NOT api.d.ts):**
    ```xml
    <!-- In your .csproj -->
    <ItemGroup>
-     <AdditionalFiles Include="../backend/convex/_generated/api.d.ts" />
+     <!-- Include actual .ts files, NOT api.d.ts (generator excludes .d.ts files) -->
+     <AdditionalFiles Include="../backend/convex/**/*.ts" Exclude="../backend/convex/_generated/**" />
    </ItemGroup>
    ```
 
-2. **Check file exists:**
-   - Ensure `api.d.ts` exists at the specified path
-   - Run `npx convex dev` in your backend directory to generate it
+2. **Check files exist:**
+   - Ensure your TypeScript function files exist at the specified path
+   - The generator reads actual `.ts` files, not generated `.d.ts` files
 
 3. **Rebuild project:**
    ```bash
@@ -157,6 +158,41 @@ var result = await client.Query<List<Todo>>(ConvexFunctions.Mutations.List).Exec
 ```
 
 See [Source Generator documentation](source-generator.md) for details.
+
+### Model Class Not Found
+
+**Symptoms:** `Note`, `User`, or other model classes not found
+
+**Possible Causes:**
+
+1. **Wrong class name** - Table names are **singularized**:
+   - Table `notes` → Class `Note` (not `Notes`)
+   - Table `users` → Class `User` (not `Users`)
+
+2. **Missing using directive** - Add `using Convex.Generated;`
+
+3. **Schema not included** - Ensure your schema.ts is in `<AdditionalFiles>`
+
+### Glob Pattern Including node_modules
+
+**Symptoms:** Build is slow or generator produces unexpected output
+
+**Cause:** Using `**/*.ts` can accidentally include `node_modules` files
+
+**Solution:** Use explicit paths or proper exclusions:
+
+```xml
+<!-- ❌ Bad - may include node_modules -->
+<AdditionalFiles Include="../backend/**/*.ts" />
+
+<!-- ✅ Good - explicit paths -->
+<AdditionalFiles Include="../backend/convex/schema.ts" />
+<AdditionalFiles Include="../backend/convex/functions/*.ts" />
+
+<!-- ✅ Also good - proper exclusion -->
+<AdditionalFiles Include="../backend/convex/**/*.ts"
+                 Exclude="../backend/convex/_generated/**;../backend/node_modules/**" />
+```
 
 ## Type Mismatch / Serialization Errors
 

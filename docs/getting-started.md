@@ -57,11 +57,9 @@ npm install
 
 # Deploy to Convex
 npx convex dev
-
-# This automatically generates convex/_generated/api.d.ts
 ```
 
-Convex automatically generates `convex/_generated/api.d.ts` with your function definitions. This file contains the API schema that the C# client uses.
+This starts the Convex development server and syncs your functions. Function names match file paths: `convex/functions/list.ts` → `"functions/list"`.
 
 ### Step 3: Install Convex.Client
 
@@ -73,12 +71,13 @@ That's it - one package includes everything: real-time client, analyzers, and al
 
 ### Step 4: (Optional) Generate Type-Safe Constants
 
-For type-safe function names, point the source generator to your `api.d.ts` file:
+For type-safe function names, point the source generator to your TypeScript function files:
 
 ```xml
 <!-- In your .csproj -->
 <ItemGroup>
-  <AdditionalFiles Include="../backend/convex/_generated/api.d.ts" />
+  <!-- Include your Convex function files (NOT api.d.ts) -->
+  <AdditionalFiles Include="../backend/convex/**/*.ts" Exclude="../backend/convex/_generated/**" />
 </ItemGroup>
 ```
 
@@ -217,8 +216,8 @@ public class Todo
 ## Understanding the Workflow
 
 1. **Write TypeScript functions** in Convex backend (standard Convex workflow)
-2. **Convex generates `api.d.ts`** automatically when you run `npx convex dev`
-3. **Source generator (optional)** reads `api.d.ts` and generates C# constants for type-safe function names
+2. **Run `npx convex dev`** to start the Convex development server
+3. **Source generator (optional)** reads your `.ts` files and generates C# constants for type-safe function names
 4. **Use C# client** to call functions by string name or generated constants
 5. **Real-time subscriptions** automatically sync data changes
 

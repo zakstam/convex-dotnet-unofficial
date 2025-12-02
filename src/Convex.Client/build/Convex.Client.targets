@@ -1,4 +1,14 @@
 <Project>
+  <!-- Expose MSBuild properties to source generator -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ConvexGenerateTypedIds" />
+    <CompilerVisibleProperty Include="ConvexModelsNamespace" />
+    <CompilerVisibleProperty Include="ConvexFunctionsNamespace" />
+    <CompilerVisibleProperty Include="ConvexGenerateModels" />
+    <CompilerVisibleProperty Include="ConvexGenerateFunctions" />
+    <CompilerVisibleProperty Include="ConvexGenerateArgs" />
+  </ItemGroup>
+
   <!-- Automatic Convex Backend Generation -->
   <PropertyGroup>
     <!-- Backend generation is disabled by default when using NuGet package -->
