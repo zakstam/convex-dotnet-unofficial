@@ -60,6 +60,7 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\icon.png" Pack="true" PackagePath="\" Condition="Exists('..\..\icon.png')" />
+    <None Include="build\$(BasePackageId).props" Pack="true" PackagePath="build\$(BasePackageId).props" Condition="Exists('build\$(BasePackageId).props')" />
     <None Include="build\$(BasePackageId).targets" Pack="true" PackagePath="$(TargetsFilePackagePath)" Condition="Exists('build\$(BasePackageId).targets')" />
 
     <!-- Pack analyzer and source generator DLLs into the NuGet package -->

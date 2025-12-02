@@ -913,7 +913,7 @@ class TodoViewModel : INotifyPropertyChanged
 
 ```csharp
 // Program.cs
-using Convex.Client.DependencyInjection;
+using Convex.Client.Extensions.DependencyInjection;
 using Convex.Client.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);

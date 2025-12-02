@@ -1,13 +1,5 @@
 <Project>
-  <!-- Expose MSBuild properties to source generator -->
-  <ItemGroup>
-    <CompilerVisibleProperty Include="ConvexGenerateTypedIds" />
-    <CompilerVisibleProperty Include="ConvexModelsNamespace" />
-    <CompilerVisibleProperty Include="ConvexFunctionsNamespace" />
-    <CompilerVisibleProperty Include="ConvexGenerateModels" />
-    <CompilerVisibleProperty Include="ConvexGenerateFunctions" />
-    <CompilerVisibleProperty Include="ConvexGenerateArgs" />
-  </ItemGroup>
+  <!-- NOTE: CompilerVisibleProperty declarations and defaults are in Convex.Client.props -->
 
   <!-- Automatic Convex Backend Generation -->
   <PropertyGroup>
