@@ -5,6 +5,19 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v4.1.0-alpha...v4.2.0-alpha) (2025-12-03)
+
+
+### Features
+
+* enhance SendMessageAsync with optimistic updates for immediate UI feedback ([c0bca5b](https://github.com/zakstam/convex-dotnet-unofficial/commit/c0bca5b116031c4dac387a8baa199be8139cd0cb))
+* implement reactive cache for improved optimistic updates ([c7f014b](https://github.com/zakstam/convex-dotnet-unofficial/commit/c7f014b262823a6144ae91ae93c88f4d5ccfbb6e))
+
+
+### Bug Fixes
+
+* improve WebSocket subscription handling in ConvexClient ([e7edc23](https://github.com/zakstam/convex-dotnet-unofficial/commit/e7edc2321e054ba9278db70c0dee4df3a53b2282))
+
 ## [4.1.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v4.0.1-alpha...v4.1.0-alpha) (2025-12-03)
 
 
