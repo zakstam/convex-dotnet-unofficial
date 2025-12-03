@@ -1,18 +1,49 @@
+using System.Collections.Concurrent;
 using Convex.Client.Infrastructure.Caching;
 using Convex.Client.Infrastructure.Serialization;
 
 namespace Convex.Client.Infrastructure.OptimisticUpdates;
 
 /// <summary>
-/// Implementation of IOptimisticLocalStore that uses the query cache.
+/// Implementation of IOptimisticLocalStore that uses both the query cache and subscription cache.
 /// Tracks modifications for rollback purposes.
 /// </summary>
-internal sealed class OptimisticLocalStore(IConvexCache cache, IConvexSerializer serializer) : IOptimisticLocalStore
+/// <remarks>
+/// The local store checks both caches when retrieving query data:
+/// 1. First checks the HTTP query cache (IConvexCache)
+/// 2. Falls back to the WebSocket subscription cache (_cachedValues from Observe())
+/// This ensures optimistic updates work with both Query() and Observe() data.
+/// </remarks>
+internal sealed class OptimisticLocalStore : IOptimisticLocalStore
 {
-    private readonly IConvexCache _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-    private readonly IConvexSerializer _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+    private readonly IConvexCache _cache;
+    private readonly IConvexSerializer _serializer;
+    private readonly ConcurrentDictionary<string, object?>? _subscriptionCache;
     private readonly HashSet<string> _modifiedQueries = [];
     private readonly Dictionary<string, object?> _originalValues = [];
+
+    /// <summary>
+    /// Creates a new OptimisticLocalStore with only the query cache.
+    /// </summary>
+    /// <param name="cache">The HTTP query cache.</param>
+    /// <param name="serializer">The serializer for cache key generation.</param>
+    public OptimisticLocalStore(IConvexCache cache, IConvexSerializer serializer)
+        : this(cache, serializer, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates a new OptimisticLocalStore with both query cache and subscription cache.
+    /// </summary>
+    /// <param name="cache">The HTTP query cache.</param>
+    /// <param name="serializer">The serializer for cache key generation.</param>
+    /// <param name="subscriptionCache">The WebSocket subscription cache from Observe(). Can be null.</param>
+    public OptimisticLocalStore(IConvexCache cache, IConvexSerializer serializer, ConcurrentDictionary<string, object?>? subscriptionCache)
+    {
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _subscriptionCache = subscriptionCache;
+    }
 
     /// <summary>
     /// Gets the set of query keys that were modified during the optimistic update.
@@ -34,12 +65,19 @@ internal sealed class OptimisticLocalStore(IConvexCache cache, IConvexSerializer
         }
 
         var cacheKey = GenerateCacheKey(queryName, args);
+
+        // First, check the HTTP query cache
         if (_cache.TryGet<TResult>(cacheKey, out var value))
         {
             return value;
         }
 
-        return default;
+        // Fall back to the WebSocket subscription cache (from Observe())
+        return _subscriptionCache != null
+            && _subscriptionCache.TryGetValue(cacheKey, out var subscriptionValue)
+            && subscriptionValue is TResult typedValue
+            ? typedValue
+            : default;
     }
 
     /// <inheritdoc/>

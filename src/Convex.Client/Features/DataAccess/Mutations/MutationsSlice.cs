@@ -19,6 +19,7 @@ namespace Convex.Client.Features.DataAccess.Mutations;
 /// <param name="httpProvider">The HTTP client provider for making requests.</param>
 /// <param name="serializer">The serializer for handling Convex JSON format.</param>
 /// <param name="queryCache">Optional query cache for optimistic updates.</param>
+/// <param name="subscriptionCache">Optional subscription cache for optimistic updates with Observe() data.</param>
 /// <param name="invalidateDependencies">Optional callback to invalidate dependent queries.</param>
 /// <param name="syncContext">Optional synchronization context for UI thread marshalling.</param>
 /// <param name="logger">Optional logger for debug logging.</param>
@@ -27,6 +28,7 @@ public class MutationsSlice(
     IHttpClientProvider httpProvider,
     IConvexSerializer serializer,
     IConvexCache? queryCache = null,
+    ConcurrentDictionary<string, object?>? subscriptionCache = null,
     Func<string, Task>? invalidateDependencies = null,
     SyncContextCapture? syncContext = null,
     ILogger? logger = null,
@@ -35,6 +37,7 @@ public class MutationsSlice(
     private readonly IHttpClientProvider _httpProvider = httpProvider ?? throw new ArgumentNullException(nameof(httpProvider));
     private readonly IConvexSerializer _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     private readonly IConvexCache? _queryCache = queryCache;
+    private readonly ConcurrentDictionary<string, object?>? _subscriptionCache = subscriptionCache;
     private readonly Func<string, Task>? _invalidateDependencies = invalidateDependencies;
     private readonly SyncContextCapture? _syncContext = syncContext;
     private readonly ILogger? _logger = logger;
@@ -63,6 +66,7 @@ public class MutationsSlice(
             _serializer,
             functionName,
             _queryCache,
+            _subscriptionCache,
             _invalidateDependencies,
             middlewareExecutor,
             _syncContext,

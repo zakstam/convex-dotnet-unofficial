@@ -51,6 +51,8 @@ This project is actively maintained by the community and provides protocol compa
 
 **[Quick Start](#-quick-start)** • [Core Features](#-core-features) • [Advanced Features](#-advanced-features) • [UI Integrations](#-ui-integrations) • [Authentication](#-authentication) • [Developer Tools](#-developer-tools) • [Reference](#-reference)
 
+**Core Features:** [Real-Time Subscriptions](#real-time-subscriptions) • [Queries & Mutations](#queries--mutations) • [Optimistic Updates](#-optimistic-updates) • [Actions](#actions)
+
 ---
 
 ## 🚀 Quick Start
@@ -468,8 +470,127 @@ class TodoService
 - Type-safe with generics
 - Batch multiple queries for efficiency
 - Built-in timeout and error handling
+- Mutations support optimistic updates for instant UI feedback (see [Optimistic Updates](#-optimistic-updates) below)
 
 **Learn more:** [API Reference - Queries & Mutations](docs/api-reference.md#queries)
+
+### Optimistic Updates
+
+**Problem:** You want instant UI feedback when mutations execute, without waiting for the server response.
+
+**Solution:** Use optimistic updates to immediately update the UI before the server responds. If the mutation fails, updates are automatically rolled back.
+
+**Complete Example:** Optimistic updates for instant feedback
+
+```csharp
+using Convex.Client;
+
+class TodoService
+{
+    private readonly ConvexClient _client;
+    private List<Todo> _todos = new();
+
+    public TodoService(ConvexClient client)
+    {
+        _client = client;
+    }
+
+    // Method 1: Simple optimistic update with callback (recommended for simple cases)
+    public async Task<Todo> CreateTodoOptimisticAsync(string text)
+    {
+        return await _client.Mutate<Todo>("todos:create")
+            .WithArgs(new { text })
+            .Optimistic(result =>
+            {
+                // Update UI immediately with the expected result
+                _todos.Add(result);
+                UpdateUI();
+            })
+            .WithRollback(() =>
+            {
+                // Restore original state if mutation fails
+                _todos.RemoveAll(t => t.Text == text);
+                UpdateUI();
+            })
+            .ExecuteAsync();
+    }
+
+    // Method 2: Optimistic update with automatic rollback (recommended)
+    public async Task<Todo> CreateTodoWithAutoRollbackAsync(string text)
+    {
+        return await _client.Mutate<Todo>("todos:create")
+            .WithArgs(new { text })
+            .OptimisticWithAutoRollback(
+                getter: () => _todos.ToList(), // Capture current state
+                setter: value => { _todos = value; UpdateUI(); }, // Update state
+                update: todos => todos.Append(new Todo { Text = text, Id = "temp" }).ToList() // Optimistic change
+            )
+            .ExecuteAsync();
+    }
+
+    // Method 3: Query-focused optimistic updates (convex-js style)
+    public async Task<Message> SendMessageOptimisticAsync(string text)
+    {
+        return await _client.Mutate<Message>("messages:send")
+            .WithArgs(new { text })
+            .WithOptimisticUpdate((localStore, args) =>
+            {
+                // Update query results directly
+                var currentMessages = localStore.GetQuery<List<Message>>("messages:list") ?? new List<Message>();
+                var optimisticMessage = new Message 
+                { 
+                    Id = Guid.NewGuid().ToString(), 
+                    Text = args.text,
+                    CreatedAt = DateTime.UtcNow 
+                };
+                localStore.SetQuery("messages:list", currentMessages.Append(optimisticMessage).ToList());
+            })
+            .ExecuteAsync();
+    }
+
+    // Method 4: Update cached query result optimistically
+    public async Task<Todo> ToggleTodoOptimisticAsync(string id, bool completed)
+    {
+        return await _client.Mutate<Todo>("todos:toggle")
+            .WithArgs(new { id, completed })
+            .UpdateCache<List<Todo>>("todos:list", todos =>
+            {
+                // Optimistically update the cached query result
+                return todos.Select(t => t.Id == id ? new Todo 
+                { 
+                    Id = t.Id, 
+                    Text = t.Text, 
+                    IsCompleted = completed,
+                    CreatedAt = t.CreatedAt 
+                } : t).ToList();
+            })
+            .ExecuteAsync();
+    }
+
+    private void UpdateUI()
+    {
+        // Trigger UI refresh
+    }
+}
+```
+
+**Key Points:**
+
+- **`Optimistic()`** - Simple callback that runs immediately with the expected result
+- **`OptimisticWithAutoRollback()`** - Recommended approach: automatically captures and restores state on failure
+- **`WithOptimisticUpdate()`** - Query-focused updates matching convex-js pattern (operates on query results)
+- **`UpdateCache()`** - Optimistically update cached query results before mutation completes
+- Automatic rollback on mutation failure
+- Optimistic updates are NOT re-applied during retries to avoid duplicate updates
+
+**When to use each approach:**
+
+- Use **`OptimisticWithAutoRollback()`** for most cases - it handles rollback automatically
+- Use **`Optimistic()`** with **`WithRollback()`** when you need custom rollback logic
+- Use **`WithOptimisticUpdate()`** when you want to match convex-js's query-focused pattern
+- Use **`UpdateCache()`** when you want to update cached query subscriptions optimistically
+
+**Learn more:** [API Reference - Optimistic Updates](docs/api-reference.md#mutations)
 
 ### Actions
 

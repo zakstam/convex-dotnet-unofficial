@@ -369,6 +369,7 @@ public class MutationsSliceTests
             _mockHttpProvider.Object,
             _mockSerializer.Object,
             _mockCache.Object,
+            subscriptionCache: null,
             invalidateDependencies,
             syncContext: null,
             logger: null,

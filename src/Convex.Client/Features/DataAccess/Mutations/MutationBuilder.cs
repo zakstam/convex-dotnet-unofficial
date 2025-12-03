@@ -1,14 +1,15 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using Convex.Client.Infrastructure.Builders;
 using Convex.Client.Infrastructure.Caching;
 using Convex.Client.Infrastructure.ErrorHandling;
 using Convex.Client.Infrastructure.Http;
+using Convex.Client.Infrastructure.Internal.Threading;
 using Convex.Client.Infrastructure.OptimisticUpdates;
 using Convex.Client.Infrastructure.Resilience;
 using Convex.Client.Infrastructure.Serialization;
-using Convex.Client.Infrastructure.Internal.Threading;
-using Microsoft.Extensions.Logging;
 using Convex.Client.Infrastructure.Telemetry;
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Convex.Client.Features.DataAccess.Mutations;
 
@@ -22,6 +23,7 @@ internal sealed class MutationBuilder<TResult>(
     IConvexSerializer serializer,
     string functionName,
     IConvexCache? queryCache = null,
+    ConcurrentDictionary<string, object?>? subscriptionCache = null,
     Func<string, Task>? invalidateDependencies = null,
     Func<string, string, object?, TimeSpan?, CancellationToken, Task<TResult>>? middlewareExecutor = null,
     SyncContextCapture? syncContext = null,
@@ -311,7 +313,7 @@ internal sealed class MutationBuilder<TResult>(
                     _logger!.LogDebug("[Mutation] Applying query-focused optimistic update: Function={FunctionName}", _functionName);
                 }
 
-                optimisticStore = new OptimisticLocalStore(_queryCache, _serializer);
+                optimisticStore = new OptimisticLocalStore(_queryCache, _serializer, subscriptionCache);
 
                 // Invoke the optimistic update function
                 // We need to dynamically invoke the delegate with the correct type

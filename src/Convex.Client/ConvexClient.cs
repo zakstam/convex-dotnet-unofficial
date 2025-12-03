@@ -345,7 +345,7 @@ public sealed class ConvexClient : IConvexClient
         _serializer = new DefaultConvexSerializer();
         _resilience = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
         _queries = new QueriesSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        _mutations = new MutationsSlice(_httpProvider, _serializer, _caching, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
+        _mutations = new MutationsSlice(_httpProvider, _serializer, _caching, _cachedValues, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
         _actions = new ActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         TimestampManager = new TimestampManager(httpClient, deploymentUrl);
         _fileStorage = new Features.Storage.Files.FileStorageSlice(_httpProvider, _serializer, httpClient, logger, enableDebugLogging);
@@ -447,6 +447,7 @@ public sealed class ConvexClient : IConvexClient
             _serializer,
             functionName,
             _caching,
+            _cachedValues,
             InvalidateDependentQueriesAsync,
             ExecuteThroughMiddleware<TResult>,
             _syncContext);
