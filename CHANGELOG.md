@@ -5,6 +5,19 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v4.0.1-alpha...v4.1.0-alpha) (2025-12-03)
+
+
+### Features
+
+* add JSON converters for DateTimeOffset and nullable DateTimeOffset, and update schema generation for timestamp fields ([de746f1](https://github.com/zakstam/convex-dotnet-unofficial/commit/de746f17f6791d618a14112b1141179e688e2b09))
+
+
+### Bug Fixes
+
+* enhance optimistic updates with subscription cache support ([289808a](https://github.com/zakstam/convex-dotnet-unofficial/commit/289808ab421f7e7414623c3ea3c51f5b219c882c))
+* update dependency injection namespace and clean up build targets ([78b221e](https://github.com/zakstam/convex-dotnet-unofficial/commit/78b221ef90bdeac9ebc8bc47b55ed2b7a6ee6876))
+
 ## [4.0.1-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v4.0.0-alpha...v4.0.1-alpha) (2025-12-02)
 
 
