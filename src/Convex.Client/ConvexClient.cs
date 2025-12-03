@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Convex.Client.Infrastructure.Caching;
@@ -14,6 +13,7 @@ using Convex.Client.Infrastructure.Http;
 using Convex.Client.Infrastructure.Serialization;
 using Convex.Client.Infrastructure.Builders;
 using Convex.Client.Features.DataAccess.Actions;
+using Convex.Client.Features.DataAccess.Caching;
 using Convex.Client.Features.DataAccess.Mutations;
 using Convex.Client.Features.DataAccess.Queries;
 
@@ -74,12 +74,11 @@ public sealed class ConvexClient : IConvexClient
     private readonly Features.Storage.VectorSearch.VectorSearchSlice _vectorSearch;
     private readonly Features.Operational.HttpActions.HttpActionsSlice _httpActions;
     private readonly Features.Operational.Scheduling.SchedulingSlice _scheduling;
-    private readonly Features.DataAccess.Caching.CachingSlice _caching;
+    private readonly ReactiveCacheImplementation _reactiveCache;
     private readonly Features.Security.Authentication.AuthenticationSlice _authentication;
     private readonly Features.Observability.Health.HealthSlice _health;
     private readonly Features.Observability.Diagnostics.DiagnosticsSlice _diagnostics;
     private readonly Features.Observability.Resilience.ResilienceSlice _resilience;
-    private readonly ConcurrentDictionary<string, object?> _cachedValues = new();
     private readonly object _connectionStateLock = new();
     private readonly QueryDependencyRegistry _dependencyRegistry;
     private readonly MiddlewarePipeline _middlewarePipeline;
@@ -322,7 +321,7 @@ public sealed class ConvexClient : IConvexClient
         var enableDebugLogging = options?.EnableDebugLogging ?? false;
 
         QualityMonitor = new ConnectionQualityMonitor(logger, enableDebugLogging);
-        _caching = new Features.DataAccess.Caching.CachingSlice(logger, enableDebugLogging);
+        _reactiveCache = new ReactiveCacheImplementation(logger, enableDebugLogging);
         _health = new Features.Observability.Health.HealthSlice(logger, enableDebugLogging);
         _diagnostics = new Features.Observability.Diagnostics.DiagnosticsSlice();
         _dependencyRegistry = new QueryDependencyRegistry();
@@ -345,7 +344,7 @@ public sealed class ConvexClient : IConvexClient
         _serializer = new DefaultConvexSerializer();
         _resilience = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
         _queries = new QueriesSlice(_httpProvider, _serializer, logger, enableDebugLogging);
-        _mutations = new MutationsSlice(_httpProvider, _serializer, _caching, _cachedValues, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
+        _mutations = new MutationsSlice(_httpProvider, _serializer, _reactiveCache, InvalidateDependentQueriesAsync, _syncContext, logger, enableDebugLogging);
         _actions = new ActionsSlice(_httpProvider, _serializer, logger, enableDebugLogging);
         TimestampManager = new TimestampManager(httpClient, deploymentUrl);
         _fileStorage = new Features.Storage.Files.FileStorageSlice(_httpProvider, _serializer, httpClient, logger, enableDebugLogging);
@@ -446,8 +445,7 @@ public sealed class ConvexClient : IConvexClient
             _httpProvider,
             _serializer,
             functionName,
-            _caching,
-            _cachedValues,
+            _reactiveCache,
             InvalidateDependentQueriesAsync,
             ExecuteThroughMiddleware<TResult>,
             _syncContext);
@@ -469,12 +467,19 @@ public sealed class ConvexClient : IConvexClient
     {
         EnsureWebSocketInitialized();
 
-        // Create the async enumerable source from WebSocket and convert to IObservable
-        var source = _webSocketClient.Value.LiveQuery<T>(functionName);
-        var observable = source.ToObservable();
+        // Get reactive observable from cache - this will receive SetQuery() notifications
+        var cacheObservable = _reactiveCache.GetObservable<T>(functionName)
+            .Where(value => value is not null)
+            .Select(value => value!);
 
-        // Track values for caching
-        return observable.Do(value => _cachedValues[functionName] = value);
+        // Create the async enumerable source from WebSocket and convert to IObservable
+        var wsObservable = _webSocketClient.Value.LiveQuery<T>(functionName)
+            .ToObservable()
+            .Do(value => _reactiveCache.SetAndNotify(functionName, value, CacheEntrySource.Subscription));
+
+        // Merge: WebSocket updates write to cache, and we observe from cache
+        // This ensures SetQuery() optimistic updates are also received by subscribers
+        return cacheObservable.Merge(wsObservable);
     }
 
     /// <inheritdoc/>
@@ -482,14 +487,22 @@ public sealed class ConvexClient : IConvexClient
     {
         EnsureWebSocketInitialized();
 
-        // Create the async enumerable source with args from WebSocket and convert to IObservable
-        var source = _webSocketClient.Value.LiveQuery<T, TArgs>(functionName, args);
-        var observable = source.ToObservable();
-
-        // Track values for caching (use function name with args hash for cache key)
-        // Use ConvexSerializer to ensure deterministic key ordering (matches convex-js behavior)
+        // Generate cache key with args (matches convex-js behavior)
         var cacheKey = $"{functionName}:{_serializer.Serialize(args)}";
-        return observable.Do(value => _cachedValues[cacheKey] = value);
+
+        // Get reactive observable from cache - this will receive SetQuery() notifications
+        var cacheObservable = _reactiveCache.GetObservable<T>(cacheKey)
+            .Where(value => value is not null)
+            .Select(value => value!);
+
+        // Create the async enumerable source with args from WebSocket and convert to IObservable
+        var wsObservable = _webSocketClient.Value.LiveQuery<T, TArgs>(functionName, args)
+            .ToObservable()
+            .Do(value => _reactiveCache.SetAndNotify(cacheKey, value, CacheEntrySource.Subscription));
+
+        // Merge: WebSocket updates write to cache, and we observe from cache
+        // This ensures SetQuery() optimistic updates are also received by subscribers
+        return cacheObservable.Merge(wsObservable);
     }
 
     #endregion
@@ -498,24 +511,13 @@ public sealed class ConvexClient : IConvexClient
 
     /// <inheritdoc/>
     public T? GetCachedValue<T>(string functionName)
-        => _cachedValues.TryGetValue(functionName, out var cached) && cached is T typedValue
-            ? typedValue
-            : default;
+        => _reactiveCache.GetCurrentValue<T>(functionName);
 
     /// <inheritdoc/>
     public bool TryGetCachedValue<T>(string functionName, out T? value)
-    {
-        if (_cachedValues.TryGetValue(functionName, out var cached) && cached is T typedValue)
-        {
-            value = typedValue;
-            return true;
-        }
+        => _reactiveCache.TryGet(functionName, out value);
 
-        value = default;
-        return false;
-    }
-
-    #endregion
+    #endregion Cached Values
 
     #region Connection Management
 
@@ -550,7 +552,7 @@ public sealed class ConvexClient : IConvexClient
     public Features.Security.Authentication.IConvexAuthentication Auth => _authentication;
 
     /// <inheritdoc/>
-    public IConvexCache Cache => _caching;
+    public IConvexCache Cache => _reactiveCache;
 
     /// <inheritdoc/>
     public Features.Observability.Health.IConvexHealth Health => _health;
@@ -579,7 +581,7 @@ public sealed class ConvexClient : IConvexClient
             throw new ArgumentNullException(nameof(queryName));
         }
 
-        _ = _caching.Remove(queryName);
+        _ = _reactiveCache.Remove(queryName);
         await Task.CompletedTask;
     }
 
@@ -591,7 +593,7 @@ public sealed class ConvexClient : IConvexClient
             throw new ArgumentNullException(nameof(pattern));
         }
 
-        _ = _caching.RemovePattern(pattern);
+        _ = _reactiveCache.RemovePattern(pattern);
         await Task.CompletedTask;
     }
 
@@ -601,18 +603,16 @@ public sealed class ConvexClient : IConvexClient
     /// </summary>
     internal async Task InvalidateDependentQueriesAsync(string mutationName)
     {
-        var queriesToInvalidate = _dependencyRegistry.GetQueriesToInvalidate(mutationName);
-
-        foreach (var queryPattern in queriesToInvalidate)
+        foreach (var queryPattern in _dependencyRegistry.GetQueriesToInvalidate(mutationName))
         {
             // Support both exact matches and patterns
             if (queryPattern.Contains('*') || queryPattern.Contains('?'))
             {
-                _ = _caching.RemovePattern(queryPattern);
+                _ = _reactiveCache.RemovePattern(queryPattern);
             }
             else
             {
-                _ = _caching.Remove(queryPattern);
+                _ = _reactiveCache.Remove(queryPattern);
             }
         }
 
@@ -860,8 +860,8 @@ public sealed class ConvexClient : IConvexClient
             _httpClient?.Dispose();
         }
 
-        // Clear cached values
-        _cachedValues.Clear();
+        // Dispose reactive cache (clears entries and completes subjects)
+        _reactiveCache.Dispose();
 
         // Complete and dispose reactive subjects
         _connectionStateSubject.OnCompleted();

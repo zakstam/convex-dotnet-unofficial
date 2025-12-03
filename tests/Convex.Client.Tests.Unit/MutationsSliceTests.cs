@@ -22,7 +22,7 @@ public class MutationsSliceTests
 {
     private Mock<IHttpClientProvider> _mockHttpProvider = null!;
     private Mock<IConvexSerializer> _mockSerializer = null!;
-    private Mock<IConvexCache> _mockCache = null!;
+    private Mock<IReactiveCache> _mockCache = null!;
     private Mock<ILogger> _mockLogger = null!;
     private MutationsSlice _mutationsSlice = null!;
     private const string TestDeploymentUrl = "https://test.convex.cloud";
@@ -32,7 +32,7 @@ public class MutationsSliceTests
     {
         _mockHttpProvider = new Mock<IHttpClientProvider>();
         _mockSerializer = new Mock<IConvexSerializer>();
-        _mockCache = new Mock<IConvexCache>();
+        _mockCache = new Mock<IReactiveCache>();
         _mockLogger = new Mock<ILogger>();
 
         _mockHttpProvider.Setup(p => p.DeploymentUrl).Returns(TestDeploymentUrl);
@@ -40,7 +40,7 @@ public class MutationsSliceTests
         _mutationsSlice = new MutationsSlice(
             _mockHttpProvider.Object,
             _mockSerializer.Object,
-            _mockCache.Object,
+            reactiveCache: _mockCache.Object,
             invalidateDependencies: null,
             syncContext: null,
             logger: _mockLogger.Object,
@@ -368,9 +368,8 @@ public class MutationsSliceTests
         var sliceWithInvalidation = new MutationsSlice(
             _mockHttpProvider.Object,
             _mockSerializer.Object,
-            _mockCache.Object,
-            subscriptionCache: null,
-            invalidateDependencies,
+            reactiveCache: _mockCache.Object,
+            invalidateDependencies: invalidateDependencies,
             syncContext: null,
             logger: null,
             enableDebugLogging: false);

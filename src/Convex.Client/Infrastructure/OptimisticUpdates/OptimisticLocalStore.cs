@@ -1,48 +1,35 @@
-using System.Collections.Concurrent;
 using Convex.Client.Infrastructure.Caching;
 using Convex.Client.Infrastructure.Serialization;
 
 namespace Convex.Client.Infrastructure.OptimisticUpdates;
 
 /// <summary>
-/// Implementation of IOptimisticLocalStore that uses both the query cache and subscription cache.
+/// Implementation of IOptimisticLocalStore that uses the unified reactive cache.
 /// Tracks modifications for rollback purposes.
 /// </summary>
 /// <remarks>
-/// The local store checks both caches when retrieving query data:
-/// 1. First checks the HTTP query cache (IConvexCache)
-/// 2. Falls back to the WebSocket subscription cache (_cachedValues from Observe())
-/// This ensures optimistic updates work with both Query() and Observe() data.
+/// The local store uses the reactive cache which holds all cached values from:
+/// - HTTP queries (Query())
+/// - WebSocket subscriptions (Observe())
+/// - Optimistic updates (SetQuery())
+/// When SetQuery() is called, subscribers are automatically notified via the reactive cache.
 /// </remarks>
 internal sealed class OptimisticLocalStore : IOptimisticLocalStore
 {
-    private readonly IConvexCache _cache;
+    private readonly IReactiveCache _reactiveCache;
     private readonly IConvexSerializer _serializer;
-    private readonly ConcurrentDictionary<string, object?>? _subscriptionCache;
     private readonly HashSet<string> _modifiedQueries = [];
     private readonly Dictionary<string, object?> _originalValues = [];
 
     /// <summary>
-    /// Creates a new OptimisticLocalStore with only the query cache.
+    /// Creates a new OptimisticLocalStore with a reactive cache.
     /// </summary>
-    /// <param name="cache">The HTTP query cache.</param>
+    /// <param name="reactiveCache">The reactive cache for optimistic updates with subscriber notifications.</param>
     /// <param name="serializer">The serializer for cache key generation.</param>
-    public OptimisticLocalStore(IConvexCache cache, IConvexSerializer serializer)
-        : this(cache, serializer, null)
+    public OptimisticLocalStore(IReactiveCache reactiveCache, IConvexSerializer serializer)
     {
-    }
-
-    /// <summary>
-    /// Creates a new OptimisticLocalStore with both query cache and subscription cache.
-    /// </summary>
-    /// <param name="cache">The HTTP query cache.</param>
-    /// <param name="serializer">The serializer for cache key generation.</param>
-    /// <param name="subscriptionCache">The WebSocket subscription cache from Observe(). Can be null.</param>
-    public OptimisticLocalStore(IConvexCache cache, IConvexSerializer serializer, ConcurrentDictionary<string, object?>? subscriptionCache)
-    {
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        _reactiveCache = reactiveCache ?? throw new ArgumentNullException(nameof(reactiveCache));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-        _subscriptionCache = subscriptionCache;
     }
 
     /// <summary>
@@ -66,18 +53,8 @@ internal sealed class OptimisticLocalStore : IOptimisticLocalStore
 
         var cacheKey = GenerateCacheKey(queryName, args);
 
-        // First, check the HTTP query cache
-        if (_cache.TryGet<TResult>(cacheKey, out var value))
-        {
-            return value;
-        }
-
-        // Fall back to the WebSocket subscription cache (from Observe())
-        return _subscriptionCache != null
-            && _subscriptionCache.TryGetValue(cacheKey, out var subscriptionValue)
-            && subscriptionValue is TResult typedValue
-            ? typedValue
-            : default;
+        // Use the unified reactive cache which contains values from both Query() and Observe()
+        return _reactiveCache.GetCurrentValue<TResult>(cacheKey);
     }
 
     /// <inheritdoc/>
@@ -92,7 +69,7 @@ internal sealed class OptimisticLocalStore : IOptimisticLocalStore
         var prefix = $"{queryName}:";
 
         // Iterate through all cache keys that start with the query name prefix
-        foreach (var cacheKey in _cache.Keys)
+        foreach (var cacheKey in _reactiveCache.Keys)
         {
             if (cacheKey.StartsWith(prefix, StringComparison.Ordinal))
             {
@@ -115,12 +92,7 @@ internal sealed class OptimisticLocalStore : IOptimisticLocalStore
                 }
 
                 // Get the query result
-                TResult? value = default;
-                if (_cache.TryGet<TResult>(cacheKey, out var cachedValue))
-                {
-                    value = cachedValue;
-                }
-
+                var value = _reactiveCache.GetCurrentValue<TResult>(cacheKey);
                 results.Add(new QueryResult<TResult, TArgs>(args, value));
             }
         }
@@ -143,28 +115,21 @@ internal sealed class OptimisticLocalStore : IOptimisticLocalStore
         {
             // This is the first time modifying this query in this optimistic update
             // Capture the original value for rollback
-            if (_cache.TryGet<object>(cacheKey, out var originalValue))
-            {
-                _originalValues[cacheKey] = originalValue;
-            }
-            else
-            {
-                // Query didn't exist before - mark as null for removal on rollback
-                _originalValues[cacheKey] = null;
-            }
+            _originalValues[cacheKey] = _reactiveCache.GetCurrentValue<object>(cacheKey);
         }
 
         _ = _modifiedQueries.Add(cacheKey);
 
-        if (value == null)
+        if (value is null)
         {
             // Remove the query from cache
-            _ = _cache.Remove(cacheKey);
+            _ = _reactiveCache.Remove(cacheKey);
         }
         else
         {
-            // Set the optimistic value
-            _cache.Set(cacheKey, value);
+            // Set the optimistic value and notify all subscribers
+            // This is the key change - SetAndNotify triggers Observe() callbacks immediately
+            _reactiveCache.SetAndNotify(cacheKey, value, CacheEntrySource.OptimisticUpdate);
         }
     }
 

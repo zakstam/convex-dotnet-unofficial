@@ -16,6 +16,12 @@
     <PackageReleaseNotes>Initial release (0.0.1) of Convex .NET SDK with vertical slice architecture, real-time subscriptions, authentication, file storage, and vector search. See CHANGELOG.md for full details.</PackageReleaseNotes>
   </PropertyGroup>
 
+  <!-- Expose internal types to test projects -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Convex.Client.Tests.Unit" />
+    <InternalsVisibleTo Include="Convex.Client.Tests.Integration" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />

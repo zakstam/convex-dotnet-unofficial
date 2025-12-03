@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using Convex.Client.Infrastructure.Builders;
 using Convex.Client.Infrastructure.Caching;
@@ -22,8 +21,7 @@ internal sealed class MutationBuilder<TResult>(
     IHttpClientProvider httpProvider,
     IConvexSerializer serializer,
     string functionName,
-    IConvexCache? queryCache = null,
-    ConcurrentDictionary<string, object?>? subscriptionCache = null,
+    IReactiveCache? reactiveCache = null,
     Func<string, Task>? invalidateDependencies = null,
     Func<string, string, object?, TimeSpan?, CancellationToken, Task<TResult>>? middlewareExecutor = null,
     SyncContextCapture? syncContext = null,
@@ -34,7 +32,7 @@ internal sealed class MutationBuilder<TResult>(
     private readonly IHttpClientProvider _httpProvider = httpProvider ?? throw new ArgumentNullException(nameof(httpProvider));
     private readonly IConvexSerializer _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     private readonly string _functionName = functionName ?? throw new ArgumentNullException(nameof(functionName));
-    private readonly IConvexCache? _queryCache = queryCache;
+    private readonly IReactiveCache? _reactiveCache = reactiveCache;
     private readonly Func<string, Task>? _invalidateDependencies = invalidateDependencies;
     private readonly Func<string, string, object?, TimeSpan?, CancellationToken, Task<TResult>>? _middlewareExecutor = middlewareExecutor;
     private readonly SyncContextCapture? _syncContext = syncContext;
@@ -306,14 +304,14 @@ internal sealed class MutationBuilder<TResult>(
         try
         {
             // Apply query-focused optimistic update if configured and cache is available
-            if (_queryCache != null && _queryFocusedOptimisticUpdate != null && _args != null)
+            if (_reactiveCache != null && _queryFocusedOptimisticUpdate != null && _args != null)
             {
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogDebug("[Mutation] Applying query-focused optimistic update: Function={FunctionName}", _functionName);
                 }
 
-                optimisticStore = new OptimisticLocalStore(_queryCache, _serializer, subscriptionCache);
+                optimisticStore = new OptimisticLocalStore(_reactiveCache, _serializer);
 
                 // Invoke the optimistic update function
                 // We need to dynamically invoke the delegate with the correct type
@@ -334,20 +332,20 @@ internal sealed class MutationBuilder<TResult>(
             }
 
             // Apply cache updates optimistically if configured and cache is available
-            if (_queryCache != null && _cacheUpdates.Count > 0)
+            if (_reactiveCache != null && _cacheUpdates.Count > 0)
             {
                 foreach (var update in _cacheUpdates)
                 {
                     // Save current value for rollback
                     var snapshot = new CacheSnapshot(update.QueryName, update.ValueType);
-                    if (_queryCache.TryGet<object>(update.QueryName, out var currentValue))
+                    if (_reactiveCache.TryGet<object>(update.QueryName, out var currentValue))
                     {
                         snapshot.OriginalValue = currentValue;
                         snapshot.WasCached = true;
 
                         // Apply optimistic update
                         var updatedValue = update.UpdateFunction(currentValue);
-                        _queryCache.Set(update.QueryName, updatedValue);
+                        _reactiveCache.SetAndNotify(update.QueryName, updatedValue, CacheEntrySource.OptimisticUpdate);
                         appliedCacheUpdates.Add(snapshot);
                     }
                 }
@@ -464,35 +462,36 @@ internal sealed class MutationBuilder<TResult>(
                         _functionName, ex.GetType().Name);
                 }
                 // Rollback query-focused optimistic updates
-                if (_queryCache != null && _querySnapshots != null)
+                if (_reactiveCache != null && _querySnapshots != null)
                 {
                     foreach (var (queryKey, originalValue) in _querySnapshots)
                     {
                         if (originalValue == null)
                         {
                             // Query was not cached before, remove it
-                            _ = _queryCache.Remove(queryKey);
+                            _ = _reactiveCache.Remove(queryKey);
                         }
                         else
                         {
-                            // Restore original value
-                            _queryCache.Set(queryKey, originalValue);
+                            // Restore original value - use SetAndNotify to notify subscribers of rollback
+                            _reactiveCache.SetAndNotify(queryKey, originalValue, CacheEntrySource.OptimisticUpdate);
                         }
                     }
                 }
 
                 // Rollback cache updates
-                if (_queryCache != null && appliedCacheUpdates.Count > 0)
+                if (_reactiveCache != null && appliedCacheUpdates.Count > 0)
                 {
                     foreach (var snapshot in appliedCacheUpdates)
                     {
                         if (snapshot.WasCached)
                         {
-                            _queryCache.Set(snapshot.QueryName, snapshot.OriginalValue!);
+                            // Use SetAndNotify to notify subscribers of rollback
+                            _reactiveCache.SetAndNotify(snapshot.QueryName, snapshot.OriginalValue!, CacheEntrySource.OptimisticUpdate);
                         }
                         else
                         {
-                            _ = _queryCache.Remove(snapshot.QueryName);
+                            _ = _reactiveCache.Remove(snapshot.QueryName);
                         }
                     }
                 }
