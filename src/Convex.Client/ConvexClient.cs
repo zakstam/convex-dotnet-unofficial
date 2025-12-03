@@ -1,3 +1,4 @@
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Convex.Client.Infrastructure.Caching;
@@ -473,13 +474,26 @@ public sealed class ConvexClient : IConvexClient
             .Select(value => value!);
 
         // Create the async enumerable source from WebSocket and convert to IObservable
+        // The .Do() operator writes WebSocket values to cache, which triggers cacheObservable
         var wsObservable = _webSocketClient.Value.LiveQuery<T>(functionName)
             .ToObservable()
-            .Do(value => _reactiveCache.SetAndNotify(functionName, value, CacheEntrySource.Subscription));
+            .Do(value => _reactiveCache.SetAndNotify(functionName, value, CacheEntrySource.Subscription))
+            .Publish()
+            .RefCount();
 
-        // Merge: WebSocket updates write to cache, and we observe from cache
-        // This ensures SetQuery() optimistic updates are also received by subscribers
-        return cacheObservable.Merge(wsObservable);
+        // Return an observable that subscribes to wsObservable when someone subscribes to it
+        // This keeps the WebSocket subscription alive while only emitting cacheObservable values
+        // WebSocket updates write to cache via .Do(), which triggers cacheObservable
+        // SetQuery() optimistic updates also write to cache, triggering cacheObservable
+        return Observable.Create<T>(observer =>
+        {
+            // Subscribe to wsObservable to keep WebSocket subscription active
+            var wsSubscription = wsObservable.Subscribe();
+            // Subscribe to cacheObservable to emit values (no duplicates since wsObservable doesn't emit directly)
+            var cacheSubscription = cacheObservable.Subscribe(observer);
+            // Return composite subscription that disposes both
+            return new CompositeDisposable(wsSubscription, cacheSubscription);
+        });
     }
 
     /// <inheritdoc/>
@@ -496,13 +510,26 @@ public sealed class ConvexClient : IConvexClient
             .Select(value => value!);
 
         // Create the async enumerable source with args from WebSocket and convert to IObservable
+        // The .Do() operator writes WebSocket values to cache, which triggers cacheObservable
         var wsObservable = _webSocketClient.Value.LiveQuery<T, TArgs>(functionName, args)
             .ToObservable()
-            .Do(value => _reactiveCache.SetAndNotify(cacheKey, value, CacheEntrySource.Subscription));
+            .Do(value => _reactiveCache.SetAndNotify(cacheKey, value, CacheEntrySource.Subscription))
+            .Publish()
+            .RefCount();
 
-        // Merge: WebSocket updates write to cache, and we observe from cache
-        // This ensures SetQuery() optimistic updates are also received by subscribers
-        return cacheObservable.Merge(wsObservable);
+        // Return an observable that subscribes to wsObservable when someone subscribes to it
+        // This keeps the WebSocket subscription alive while only emitting cacheObservable values
+        // WebSocket updates write to cache via .Do(), which triggers cacheObservable
+        // SetQuery() optimistic updates also write to cache, triggering cacheObservable
+        return Observable.Create<T>(observer =>
+        {
+            // Subscribe to wsObservable to keep WebSocket subscription active
+            var wsSubscription = wsObservable.Subscribe();
+            // Subscribe to cacheObservable to emit values (no duplicates since wsObservable doesn't emit directly)
+            var cacheSubscription = cacheObservable.Subscribe(observer);
+            // Return composite subscription that disposes both
+            return new CompositeDisposable(wsSubscription, cacheSubscription);
+        });
     }
 
     #endregion
