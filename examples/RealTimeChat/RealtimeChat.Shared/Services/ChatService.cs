@@ -256,7 +256,9 @@ public class ChatService : IDisposable
 
     #region Message Sending
     /// <summary>
-    /// Send a new message.
+    /// Send a new message with optimistic updates.
+    /// The message appears immediately in the UI, then is confirmed by the server.
+    /// If the mutation fails, the optimistic update is rolled back automatically.
     /// </summary>
     public async Task<bool> SendMessageAsync(string text, List<Attachment>? attachments = null)
     {
@@ -265,11 +267,30 @@ public class ChatService : IDisposable
             return false;
         }
 
+        var messageText = text?.Trim() ?? "";
+
+        // Create an optimistic message that will appear immediately
+        var optimisticMessage = new MessageDto
+        {
+            Id = $"optimistic-{Guid.NewGuid()}", // Temporary ID until server confirms
+            Username = Username,
+            Text = messageText,
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            Attachments = attachments?.Select(a => new AttachmentDto
+            {
+                StorageId = a.StorageId,
+                Filename = a.Filename,
+                ContentType = a.ContentType,
+                Size = (double)a.Size
+            }).ToList()
+        };
+
+        // Track whether we applied the optimistic update
+        var appliedOptimistic = false;
+
         try
         {
-            var messageText = text?.Trim() ?? "";
-
-            var result = await _client.Mutate<object>(_sendMessageFunctionName)
+            _ = await _client.Mutate<object>(_sendMessageFunctionName)
                 .WithArgs(new Convex.Generated.SendMessageArgs
                 {
                     Username = Username,
@@ -282,12 +303,34 @@ public class ChatService : IDisposable
                         Size = a.Size
                     }).ToList()
                 })
+                // Optimistic update: add message to UI immediately
+                .Optimistic(_ =>
+                {
+                    // Add to the beginning of the list (newest first when sorted)
+                    _currentMessages.Add(optimisticMessage);
+                    appliedOptimistic = true;
+
+                    // Notify subscribers immediately - UI updates before server confirms
+                    MessagesUpdated?.Invoke(_currentMessages);
+                })
+                // Rollback: remove the optimistic message if mutation fails
+                .WithRollback(() =>
+                {
+                    if (appliedOptimistic)
+                    {
+                        _currentMessages.RemoveAll(m => m.Id == optimisticMessage.Id);
+                        MessagesUpdated?.Invoke(_currentMessages);
+                    }
+                })
                 .ExecuteAsync();
 
+            // On success, the server will send the real message via WebSocket subscription
+            // which will replace/update the optimistic message
             return true;
         }
         catch (ConvexException ex)
         {
+            // Rollback is handled automatically by WithRollback()
             ErrorOccurred?.Invoke($"Failed to send message: {ex.Message}");
             return false;
         }
