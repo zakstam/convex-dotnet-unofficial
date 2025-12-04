@@ -18,7 +18,7 @@
     <!--   - feat: triggers minor version bump (0.x.0) -->
     <!--   - fix: triggers patch version bump (0.0.x) -->
     <!--   - BREAKING CHANGE: triggers major version bump (x.0.0) -->
-    <Version Condition="'$(Version)' == ''">4.3.0-beta</Version>
+    <Version Condition="'$(Version)' == ''">5.0.0-beta</Version>
     <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
