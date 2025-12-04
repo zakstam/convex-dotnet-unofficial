@@ -53,6 +53,10 @@ This project is actively maintained by the community and provides protocol compa
 
 **Core Features:** [Real-Time Subscriptions](#real-time-subscriptions) • [Queries & Mutations](#queries--mutations) • [Optimistic Updates](#-optimistic-updates) • [Actions](#actions)
 
+**Advanced Features:** [File Storage](#file-storage) • [Vector Search](#vector-search) • [Scheduling](#scheduling) • [HTTP Actions](#http-actions)
+
+**Developer Tools:** [Rx Extensions](#reactive-extensions-rx) • [Error Handling](#error-handling) • [Testing](#testing) • [Cache Management](#cache-management) • [Pagination](#pagination) • [Retry Policies](#retry-policies) • [Connection Quality](#connection-quality-monitoring) • [Middleware](#middleware)
+
 ---
 
 ## 🚀 Quick Start
@@ -255,6 +259,23 @@ var client = new ConvexClientBuilder()
     .WithTimeout(TimeSpan.FromSeconds(30))
     .Build();
 
+// Full builder options available:
+var client = new ConvexClientBuilder()
+    .UseDeployment("https://your-deployment.convex.cloud")
+    .WithHttpClient(customHttpClient)              // Custom HttpClient
+    .WithTimeout(TimeSpan.FromSeconds(30))         // Default timeout
+    .WithAutoReconnect(maxAttempts: 5, delayMs: 1000)  // Reconnection config
+    .WithReconnectionPolicy(ReconnectionPolicy.Default())  // Or custom policy
+    .WithSyncContext(SynchronizationContext.Current)  // UI thread marshalling
+    .WithLogging(logger)                           // Structured logging (ILogger)
+    .EnableDebugLogging()                          // Enable debug logs
+    .PreConnect()                                  // Connect immediately on build
+    .UseMiddleware<LoggingMiddleware>()            // Add middleware
+    .WithSchemaValidation(opts => opts.StrictMode = true)  // Schema validation
+    .WithRequestLogging()                          // Log all requests
+    .WithDevelopmentDefaults()                     // Or: WithProductionDefaults()
+    .Build();
+
 // Subscribe to live todos - updates automatically when data changes!
 client.Observe<List<Todo>>("functions/list")
     // Or: ConvexFunctions.Queries.List (if using generator)
@@ -412,7 +433,7 @@ class TodoService
         _client = client;
     }
 
-    // Read todos
+    // Read todos - basic
     public async Task<List<Todo>> GetAllTodosAsync()
     {
         try
@@ -426,6 +447,36 @@ class TodoService
             Console.WriteLine($"Error loading todos: {ex.Message}");
             return new List<Todo>();
         }
+    }
+
+    // Read todos - with all advanced options
+    public async Task<List<Todo>> GetAllTodosAdvancedAsync()
+    {
+        return await _client.Query<List<Todo>>("todos:list")
+            .WithArgs(new { userId = "123" })          // Query arguments
+            .WithTimeout(TimeSpan.FromSeconds(5))      // Timeout
+            .Cached(TimeSpan.FromMinutes(5))           // Cache result for 5 minutes
+            .IncludeMetadata()                         // Include execution metadata
+            .OnError(ex => Console.WriteLine($"Query failed: {ex.Message}"))
+            .WithRetry(policy => policy
+                .MaxRetries(3)
+                .ExponentialBackoff(TimeSpan.FromSeconds(1))
+                .WithJitter(true))
+            .ExecuteAsync();
+    }
+
+    // Get result with metadata using ConvexResult<T>
+    public async Task<ConvexResult<List<Todo>>> GetTodosWithResultAsync()
+    {
+        var result = await _client.Query<List<Todo>>("todos:list")
+            .ExecuteWithResultAsync();
+
+        if (result.IsSuccess)
+            Console.WriteLine($"Got {result.Value.Count} todos");
+        else
+            Console.WriteLine($"Error: {result.Error?.Message}");
+
+        return result;
     }
 
     // Create todo
@@ -452,6 +503,22 @@ class TodoService
             .ExecuteAsync();
     }
 
+    // Advanced mutation with all options
+    public async Task<Todo> CreateTodoAdvancedAsync(string text, ISet<string> pendingTracker)
+    {
+        return await _client.Mutate<Todo>("todos:create")
+            .WithArgs(new { text })
+            .WithTimeout(TimeSpan.FromSeconds(10))
+            .OnSuccess(todo => Console.WriteLine($"Created: {todo.Id}"))
+            .OnError(ex => Console.WriteLine($"Failed: {ex.Message}"))
+            .WithRetry(policy => policy.MaxRetries(3).ExponentialBackoff(TimeSpan.FromSeconds(1)))
+            .TrackPending(pendingTracker, text)        // Track pending mutations
+            .WithCleanup(() => pendingTracker.Remove(text))  // Cleanup on completion
+            .SkipQueue()                               // Bypass mutation queue (use carefully)
+            .RollbackOn<InvalidOperationException>()   // Only rollback on specific exceptions
+            .ExecuteAsync();
+    }
+
     // Batch multiple queries
     public async Task<(List<Todo>, User, Stats)> GetDashboardDataAsync()
     {
@@ -471,6 +538,40 @@ class TodoService
 - Batch multiple queries for efficiency
 - Built-in timeout and error handling
 - Mutations support optimistic updates for instant UI feedback (see [Optimistic Updates](#-optimistic-updates) below)
+
+**Query Builder Options:**
+
+| Method | Description |
+|--------|-------------|
+| `WithArgs<T>(args)` | Set query arguments |
+| `WithTimeout(TimeSpan)` | Set timeout |
+| `Cached(TimeSpan)` | Cache result for duration |
+| `IncludeMetadata()` | Include execution metadata |
+| `OnError(Action<Exception>)` | Error callback |
+| `WithRetry(policy)` | Configure retry policy |
+| `ExecuteAsync()` | Execute and return result |
+| `ExecuteWithResultAsync()` | Execute and return `ConvexResult<T>` |
+
+**Mutation Builder Options:**
+
+| Method | Description |
+|--------|-------------|
+| `WithArgs<T>(args)` | Set mutation arguments |
+| `WithTimeout(TimeSpan)` | Set timeout |
+| `Optimistic(Action<T>)` | Optimistic update callback |
+| `OptimisticWithAutoRollback()` | Auto-rollback on failure |
+| `WithOptimisticUpdate()` | Query-focused optimistic update |
+| `UpdateCache<T>()` | Update cached query result |
+| `WithRollback(Action)` | Manual rollback action |
+| `RollbackOn<TException>()` | Rollback only on specific exception |
+| `OnSuccess(Action<T>)` | Success callback |
+| `OnError(Action<Exception>)` | Error callback |
+| `WithRetry(policy)` | Configure retry policy |
+| `SkipQueue()` | Bypass mutation queue |
+| `TrackPending(tracker, key)` | Track pending mutations |
+| `WithCleanup(Action)` | Cleanup action on completion |
+| `ExecuteAsync()` | Execute and return result |
+| `ExecuteWithResultAsync()` | Execute and return `ConvexResult<T>` |
 
 **Learn more:** [API Reference - Queries & Mutations](docs/api-reference.md#queries)
 
@@ -644,6 +745,18 @@ class EmailService
 - Use for operations that aren't pure database operations
 - Supports longer timeouts for external calls
 
+**Action Builder Options:**
+
+| Method | Description |
+|--------|-------------|
+| `WithArgs<T>(args)` | Set action arguments |
+| `WithTimeout(TimeSpan)` | Set timeout |
+| `OnSuccess(Action<T>)` | Success callback |
+| `OnError(Action<Exception>)` | Error callback |
+| `WithRetry(policy)` | Configure retry policy |
+| `ExecuteAsync()` | Execute and return result |
+| `ExecuteWithResultAsync()` | Execute and return `ConvexResult<T>` |
+
 **Learn more:** [API Reference - Actions](docs/api-reference.md#actions)
 
 ---
@@ -695,6 +808,25 @@ class ProfileService
         // Download file directly
         return await _client.Files.DownloadFileAsync(storageId);
     }
+
+    public async Task<FileMetadata> GetFileInfoAsync(string storageId)
+    {
+        // Get file metadata (size, content type, etc.)
+        return await _client.Files.GetFileMetadataAsync(storageId);
+    }
+
+    public async Task<string> UploadWithSeparateUrlAsync(Stream imageStream)
+    {
+        // Two-step upload: generate URL first, then upload
+        var uploadUrl = await _client.Files.GenerateUploadUrlAsync("profile.jpg");
+        var storageId = await _client.Files.UploadFileAsync(
+            uploadUrl,
+            imageStream,
+            contentType: "image/jpeg",
+            filename: "profile.jpg"
+        );
+        return storageId;
+    }
 }
 ```
 
@@ -703,6 +835,17 @@ class ProfileService
 - Upload returns a storage ID
 - Get download URL for browser display
 - Download directly for server processing
+
+**File Storage Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `GenerateUploadUrlAsync(filename)` | Get a pre-signed upload URL |
+| `UploadFileAsync(url, stream, contentType, filename)` | Upload using pre-signed URL |
+| `UploadFileAsync(stream, contentType, filename)` | Combined URL generation + upload |
+| `DownloadFileAsync(storageId)` | Download file as Stream |
+| `GetDownloadUrlAsync(storageId)` | Get temporary download URL |
+| `GetFileMetadataAsync(storageId)` | Get file metadata (size, type, etc.) |
 
 **Learn more:** [API Reference - File Storage](docs/api-reference.md#file-storage)
 
@@ -751,6 +894,41 @@ class ProductSearchService
             return new List<Product>();
         }
     }
+
+    // Search by text (auto-generates embedding)
+    public async Task<List<Product>> SearchByTextAsync(string searchText)
+    {
+        var results = await _client.VectorSearch.SearchByTextAsync<Product>(
+            indexName: "product_embeddings",
+            text: searchText,
+            embeddingModel: "text-embedding-ada-002",
+            limit: 10
+        );
+
+        return results.Select(r => r.Item).ToList();
+    }
+
+    // Search with filter
+    public async Task<List<Product>> SearchWithFilterAsync(float[] queryEmbedding, string category)
+    {
+        var results = await _client.VectorSearch.SearchAsync<Product, object>(
+            indexName: "product_embeddings",
+            vector: queryEmbedding,
+            limit: 10,
+            filter: new { category }
+        );
+
+        return results.Select(r => r.Item).ToList();
+    }
+
+    // Create embedding from text
+    public async Task<float[]> CreateEmbeddingAsync(string text)
+    {
+        return await _client.VectorSearch.CreateEmbeddingAsync(
+            text: text,
+            model: "text-embedding-ada-002"
+        );
+    }
 }
 ```
 
@@ -759,6 +937,16 @@ class ProductSearchService
 - Requires pre-computed embeddings
 - Returns results with similarity scores
 - Use for semantic search, recommendations, etc.
+
+**Vector Search Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `SearchAsync<T>(index, vector, limit)` | Search by vector embedding |
+| `SearchAsync<T, TFilter>(index, vector, limit, filter)` | Search with filter |
+| `SearchByTextAsync<T>(index, text, model, limit)` | Search by text (auto-embed) |
+| `SearchByTextAsync<T, TFilter>(index, text, limit, filter)` | Search by text with filter |
+| `CreateEmbeddingAsync(text, model)` | Create embedding from text |
 
 **Learn more:** [API Reference - Vector Search](docs/api-reference.md#vector-search)
 
@@ -818,6 +1006,28 @@ class ReminderService
             Console.WriteLine($"Reminder cancelled: {jobId}");
         }
     }
+
+    // Schedule at specific time
+    public async Task<string> ScheduleAtExactTimeAsync(string userId, DateTimeOffset scheduledTime)
+    {
+        return await _client.Scheduler.ScheduleAtAsync(
+            functionName: "reminders:send",
+            scheduledTime: scheduledTime,
+            args: new { userId }
+        );
+    }
+
+    // Schedule recurring at interval
+    public async Task<string> ScheduleIntervalAsync(string userId)
+    {
+        return await _client.Scheduler.ScheduleIntervalAsync(
+            functionName: "sync:heartbeat",
+            interval: TimeSpan.FromMinutes(5),
+            args: new { userId },
+            startTime: DateTimeOffset.UtcNow,
+            endTime: DateTimeOffset.UtcNow.AddDays(30)
+        );
+    }
 }
 ```
 
@@ -826,6 +1036,20 @@ class ReminderService
 - Schedule one-time, recurring (cron), or interval jobs
 - Returns job ID for cancellation
 - Supports timezone-aware scheduling
+
+**Scheduler Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `ScheduleAsync(fn, delay)` | Schedule after delay |
+| `ScheduleAsync<T>(fn, delay, args)` | Schedule after delay with args |
+| `ScheduleAtAsync(fn, time)` | Schedule at specific time |
+| `ScheduleAtAsync<T>(fn, time, args)` | Schedule at time with args |
+| `ScheduleRecurringAsync(fn, cron, timezone)` | Schedule with cron expression |
+| `ScheduleRecurringAsync<T>(fn, cron, args, timezone)` | Schedule cron with args |
+| `ScheduleIntervalAsync(fn, interval)` | Schedule at fixed interval |
+| `ScheduleIntervalAsync<T>(fn, interval, args, start?, end?)` | Schedule interval with args |
+| `CancelAsync(jobId)` | Cancel scheduled job |
 
 **Learn more:** [API Reference - Scheduling](docs/api-reference.md#scheduling)
 
@@ -882,14 +1106,55 @@ class ApiClient
 
         throw new Exception($"Failed to create user: {response.StatusCode}");
     }
+
+    public async Task<User> UpdateUserAsync(string userId, User updatedUser)
+    {
+        // PUT request
+        var response = await _client.Http.PutAsync<User, User>(
+            endpoint: $"users/{userId}",
+            body: updatedUser
+        );
+
+        return response.IsSuccess ? response.Body! : throw new Exception("Update failed");
+    }
+
+    public async Task<User> PatchUserAsync(string userId, object partialUpdate)
+    {
+        // PATCH request for partial updates
+        var response = await _client.Http.PatchAsync<User, object>(
+            endpoint: $"users/{userId}",
+            body: partialUpdate
+        );
+
+        return response.IsSuccess ? response.Body! : throw new Exception("Patch failed");
+    }
+
+    public async Task DeleteUserAsync(string userId)
+    {
+        // DELETE request
+        await _client.Http.DeleteAsync(endpoint: $"users/{userId}");
+    }
 }
 ```
 
 **Key Points:**
 
-- GET and POST requests supported
+- Full REST support: GET, POST, PUT, PATCH, DELETE
 - Type-safe request/response handling
 - Check `IsSuccess` before using response body
+
+**HTTP Action Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `GetAsync<T>(endpoint)` | HTTP GET request |
+| `PostAsync<T>(endpoint)` | HTTP POST without body |
+| `PostAsync<T, TBody>(endpoint, body)` | HTTP POST with body |
+| `PutAsync<T>(endpoint)` | HTTP PUT without body |
+| `PutAsync<T, TBody>(endpoint, body)` | HTTP PUT with body |
+| `PatchAsync<T>(endpoint)` | HTTP PATCH without body |
+| `PatchAsync<T, TBody>(endpoint, body)` | HTTP PATCH with body |
+| `DeleteAsync(endpoint)` | HTTP DELETE request |
 
 **Learn more:** [API Reference - HTTP Actions](docs/api-reference.md#http-actions)
 
@@ -1115,6 +1380,33 @@ class AuthService
     {
         await _client.Auth.SetAuthTokenAsync(token);
     }
+
+    // Clear authentication
+    public async Task LogoutAsync()
+    {
+        await _client.Auth.ClearAuthAsync();
+    }
+
+    // Get current auth state
+    public async Task<AuthenticationState> GetCurrentStateAsync()
+    {
+        return await _client.Auth.GetAuthStateAsync();
+    }
+
+    // Subscribe to auth state changes
+    public void SubscribeToAuthChanges()
+    {
+        _client.Auth.AuthenticationStateChanged += (sender, state) =>
+        {
+            Console.WriteLine($"Auth state changed: {state}");
+        };
+
+        // Or use the observable
+        _client.AuthenticationStateChanges.Subscribe(state =>
+        {
+            Console.WriteLine($"Auth state: {state}");
+        });
+    }
 }
 
 class AuthTokenProvider : IAuthTokenProvider
@@ -1139,6 +1431,29 @@ class AuthTokenProvider : IAuthTokenProvider
 - Token provider pattern for automatic refresh
 - Static token for simple apps/testing
 - Admin auth for server-side only
+
+**Authentication Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `SetAuthTokenAsync(token)` | Set JWT authentication token |
+| `SetAdminAuthAsync(adminKey)` | Set admin key (server-side only) |
+| `SetAuthTokenProviderAsync(provider)` | Set token provider for auto-refresh |
+| `ClearAuthAsync()` | Clear authentication |
+| `GetAuthStateAsync()` | Get current auth state |
+| `AuthenticationStateChanged` (event) | Subscribe to state changes |
+| `CurrentAuthToken` (property) | Get current token |
+| `AuthenticationState` (property) | Get current state |
+
+**Authentication States:**
+
+| State | Description |
+|-------|-------------|
+| `Unauthenticated` | No authentication set |
+| `Authenticating` | Authentication in progress |
+| `Authenticated` | Successfully authenticated |
+| `TokenExpired` | Token has expired |
+| `AuthenticationFailed` | Authentication failed |
 
 **Learn more:** [API Reference - Authentication](docs/api-reference.md#authentication)
 
@@ -1333,6 +1648,359 @@ public class TodoServiceTests
 
 **Learn more:** These testing utilities are included in `Convex.Client`
 
+### Cache Management
+
+**Problem:** You need direct control over the client-side cache for query results.
+
+**Solution:** Use the `Cache` property to manage cached data.
+
+**Complete Example:** Cache manipulation
+
+```csharp
+using Convex.Client;
+
+class CacheService
+{
+    private readonly IConvexClient _client;
+
+    public CacheService(IConvexClient client)
+    {
+        _client = client;
+    }
+
+    public void ManageCache()
+    {
+        // Get cached value
+        var todos = _client.Cache.Get<List<Todo>>("todos:list");
+
+        // Try get (safer - doesn't throw)
+        if (_client.Cache.TryGet<List<Todo>>("todos:list", out var cachedTodos))
+        {
+            Console.WriteLine($"Found {cachedTodos.Count} cached todos");
+        }
+
+        // Set cache value manually
+        _client.Cache.Set("todos:list", new List<Todo>());
+
+        // Remove specific cache entry
+        _client.Cache.Remove("todos:list");
+
+        // Remove by pattern (supports wildcards)
+        _client.Cache.RemovePattern("todos:*");
+
+        // Clear all cache
+        _client.Cache.Clear();
+    }
+
+    // Invalidate queries (triggers re-fetch)
+    public async Task InvalidateAsync()
+    {
+        // Invalidate specific query
+        await _client.InvalidateQueryAsync("todos:list");
+
+        // Invalidate by pattern
+        await _client.InvalidateQueriesAsync("todos:*");
+    }
+
+    // Define mutation dependencies (auto-invalidate on mutation)
+    public void SetupDependencies()
+    {
+        _client.DefineQueryDependency("todos:create", "todos:list", "todos:count");
+        _client.DefineQueryDependency("todos:delete", "todos:list", "todos:count");
+    }
+}
+```
+
+**Cache Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `Cache.Get<T>(key)` | Get cached value by key |
+| `Cache.TryGet<T>(key, out value)` | Try get cached value (safer) |
+| `Cache.Set<T>(key, value)` | Set cache value |
+| `Cache.Remove(key)` | Remove cache entry |
+| `Cache.RemovePattern(pattern)` | Remove by pattern (wildcards) |
+| `Cache.Clear()` | Clear all cache |
+| `InvalidateQueryAsync(name)` | Invalidate and re-fetch query |
+| `InvalidateQueriesAsync(pattern)` | Invalidate queries by pattern |
+| `DefineQueryDependency(mutation, queries...)` | Auto-invalidate on mutation |
+
+### Pagination
+
+**Problem:** You need to efficiently load large datasets in pages.
+
+**Solution:** Use cursor-based pagination with the `Pagination` property.
+
+**Complete Example:** Paginated data loading
+
+```csharp
+using Convex.Client;
+
+class PaginatedDataService
+{
+    private readonly IConvexClient _client;
+
+    public PaginatedDataService(IConvexClient client)
+    {
+        _client = client;
+    }
+
+    public async Task LoadPaginatedDataAsync()
+    {
+        var paginator = _client.Pagination.Query<Message>("messages:list");
+
+        // Load first page
+        var firstPage = await paginator.LoadFirstPageAsync(pageSize: 20);
+        Console.WriteLine($"Loaded {firstPage.Items.Count} messages");
+
+        // Check if more pages available
+        if (firstPage.HasMore)
+        {
+            // Load next page using cursor
+            var nextPage = await paginator.LoadNextPageAsync(firstPage.Cursor);
+            Console.WriteLine($"Loaded {nextPage.Items.Count} more messages");
+        }
+
+        // Or iterate through all pages
+        await foreach (var page in paginator.GetPagesAsync(pageSize: 20))
+        {
+            foreach (var message in page.Items)
+            {
+                Console.WriteLine(message.Text);
+            }
+        }
+    }
+}
+```
+
+### Retry Policies
+
+**Problem:** You need fine-grained control over retry behavior for failed operations.
+
+**Solution:** Configure retry policies with exponential backoff, jitter, and conditional retry.
+
+**Complete Example:** Custom retry policies
+
+```csharp
+using Convex.Client;
+using Convex.Client.Infrastructure.Resilience;
+
+class RetryService
+{
+    private readonly ConvexClient _client;
+
+    public RetryService(ConvexClient client)
+    {
+        _client = client;
+    }
+
+    public async Task ExecuteWithRetryAsync()
+    {
+        // Use predefined policies
+        await _client.Query<List<Todo>>("todos:list")
+            .WithRetry(RetryPolicy.Default())      // 3 retries, exponential backoff
+            .ExecuteAsync();
+
+        await _client.Query<List<Todo>>("todos:list")
+            .WithRetry(RetryPolicy.Aggressive())   // 5 retries, shorter delays
+            .ExecuteAsync();
+
+        await _client.Query<List<Todo>>("todos:list")
+            .WithRetry(RetryPolicy.Conservative()) // 2 retries, longer delays
+            .ExecuteAsync();
+
+        // Build custom policy
+        await _client.Query<List<Todo>>("todos:list")
+            .WithRetry(policy => policy
+                .MaxRetries(5)
+                .ExponentialBackoff(TimeSpan.FromMilliseconds(100))
+                .WithBackoffMultiplier(2.0)
+                .WithMaxDelay(TimeSpan.FromSeconds(30))
+                .WithJitter(true)                  // Add randomness to prevent thundering herd
+                .RetryOn<TimeoutException>()       // Only retry on specific exceptions
+                .RetryOnTransient())               // Retry on transient errors
+            .ExecuteAsync();
+    }
+}
+```
+
+**Retry Policy Options:**
+
+| Method | Description |
+|--------|-------------|
+| `MaxRetries(count)` | Maximum retry attempts |
+| `ExponentialBackoff(initialDelay)` | Exponential backoff strategy |
+| `LinearBackoff(initialDelay)` | Linear backoff strategy |
+| `ConstantBackoff(delay)` | Fixed delay between retries |
+| `WithBackoffMultiplier(multiplier)` | Multiplier for exponential backoff |
+| `WithMaxDelay(maxDelay)` | Maximum delay cap |
+| `WithJitter(bool)` | Add randomness to delays |
+| `RetryOn<TException>()` | Retry only on specific exception |
+| `RetryOnTransient()` | Retry on transient network errors |
+
+**Predefined Policies:**
+
+| Policy | Description |
+|--------|-------------|
+| `RetryPolicy.Default()` | 3 retries, exponential backoff |
+| `RetryPolicy.Aggressive()` | 5 retries, shorter initial delay |
+| `RetryPolicy.Conservative()` | 2 retries, longer delays |
+
+### Connection Quality Monitoring
+
+**Problem:** You need to monitor connection health and adapt to network conditions.
+
+**Solution:** Use connection quality monitoring to track latency, packet loss, and uptime.
+
+**Complete Example:** Connection quality monitoring
+
+```csharp
+using Convex.Client;
+
+class ConnectionMonitor
+{
+    private readonly ConvexClient _client;
+
+    public ConnectionMonitor(ConvexClient client)
+    {
+        _client = client;
+    }
+
+    public void SetupMonitoring()
+    {
+        // Subscribe to connection state changes
+        _client.ConnectionStateChanges.Subscribe(state =>
+        {
+            Console.WriteLine($"Connection state: {state}");
+            // States: Disconnected, Connecting, Connected, Reconnecting, Failed
+        });
+
+        // Subscribe to connection quality changes
+        _client.ConnectionQualityChanges.Subscribe(quality =>
+        {
+            Console.WriteLine($"Connection quality: {quality}");
+            // Quality: Excellent, Good, Fair, Poor, Terrible
+        });
+    }
+
+    public async Task GetDetailedQualityAsync()
+    {
+        var qualityInfo = await _client.GetConnectionQualityAsync();
+
+        Console.WriteLine($"Quality: {qualityInfo.Quality}");
+        Console.WriteLine($"Description: {qualityInfo.Description}");
+        Console.WriteLine($"Average Latency: {qualityInfo.AverageLatencyMs}ms");
+        Console.WriteLine($"Latency Variance: {qualityInfo.LatencyVarianceMs}ms");
+        Console.WriteLine($"Packet Loss Rate: {qualityInfo.PacketLossRate}%");
+        Console.WriteLine($"Reconnection Count: {qualityInfo.ReconnectionCount}");
+        Console.WriteLine($"Error Count: {qualityInfo.ErrorCount}");
+        Console.WriteLine($"Uptime: {qualityInfo.UptimePercentage}%");
+        Console.WriteLine($"Quality Score: {qualityInfo.QualityScore}/100");
+    }
+
+    public async Task GetHealthAsync()
+    {
+        var health = await _client.GetHealthAsync();
+        Console.WriteLine($"Is Healthy: {health.IsHealthy}");
+    }
+}
+```
+
+**Connection States:**
+
+| State | Description |
+|-------|-------------|
+| `Disconnected` | Not connected to server |
+| `Connecting` | Connection in progress |
+| `Connected` | Successfully connected |
+| `Reconnecting` | Attempting to reconnect |
+| `Failed` | Connection failed |
+
+**Connection Quality Levels:**
+
+| Level | Description |
+|-------|-------------|
+| `Excellent` | Very low latency, no issues |
+| `Good` | Low latency, stable |
+| `Fair` | Moderate latency |
+| `Poor` | High latency or packet loss |
+| `Terrible` | Very high latency or frequent disconnects |
+
+### Middleware
+
+**Problem:** You need to intercept, modify, or log requests and responses.
+
+**Solution:** Use middleware pipeline to add cross-cutting concerns.
+
+**Complete Example:** Custom middleware
+
+```csharp
+using Convex.Client;
+using Convex.Client.Infrastructure.Middleware;
+
+// Custom logging middleware
+class LoggingMiddleware : IConvexMiddleware
+{
+    public async Task<ConvexResponse> InvokeAsync(
+        ConvexRequest request,
+        ConvexRequestDelegate next)
+    {
+        Console.WriteLine($"[{DateTime.UtcNow}] Request: {request.FunctionName}");
+        var stopwatch = Stopwatch.StartNew();
+
+        var response = await next(request);
+
+        stopwatch.Stop();
+        Console.WriteLine($"[{DateTime.UtcNow}] Response: {stopwatch.ElapsedMilliseconds}ms");
+
+        return response;
+    }
+}
+
+// Custom authentication middleware
+class AuthMiddleware : IConvexMiddleware
+{
+    private readonly ITokenService _tokenService;
+
+    public AuthMiddleware(ITokenService tokenService)
+    {
+        _tokenService = tokenService;
+    }
+
+    public async Task<ConvexResponse> InvokeAsync(
+        ConvexRequest request,
+        ConvexRequestDelegate next)
+    {
+        // Add auth token to request
+        var token = await _tokenService.GetTokenAsync();
+        request.Headers["Authorization"] = $"Bearer {token}";
+
+        return await next(request);
+    }
+}
+
+// Register middleware
+var client = new ConvexClientBuilder()
+    .UseDeployment("https://your-deployment.convex.cloud")
+    .UseMiddleware<LoggingMiddleware>()           // Add by type
+    .UseMiddleware(new AuthMiddleware(tokenService))  // Add instance
+    .Use(async (request, next) =>                 // Inline middleware
+    {
+        Console.WriteLine($"Processing: {request.FunctionName}");
+        return await next(request);
+    })
+    .Build();
+```
+
+**Middleware Registration:**
+
+| Method | Description |
+|--------|-------------|
+| `UseMiddleware<T>()` | Register middleware by type |
+| `UseMiddleware(instance)` | Register middleware instance |
+| `UseMiddleware<T>(factory)` | Register with factory function |
+| `Use(Func<...>)` | Inline middleware delegate |
+
 ---
 
 ## 📦 Available Packages
@@ -1353,6 +2021,8 @@ The Convex .NET SDK consists of 3 main packages:
 
 ### Quick API Reference
 
+**Core Operations:**
+
 | Operation     | Method                           | Example                                                                           |
 | ------------- | -------------------------------- | --------------------------------------------------------------------------------- |
 | **Subscribe** | `Observe<T>()`                   | `client.Observe<List<Todo>>("todos:list")`                                        |
@@ -1361,12 +2031,56 @@ The Convex .NET SDK consists of 3 main packages:
 | **Action**    | `Action<T>().ExecuteAsync()`     | `await client.Action<string>("sendEmail").WithArgs(new { to }).ExecuteAsync()`    |
 | **Batch**     | `Batch().Query().ExecuteAsync()` | `await client.Batch().Query<List<Todo>>("todos:list").ExecuteAsync<List<Todo>>()` |
 
+**Feature Slices (accessed via client properties):**
+
+| Feature | Property | Example |
+|---------|----------|---------|
+| **Files** | `client.Files` | `await client.Files.UploadFileAsync(stream, "image/png", "photo.png")` |
+| **Vector Search** | `client.VectorSearch` | `await client.VectorSearch.SearchAsync<Product>("idx", vector, 10)` |
+| **HTTP Actions** | `client.Http` | `await client.Http.GetAsync<User>("users/123")` |
+| **Scheduler** | `client.Scheduler` | `await client.Scheduler.ScheduleAsync("fn", TimeSpan.FromHours(1))` |
+| **Auth** | `client.Auth` | `await client.Auth.SetAuthTokenAsync(token)` |
+| **Cache** | `client.Cache` | `client.Cache.Get<List<Todo>>("todos:list")` |
+| **Pagination** | `client.Pagination` | `client.Pagination.Query<Message>("messages:list")` |
+| **Health** | `client.Health` | `client.Health.GetAverageLatency()` |
+| **Diagnostics** | `client.Diagnostics` | `client.Diagnostics.Performance` |
+| **Resilience** | `client.Resilience` | `await client.Resilience.ExecuteAsync(() => ...)` |
+
+**Connection & Monitoring:**
+
+| Operation | Method | Example |
+|-----------|--------|---------|
+| **Connection State** | `ConnectionStateChanges` | `client.ConnectionStateChanges.Subscribe(state => ...)` |
+| **Connection Quality** | `ConnectionQualityChanges` | `client.ConnectionQualityChanges.Subscribe(quality => ...)` |
+| **Auth State** | `AuthenticationStateChanges` | `client.AuthenticationStateChanges.Subscribe(state => ...)` |
+| **Get Quality Info** | `GetConnectionQualityAsync()` | `var info = await client.GetConnectionQualityAsync()` |
+| **Get Health** | `GetHealthAsync()` | `var health = await client.GetHealthAsync()` |
+
+**Cache Management:**
+
+| Operation | Method | Example |
+|-----------|--------|---------|
+| **Invalidate Query** | `InvalidateQueryAsync()` | `await client.InvalidateQueryAsync("todos:list")` |
+| **Invalidate Pattern** | `InvalidateQueriesAsync()` | `await client.InvalidateQueriesAsync("todos:*")` |
+| **Define Dependency** | `DefineQueryDependency()` | `client.DefineQueryDependency("todos:create", "todos:list")` |
+| **Get Cached** | `TryGetCachedValue<T>()` | `client.TryGetCachedValue<List<Todo>>("todos:list", out var todos)` |
+
 ### Common Patterns
 
 **Connection Status:**
 
 ```csharp
 client.ConnectionStateChanges.Subscribe(state => Console.WriteLine(state));
+```
+
+**Connection Quality:**
+
+```csharp
+client.ConnectionQualityChanges.Subscribe(quality =>
+{
+    if (quality == ConnectionQuality.Poor)
+        ShowOfflineWarning();
+});
 ```
 
 **Cached Values:**
@@ -1382,6 +2096,26 @@ if (client.TryGetCachedValue<List<Todo>>("todos:list", out var todos))
 
 ```csharp
 client.DefineQueryDependency("todos:create", "todos:list", "todos:count");
+```
+
+**Retry with Custom Policy:**
+
+```csharp
+await client.Query<List<Todo>>("todos:list")
+    .WithRetry(p => p.MaxRetries(3).ExponentialBackoff(TimeSpan.FromSeconds(1)))
+    .ExecuteAsync();
+```
+
+**Optimistic Update:**
+
+```csharp
+await client.Mutate<Todo>("todos:create")
+    .WithArgs(new { text = "New todo" })
+    .OptimisticWithAutoRollback(
+        getter: () => todos.ToList(),
+        setter: value => { todos = value; UpdateUI(); },
+        update: list => list.Append(new Todo { Text = "New todo" }).ToList())
+    .ExecuteAsync();
 ```
 
 ### Documentation
