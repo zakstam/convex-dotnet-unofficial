@@ -10,6 +10,7 @@
       "draft": true,
       "prerelease": true,
       "prerelease-type": "beta",
+      "release-as": "4.4.0-beta",
       "include-component-in-tag": false,
       "include-v-in-tag": true,
       "changelog-sections": [
