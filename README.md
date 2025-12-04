@@ -47,6 +47,16 @@ This project is actively maintained by the community and provides protocol compa
 
 ---
 
+## 💡 Why This Project?
+
+Working at a large company, I built internal software consisting of 3 frontends and 1 backend. Two of the frontends (desktop applications, not games) were created with Godot C#. Maintaining a separate backend alongside multiple frontends became increasingly complex.
+
+**The goal:** Eliminate the backend entirely and only maintain the frontends.
+
+With Convex as a backend-as-a-service, the .NET frontends can connect directly to Convex's real-time database - no custom backend infrastructure to deploy, scale, or maintain. This SDK makes that possible for any .NET application, whether it's Godot, Unity, WPF, Blazor, or console apps.
+
+---
+
 ## 📑 Quick Navigation
 
 **[Quick Start](#-quick-start)** • [Core Features](#-core-features) • [Advanced Features](#-advanced-features) • [UI Integrations](#-ui-integrations) • [Authentication](#-authentication) • [Developer Tools](#-developer-tools) • [Reference](#-reference)
