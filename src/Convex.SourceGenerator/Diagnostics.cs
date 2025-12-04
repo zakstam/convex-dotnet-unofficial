@@ -154,4 +154,28 @@ public static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Hidden,
         isEnabledByDefault: true,
         description: "The source generation completed successfully.");
+
+    /// <summary>
+    /// CVX013: No TypeScript files found.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NoFilesFound = new(
+        id: "CVX013",
+        title: "No TypeScript Files Found",
+        messageFormat: "No Convex TypeScript files found in AdditionalFiles. Set ConvexBackendPath or add .ts files as AdditionalFiles if you want to use the source generator.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "The source generator could not find any TypeScript files to process. This is expected if you're not using the source generator. To enable it, set ConvexBackendPath to your Convex backend folder.");
+
+    /// <summary>
+    /// CVX014: File skipped due to path.
+    /// </summary>
+    public static readonly DiagnosticDescriptor FileSkipped = new(
+        id: "CVX014",
+        title: "File Skipped",
+        messageFormat: "File '{0}' was skipped because its path does not contain 'convex/'. Ensure the file is inside a 'convex' folder.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "The TypeScript file was not processed because the generator could not determine its module path. Files must be inside a folder named 'convex' for the generator to extract the correct function path.");
 }

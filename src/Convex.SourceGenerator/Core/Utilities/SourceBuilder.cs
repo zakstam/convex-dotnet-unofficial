@@ -110,11 +110,12 @@ public class SourceBuilder
     /// <summary>
     /// Opens a class block.
     /// </summary>
-    public void OpenClass(string modifiers, string className, string? baseType = null)
+    public void OpenClass(string modifiers, string className, string? baseType = null, bool partial = false)
     {
+        var partialKeyword = partial ? "partial " : "";
         var declaration = baseType != null
-            ? $"{modifiers} class {className} : {baseType}"
-            : $"{modifiers} class {className}";
+            ? $"{modifiers} {partialKeyword}class {className} : {baseType}"
+            : $"{modifiers} {partialKeyword}class {className}";
         AppendLine(declaration);
         AppendLine("{");
         Indent();

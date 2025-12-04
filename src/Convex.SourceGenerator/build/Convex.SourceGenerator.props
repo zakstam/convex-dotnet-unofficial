@@ -1,0 +1,55 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Namespace for all generated code (default: Convex.Generated) -->
+    <ConvexGeneratedNamespace Condition="'$(ConvexGeneratedNamespace)' == ''">Convex.Generated</ConvexGeneratedNamespace>
+
+    <!-- Path to Convex backend folder (auto-detected if not set) -->
+    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == ''"></ConvexBackendPath>
+
+    <!-- Core generation (enabled by default) -->
+    <ConvexGenerateModels Condition="'$(ConvexGenerateModels)' == ''">true</ConvexGenerateModels>
+    <ConvexGenerateFunctions Condition="'$(ConvexGenerateFunctions)' == ''">true</ConvexGenerateFunctions>
+    <ConvexGenerateArgs Condition="'$(ConvexGenerateArgs)' == ''">true</ConvexGenerateArgs>
+
+    <!-- Extended generation (opt-in) -->
+    <ConvexGenerateServices Condition="'$(ConvexGenerateServices)' == ''">false</ConvexGenerateServices>
+    <ConvexGenerateDI Condition="'$(ConvexGenerateDI)' == ''">false</ConvexGenerateDI>
+
+    <!-- Type safety features (opt-in) -->
+    <ConvexGenerateTypedIds Condition="'$(ConvexGenerateTypedIds)' == ''">false</ConvexGenerateTypedIds>
+  </PropertyGroup>
+
+  <!-- Auto-discover Convex backend folder (evaluation phase - before targets run) -->
+  <PropertyGroup Condition="'$(ConvexBackendPath)' == ''">
+    <ConvexBackendPath Condition="Exists('$(MSBuildProjectDirectory)\convex\')">$(MSBuildProjectDirectory)\convex</ConvexBackendPath>
+    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\..\convex\')">$(MSBuildProjectDirectory)\..\convex</ConvexBackendPath>
+    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\..\backend\convex\')">$(MSBuildProjectDirectory)\..\backend\convex</ConvexBackendPath>
+    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\..\..\backend\convex\')">$(MSBuildProjectDirectory)\..\..\backend\convex</ConvexBackendPath>
+  </PropertyGroup>
+
+  <!-- Make properties visible to the source generator -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ConvexGeneratedNamespace" />
+    <CompilerVisibleProperty Include="ConvexBackendPath" />
+    <CompilerVisibleProperty Include="ConvexGenerateModels" />
+    <CompilerVisibleProperty Include="ConvexGenerateFunctions" />
+    <CompilerVisibleProperty Include="ConvexGenerateArgs" />
+    <CompilerVisibleProperty Include="ConvexGenerateServices" />
+    <CompilerVisibleProperty Include="ConvexGenerateDI" />
+    <CompilerVisibleProperty Include="ConvexGenerateTypedIds" />
+  </ItemGroup>
+
+  <!--
+    IMPORTANT: Include TypeScript files during evaluation phase (not in targets).
+    Source generators need AdditionalFiles to be available before compilation starts.
+
+    The generator parses raw .ts source files, NOT api.d.ts (which is excluded).
+    Files needed: schema.ts and function files (e.g., functions/*.ts)
+  -->
+  <ItemGroup Condition="'$(ConvexBackendPath)' != '' And Exists('$(ConvexBackendPath)')">
+    <AdditionalFiles Include="$(ConvexBackendPath)\**\*.ts"
+                     Exclude="$(ConvexBackendPath)\_generated\**;$(ConvexBackendPath)\**\*.d.ts;$(ConvexBackendPath)\node_modules\**" />
+  </ItemGroup>
+
+</Project>

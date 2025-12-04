@@ -59,7 +59,7 @@ public class ServiceModule : IGenerationModule
 
         // Generate implementation
         sb.EmitSummary("Unified service implementation for all Convex functions.");
-        sb.AppendLine("public class ConvexFunctionsService : IConvexFunctionsService");
+        sb.AppendLine("public partial class ConvexFunctionsService : IConvexFunctionsService");
         sb.AppendLine("{");
         sb.Indent();
 

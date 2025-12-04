@@ -58,7 +58,7 @@ public class ArgumentsModule : IGenerationModule
             }
 
             sb.EmitSummary($"Arguments for the {func.Name} {func.Type.ToLowerInvariant()}.");
-            sb.OpenClass("public sealed", className);
+            sb.OpenClass("public sealed", className, partial: true);
 
             foreach (var arg in func.Arguments)
             {
@@ -141,7 +141,7 @@ public class ArgumentsModule : IGenerationModule
         GeneratorOptions options)
     {
         sb.EmitSummary($"Nested type for {className}.");
-        sb.OpenClass("public sealed", className);
+        sb.OpenClass("public sealed", className, partial: true);
 
         foreach (var field in fields)
         {

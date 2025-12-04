@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    Convex Source Generator Targets
+
+    NOTE: Auto-discovery and AdditionalFiles inclusion now happens in the .props file
+    during the MSBuild evaluation phase. This is required because source generators
+    need AdditionalFiles to be available BEFORE compilation starts.
+
+    The targets below are kept for diagnostic messages only.
+  -->
+
+  <!-- Log Convex configuration during build -->
+  <Target Name="ConvexLogConfiguration" BeforeTargets="CoreCompile">
+    <Message Text="Convex: Backend path = $(ConvexBackendPath)"
+             Condition="'$(ConvexBackendPath)' != ''"
+             Importance="normal" />
+    <Message Text="Convex: GenerateModels=$(ConvexGenerateModels), GenerateFunctions=$(ConvexGenerateFunctions), GenerateTypedIds=$(ConvexGenerateTypedIds)"
+             Importance="low" />
+    <Warning Text="Convex: No backend path configured and auto-discovery failed. Set ConvexBackendPath in your .csproj or ensure your convex folder is in a standard location."
+             Condition="'$(ConvexBackendPath)' == ''" />
+  </Target>
+
+</Project>

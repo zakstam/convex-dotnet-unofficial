@@ -126,22 +126,74 @@ dotnet add package Convex.Client
 
 That's it - one package includes everything: real-time client, analyzers, and all features.
 
-### Step 4: (Optional) Generate Type-Safe Constants
+### Step 4: (Optional) Configure Source Generator
 
-Point the source generator to your TypeScript function files for type-safe function names:
+The source generator automatically creates type-safe C# code from your Convex backend.
+
+**Quick Start (Zero Config):**
+
+If your `convex` folder is in a standard location, the generator auto-discovers it:
+
+```
+project-root/
+├── convex/                    ← Auto-detected
+├── MyApp/
+│   └── MyApp.csproj
+```
+
+Or:
+```
+project-root/
+├── backend/
+│   └── convex/                ← Auto-detected
+├── frontend/
+│   └── MyApp.csproj
+```
+
+**Manual Configuration:**
+
+For non-standard locations, set `ConvexBackendPath`:
 
 ```xml
 <!-- In your .csproj -->
-<ItemGroup>
-  <!-- Include your Convex function files (NOT api.d.ts) -->
-  <AdditionalFiles Include="../backend/convex/**/*.ts" Exclude="../backend/convex/_generated/**" />
-</ItemGroup>
+<PropertyGroup>
+  <ConvexBackendPath>path/to/your/convex</ConvexBackendPath>
+</PropertyGroup>
 ```
+
+The generator will automatically include all `.ts` files (excluding `_generated/` and `.d.ts` files).
+
+**Configuration Options:**
+
+```xml
+<PropertyGroup>
+  <!-- All options with their defaults -->
+  <ConvexGeneratedNamespace>Convex.Generated</ConvexGeneratedNamespace>
+  <ConvexBackendPath></ConvexBackendPath>          <!-- Auto-detected if empty -->
+  <ConvexGenerateModels>true</ConvexGenerateModels>
+  <ConvexGenerateFunctions>true</ConvexGenerateFunctions>
+  <ConvexGenerateArgs>true</ConvexGenerateArgs>
+  <ConvexGenerateTypedIds>false</ConvexGenerateTypedIds>
+  <ConvexGenerateServices>false</ConvexGenerateServices>
+  <ConvexGenerateDI>false</ConvexGenerateDI>
+</PropertyGroup>
+```
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `ConvexGeneratedNamespace` | `Convex.Generated` | Namespace for all generated code |
+| `ConvexBackendPath` | auto-detected | Path to Convex backend folder |
+| `ConvexGenerateModels` | `true` | Generate `partial` C# classes from schema tables |
+| `ConvexGenerateFunctions` | `true` | Generate function name constants |
+| `ConvexGenerateArgs` | `true` | Generate typed argument classes |
+| `ConvexGenerateTypedIds` | `false` | Generate strongly-typed ID wrappers |
+| `ConvexGenerateServices` | `false` | Generate `IConvexFunctionsService` interface |
+| `ConvexGenerateDI` | `false` | Generate DI extension method |
 
 Build your project - the generator creates C# constants from your TypeScript functions:
 
 ```csharp
-// Auto-generated in obj/Debug/generated/Convex.SourceGenerator/ConvexFunctions.g.cs
+// Auto-generated: ConvexFunctions.g.cs
 namespace Convex.Generated
 {
     public static class ConvexFunctions
@@ -160,76 +212,130 @@ namespace Convex.Generated
 
 **Note:** Function names match file paths. `convex/functions/createTodo.ts` becomes `"functions/createTodo"`.
 
-### Step 5: Generate Type-Safe C# Models (Recommended)
+### Step 5: Generated Code Overview
 
-The source generator automatically creates C# classes, function argument types, and strongly-typed document IDs from your Convex backend.
+The generator creates several types of files based on your configuration:
 
-**Configure in your `.csproj`:**
+#### Schema Models (`{TableName}.g.cs`)
 
-```xml
-<!-- In your .csproj -->
-<PropertyGroup>
-  <!-- Enable strongly-typed document IDs (recommended for maximum type safety) -->
-  <ConvexGenerateTypedIds>true</ConvexGenerateTypedIds>
-</PropertyGroup>
-
-<ItemGroup>
-  <!-- Point to your Convex schema for model generation -->
-  <AdditionalFiles Include="../backend/convex/schema.ts" />
-</ItemGroup>
-```
-
-**Build your project** - the generator creates:
-
-1. **Schema models** (`ConvexSchema.g.cs`) - C# classes for each table
-2. **Function arguments** (`ConvexArgs.g.cs`) - Typed argument classes for mutations/queries
-3. **Typed document IDs** (`ConvexIds.g.cs`) - Strongly-typed ID wrappers per table
+C# classes for each table in your `schema.ts`:
 
 ```csharp
-// Auto-generated schema model
-namespace Convex.Generated
+// Auto-generated from schema.ts
+public class Message
 {
-    public class Message
+    [JsonPropertyName("_id")]
+    public MessageId Id { get; init; }  // Typed ID (if ConvexGenerateTypedIds=true)
+
+    [JsonPropertyName("text")]
+    public string Text { get; init; } = default!;
+
+    [JsonPropertyName("createdAt")]
+    public DateTimeOffset CreatedAt { get; init; }  // Auto-converted from number!
+
+    [JsonPropertyName("status")]
+    public MessageStatus Status { get; init; }  // Auto-generated enum!
+}
+```
+
+**Smart Features:**
+- **Timestamp auto-detection**: Fields named `*At`, `*Time`, `*Date`, or `timestamp` are auto-converted to `DateTimeOffset`
+- **Enum generation**: String literal unions like `v.union(v.literal("pending"), v.literal("sent"))` become C# enums
+- **Nested types**: Complex objects generate separate sealed classes
+
+#### Typed IDs (`ConvexIds.g.cs`)
+
+Enable with `<ConvexGenerateTypedIds>true</ConvexGenerateTypedIds>`:
+
+```csharp
+// Strongly-typed ID prevents mixing up IDs from different tables
+public readonly record struct MessageId(string Value)
+{
+    public static implicit operator string(MessageId id) => id.Value;
+    public static implicit operator MessageId(string value) => new(value);
+}
+
+// Compile-time safety:
+DeleteMessage(userId); // ❌ Compile error: cannot convert UserId to MessageId
+```
+
+#### Function Arguments (`ConvexArgs.g.cs`)
+
+Typed argument classes for each function:
+
+```csharp
+public sealed class SendMessageArgs
+{
+    [JsonPropertyName("text")]
+    public required string Text { get; init; }
+
+    [JsonPropertyName("parentMessageId")]
+    public MessageId? ParentMessageId { get; init; }  // Uses typed IDs!
+}
+```
+
+#### Enums (`ConvexEnums.g.cs`)
+
+Auto-generated from string literal unions in schema or function args:
+
+```typescript
+// In schema.ts or function args
+status: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed"))
+```
+
+```csharp
+// Auto-generated enum
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum MessageStatus
+{
+    [EnumMember(Value = "pending")] Pending,
+    [EnumMember(Value = "sent")] Sent,
+    [EnumMember(Value = "failed")] Failed
+}
+```
+
+#### Services (`ConvexService.g.cs`)
+
+Enable with `<ConvexGenerateServices>true</ConvexGenerateServices>`:
+
+```csharp
+// Auto-generated service interface
+public interface IConvexFunctionsService
+{
+    Task<List<Message>> MessagesListAsync(CancellationToken ct = default);
+    Task<Message> MessagesSendAsync(SendMessageArgs args, CancellationToken ct = default);
+}
+
+// Usage
+public class ChatService
+{
+    private readonly IConvexFunctionsService _convex;
+
+    public async Task SendMessage(string text)
     {
-        [JsonPropertyName("_id")]
-        public MessageId Id { get; init; }  // Typed ID!
-
-        [JsonPropertyName("text")]
-        public string Text { get; init; } = default!;
-
-        [JsonPropertyName("userId")]
-        public UserId UserId { get; init; }  // References another table's ID
-    }
-
-    // Strongly-typed ID prevents mixing up IDs from different tables
-    public readonly record struct MessageId(string Value)
-    {
-        public static implicit operator string(MessageId id) => id.Value;
-        public static implicit operator MessageId(string value) => new(value);
-    }
-
-    // Auto-generated function arguments
-    public sealed class SendMessageArgs
-    {
-        [JsonPropertyName("text")]
-        public required string Text { get; init; }
-
-        [JsonPropertyName("parentMessageId")]
-        public MessageId? ParentMessageId { get; init; }  // Typed ID in args too!
+        await _convex.MessagesSendAsync(new SendMessageArgs { Text = text });
     }
 }
 ```
 
-**Why typed IDs matter:**
+#### Dependency Injection (`ConvexDI.g.cs`)
+
+Enable with `<ConvexGenerateDI>true</ConvexGenerateDI>` (requires `ConvexGenerateServices`):
 
 ```csharp
-// Before: string IDs can be mixed up - compiles but wrong!
-public async Task DeleteMessage(string messageId) { ... }
-DeleteMessage(userId); // ⚠️ Compiles, but passes wrong ID type!
+// Auto-generated extension method
+public static class ConvexServiceCollectionExtensions
+{
+    public static IServiceCollection AddConvexGeneratedServices(this IServiceCollection services)
+    {
+        services.AddScoped<IConvexFunctionsService, ConvexFunctionsService>();
+        return services;
+    }
+}
 
-// After: compile-time safety with typed IDs
-public async Task DeleteMessage(MessageId messageId) { ... }
-DeleteMessage(userId); // ❌ Compile error: cannot convert UserId to MessageId
+// Usage in Program.cs
+builder.Services.AddConvex(options => { ... });
+builder.Services.AddConvexGeneratedServices();
 ```
 
 <details>
@@ -247,7 +353,7 @@ public class Todo
 }
 ```
 
-Note: Manual models won't benefit from typed IDs or auto-generated argument types.
+Note: Manual models won't benefit from typed IDs, auto-generated enums, or argument types.
 
 </details>
 
@@ -2133,7 +2239,7 @@ await client.Mutate<Todo>("todos:create")
 - 📖 [Getting Started Guide](docs/getting-started.md) - Detailed walkthrough
 - 📘 [API Reference](docs/api-reference.md) - Complete API documentation
 - 🔧 [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
-- ⚙️ **Source Generator** - Type-safe function constants, models, Args types, and typed IDs from your Convex backend
+- ⚙️ **Source Generator** - Type-safe function constants, models, Args types, typed IDs, enums, services, and DI from your Convex backend
 
 ### Troubleshooting
 
@@ -2149,15 +2255,22 @@ await client.Mutate<Todo>("todos:create")
 
 **Source Generator Issues?**
 
-- Constants not generating? Include your `.ts` files (not `api.d.ts`) in `.csproj` as `<AdditionalFiles>`
-- Wrong function type? Constant value is still correct, just categorized differently
+- **CVX013 info**: No TypeScript files found. Set `<ConvexBackendPath>` or check auto-discovery paths
+- **CVX001 info**: No schema.ts found. Ensure schema.ts is in your convex folder
+- **CVX009 info**: No functions found. Ensure files have `export const x = query(...)` exports
+- **CVX014 info**: File skipped. File path must contain `convex/` for module path extraction
+- Constants not generating? The generator parses raw `.ts` files, NOT `api.d.ts` (which is excluded)
+- Services not generating? Enable with `<ConvexGenerateServices>true</ConvexGenerateServices>`
+- DI extension not generating? Enable with `<ConvexGenerateDI>true</ConvexGenerateDI>` (requires Services)
 
 **Schema/Model Generation Issues?**
 
-- Models not generating? Check `schema.ts` path in `.csproj` as `<AdditionalFiles>`
+- Models not generating? Check that `schema.ts` is in your convex folder
+- Generated classes are `partial` - you can extend them in separate files
 - Class name wrong? Table names are **singularized**: `notes` → `Note`, `users` → `User`
 - Typed IDs not generating? Add `<ConvexGenerateTypedIds>true</ConvexGenerateTypedIds>` to your `.csproj`
-- Glob includes node_modules? Use explicit paths: `convex/functions/*.ts` not `**/*.ts`
+- Enums not generating? Ensure you use `v.union(v.literal("a"), v.literal("b"))` syntax
+- Timestamps showing as `double`? Field name must match pattern: `*At`, `*Time`, `*Date`, or `timestamp`
 
 **More help:** See [Troubleshooting Guide](docs/troubleshooting.md)
 

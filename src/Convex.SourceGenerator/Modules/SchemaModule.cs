@@ -90,7 +90,7 @@ public class SchemaModule : IGenerationModule
             sb.EmitSummary($"Nested type for {className}.");
         }
 
-        sb.OpenClass("public", className);
+        sb.OpenClass("public", className, partial: true);
 
         if (isTable && tableName != null)
         {

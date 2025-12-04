@@ -1,0 +1,31 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Namespace for all generated code (default: Convex.Generated) -->
+    <ConvexGeneratedNamespace Condition="'$(ConvexGeneratedNamespace)' == ''">Convex.Generated</ConvexGeneratedNamespace>
+
+    <!-- Core generation (enabled by default) -->
+    <ConvexGenerateModels Condition="'$(ConvexGenerateModels)' == ''">true</ConvexGenerateModels>
+    <ConvexGenerateFunctions Condition="'$(ConvexGenerateFunctions)' == ''">true</ConvexGenerateFunctions>
+    <ConvexGenerateArgs Condition="'$(ConvexGenerateArgs)' == ''">true</ConvexGenerateArgs>
+
+    <!-- Extended generation (opt-in) -->
+    <ConvexGenerateServices Condition="'$(ConvexGenerateServices)' == ''">false</ConvexGenerateServices>
+    <ConvexGenerateDI Condition="'$(ConvexGenerateDI)' == ''">false</ConvexGenerateDI>
+
+    <!-- Type safety features (opt-in) -->
+    <ConvexGenerateTypedIds Condition="'$(ConvexGenerateTypedIds)' == ''">false</ConvexGenerateTypedIds>
+  </PropertyGroup>
+
+  <!-- Make properties visible to the source generator -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ConvexGeneratedNamespace" />
+    <CompilerVisibleProperty Include="ConvexGenerateModels" />
+    <CompilerVisibleProperty Include="ConvexGenerateFunctions" />
+    <CompilerVisibleProperty Include="ConvexGenerateArgs" />
+    <CompilerVisibleProperty Include="ConvexGenerateServices" />
+    <CompilerVisibleProperty Include="ConvexGenerateDI" />
+    <CompilerVisibleProperty Include="ConvexGenerateTypedIds" />
+  </ItemGroup>
+
+</Project>

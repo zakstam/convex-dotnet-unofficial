@@ -121,6 +121,10 @@ namespace Convex.Generated
     {
         if (files.IsDefaultOrEmpty)
         {
+            // Report diagnostic when no TypeScript files are found
+            context.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.NoFilesFound,
+                Location.None));
             return;
         }
 
@@ -130,6 +134,8 @@ namespace Convex.Generated
 
         var tables = new List<TableDefinition>();
         var functions = new HashSet<FunctionDefinition>();
+        var hasSchemaFile = false;
+        var skippedFiles = new List<string>();
 
         foreach (var file in files)
         {
@@ -143,6 +149,7 @@ namespace Convex.Generated
                 // Check if this is a schema file
                 if (file.Path.EndsWith("schema.ts", StringComparison.OrdinalIgnoreCase))
                 {
+                    hasSchemaFile = true;
                     var parsedTables = schemaParser.Parse(file.Content);
                     tables.AddRange(parsedTables);
                 }
@@ -158,6 +165,11 @@ namespace Convex.Generated
                             functions.Add(func);
                         }
                     }
+                    else
+                    {
+                        // Track files that were skipped due to path extraction failure
+                        skippedFiles.Add(file.Path);
+                    }
                 }
             }
             catch (Exception ex)
@@ -168,6 +180,31 @@ namespace Convex.Generated
                     file.Path,
                     ex.Message));
             }
+        }
+
+        // Report diagnostic if schema.ts was not found
+        if (!hasSchemaFile && options.GenerateModels)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.SchemaNotFound,
+                Location.None));
+        }
+
+        // Report diagnostic if no functions were found
+        if (functions.Count == 0 && options.GenerateFunctions)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.NoFunctionsFound,
+                Location.None));
+        }
+
+        // Report skipped files (path didn't contain 'convex/')
+        foreach (var skippedFile in skippedFiles)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.FileSkipped,
+                Location.None,
+                skippedFile));
         }
 
         // Run each enabled module

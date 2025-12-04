@@ -12,7 +12,6 @@ obj/
 *.exe
 *.pdb
 *.deps.json
-build/
 
 # NuGet
 *.nupkg
