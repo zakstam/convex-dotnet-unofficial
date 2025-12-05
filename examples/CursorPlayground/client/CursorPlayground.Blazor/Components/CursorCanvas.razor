@@ -287,7 +287,7 @@
     {
         // Render recent reactions (from last 5 seconds)
         var recentReactions = reactions.Where(r =>
-            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - r.Timestamp < 5000
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - r.Timestamp.ToUnixTimeMilliseconds() < 5000
         ).ToList();
 
         foreach (var reaction in recentReactions)
@@ -309,7 +309,7 @@
     {
         // Render recent click effects (from last 2 seconds)
         var recentEffects = effects.Where(e =>
-            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - e.Timestamp < 2000
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - e.Timestamp.ToUnixTimeMilliseconds() < 2000
         ).ToList();
 
         foreach (var effect in recentEffects)

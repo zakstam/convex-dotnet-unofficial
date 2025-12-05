@@ -304,7 +304,6 @@ public class ChatService : IDisposable
                     }).ToList()
                 })
                 // Optimistic update: add message to UI immediately BEFORE mutation executes
-                // Note: Must use 2-argument overload - the 1-argument version runs AFTER mutation!
                 .Optimistic(default(object)!, _ =>
                 {
                     // Add to the beginning of the list (newest first when sorted)
@@ -391,7 +390,6 @@ public class ChatService : IDisposable
                         Size = a.Size
                     }).ToList()
                 })
-                // Note: Must use 2-argument overload - the 1-argument version runs AFTER mutation!
                 .Optimistic(default(object)!, _ =>
                 {
                     // Notify that a reply was added (for thread views)
@@ -455,7 +453,6 @@ public class ChatService : IDisposable
                     Id = messageId,
                     Text = trimmedText
                 })
-                // Note: Must use 2-argument overload - the 1-argument version runs AFTER mutation!
                 .Optimistic(default(object)!, _ =>
                 {
                     // Apply optimistic update - find and update the message
@@ -533,7 +530,6 @@ public class ChatService : IDisposable
                 {
                     Id = messageId
                 })
-                // Note: Must use 2-argument overload - the 1-argument version runs AFTER mutation!
                 .Optimistic(default(object)!, _ =>
                 {
                     // Remove the message from UI immediately

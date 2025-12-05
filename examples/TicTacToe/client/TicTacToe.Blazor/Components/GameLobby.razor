@@ -61,9 +61,8 @@
     [Parameter]
     public EventCallback<string> OnJoinGame { get; set; }
 
-    private string FormatGameTime(double timestamp)
+    private string FormatGameTime(DateTimeOffset dateTime)
     {
-        var dateTime = DateTimeOffset.FromUnixTimeMilliseconds((long)timestamp);
         var now = DateTimeOffset.UtcNow;
         var diff = now - dateTime;
 

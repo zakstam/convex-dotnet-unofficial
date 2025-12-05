@@ -304,7 +304,7 @@ public class ChatService : IDisposable
                     }).ToList()
                 })
                 // Optimistic update: add message to UI immediately
-                .Optimistic(_ =>
+                .Optimistic(default(object)!, _ =>
                 {
                     // Add to the beginning of the list (newest first when sorted)
                     _currentMessages.Add(optimisticMessage);
