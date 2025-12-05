@@ -101,21 +101,6 @@ public interface IMutationBuilder<TResult>
     IMutationBuilder<TResult> WithTimeout(TimeSpan timeout);
 
     /// <summary>
-    /// Enables optimistic update that executes immediately before the server responds.
-    /// If the server mutation fails, the optimistic update is automatically rolled back.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Note: This uses a state-focused approach (operates on arbitrary state), which differs
-    /// from convex-js's query-focused optimistic updates (operates on query results).
-    /// Both patterns are functionally equivalent but use different API styles.
-    /// </para>
-    /// </remarks>
-    /// <param name="optimisticUpdate">A callback that performs the optimistic UI update.</param>
-    /// <returns>The builder for method chaining.</returns>
-    IMutationBuilder<TResult> Optimistic(Action<TResult> optimisticUpdate);
-
-    /// <summary>
     /// Enables optimistic update with a custom value to use before the server responds.
     /// If the server mutation fails, the optimistic update is automatically rolled back.
     /// </summary>

@@ -125,20 +125,6 @@ public class MutationsSliceTests
     #region MutationBuilder Optimistic Update Tests
 
     [Fact]
-    public void MutationBuilder_Optimistic_WithAction_SetsOptimisticUpdate()
-    {
-        // Arrange
-        var builder = _mutationsSlice.Mutate<string>(TestFunctionName);
-
-        // Act
-        var result = builder.Optimistic(value => { });
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Same(builder, result);
-    }
-
-    [Fact]
     public void MutationBuilder_Optimistic_WithValueAndApply_SetsOptimisticUpdate()
     {
         // Arrange
@@ -263,7 +249,7 @@ public class MutationsSliceTests
             .ReturnsAsync(response);
 
         var builder = _mutationsSlice.Mutate<string>(TestFunctionName)
-            .Optimistic(value => optimisticCalled = true);
+            .Optimistic("optimistic", _ => optimisticCalled = true);
 
         // Act
         await builder.ExecuteAsync();

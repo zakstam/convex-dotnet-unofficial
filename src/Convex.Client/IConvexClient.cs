@@ -139,7 +139,7 @@ public interface IConvexClient : IDisposable
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the mutation. This should match the return type of your Convex function.</typeparam>
     /// <param name="functionName">The name of the Convex function (e.g., "todos:create" or "functions/createTodo"). Function names match file paths: `convex/functions/createTodo.ts` becomes `"functions/createTodo"`.</param>
-    /// <returns>A mutation builder for configuring and executing the mutation. Use fluent methods like <see cref="IMutationBuilder{TResult}.WithArgs{TArgs}(TArgs)"/>, <see cref="IMutationBuilder{TResult}.Optimistic(Action{TResult})"/>, and <see cref="IMutationBuilder{TResult}.ExecuteAsync(CancellationToken)"/> to configure and execute.</returns>
+    /// <returns>A mutation builder for configuring and executing the mutation. Use fluent methods like <see cref="IMutationBuilder{TResult}.WithArgs{TArgs}(TArgs)"/>, <see cref="IMutationBuilder{TResult}.Optimistic(TResult, Action{TResult})"/>, and <see cref="IMutationBuilder{TResult}.ExecuteAsync(CancellationToken)"/> to configure and execute.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="functionName"/> is null or empty.</exception>
     /// <example>
     /// <code>
@@ -148,13 +148,16 @@ public interface IConvexClient : IDisposable
     ///     .WithArgs(new { text = "Learn Convex .NET", completed = false })
     ///     .ExecuteAsync();
     ///
-    /// // Mutation with optimistic update
+    /// // Mutation with optimistic update (auto-rollback on failure)
     /// await client.Mutate&lt;Todo&gt;("functions/updateTodo")
     ///     .WithArgs(new { id = "todo123", completed = true })
-    ///     .Optimistic(result => {
-    ///         // Update UI immediately before server responds
-    ///         _todos.First(t => t.Id == result.Id).IsCompleted = true;
-    ///     })
+    ///     .OptimisticWithAutoRollback(
+    ///         getter: () => _todos.ToList(),
+    ///         setter: todos => _todos = todos,
+    ///         update: todos => {
+    ///             todos.First(t => t.Id == "todo123").IsCompleted = true;
+    ///             return todos;
+    ///         })
     ///     .ExecuteAsync();
     ///
     /// // Mutation with error handling

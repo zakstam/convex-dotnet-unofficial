@@ -41,7 +41,6 @@ internal sealed class MutationBuilder<TResult>(
 
     private object? _args;
     private TimeSpan? _timeout;
-    private Action<TResult>? _optimisticUpdate;
     private TResult? _optimisticValue;
     private Action<TResult>? _applyOptimistic;
     private Action? _rollbackOptimistic;
@@ -97,13 +96,6 @@ internal sealed class MutationBuilder<TResult>(
     public IMutationBuilder<TResult> WithTimeout(TimeSpan timeout)
     {
         _timeout = timeout;
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public IMutationBuilder<TResult> Optimistic(Action<TResult> optimisticUpdate)
-    {
-        _optimisticUpdate = optimisticUpdate;
         return this;
     }
 
@@ -298,7 +290,7 @@ internal sealed class MutationBuilder<TResult>(
         {
             var argsJson = _args != null ? _serializer.Serialize(_args) : "null";
             _logger!.LogDebug("[Mutation] Starting execution: Function={FunctionName}, Args={Args}, HasOptimistic={HasOptimistic}, HasRetry={HasRetry}, SkipQueue={SkipQueue}, Timeout={Timeout}",
-                _functionName, argsJson, _applyOptimistic != null || _optimisticUpdate != null, _retryPolicy != null, _skipQueue, _timeout);
+                _functionName, argsJson, _applyOptimistic != null, _retryPolicy != null, _skipQueue, _timeout);
         }
 
         try
@@ -407,12 +399,6 @@ internal sealed class MutationBuilder<TResult>(
                 }
                 // Execute immediately without queueing
                 result = await ExecuteMutationAsync(cancellationToken);
-            }
-
-            // Apply optimistic update with actual result if configured
-            if (!appliedOptimistic && _optimisticUpdate != null)
-            {
-                ThreadMarshallingHelper.InvokeCallback(_optimisticUpdate, result, _syncContext);
             }
 
             // Invalidate dependent queries based on defined dependencies
