@@ -1610,6 +1610,119 @@ app.Run();
 
 **Learn more:** See [Convex.Client.Blazor README](src/Convex.Client.Blazor/README.md)
 
+### Better Auth Integration
+
+**Problem:** You're using [Better Auth](https://www.better-auth.com/) for authentication and want seamless integration with Convex.
+
+**Solution:** Use `Convex.BetterAuth` which provides automatic token exchange between Better Auth and Convex.
+
+**Complete Example:** Blazor WebAssembly app with Better Auth
+
+```bash
+# Install Better Auth package
+dotnet add package Convex.BetterAuth
+```
+
+```csharp
+// Program.cs
+using Convex.Client.Extensions.DependencyInjection;
+using Convex.BetterAuth.Extensions;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+// Add Convex client
+builder.Services.AddConvex(builder.Configuration.GetSection("Convex"));
+
+// Add Better Auth (automatically wires up token provider)
+builder.Services.AddConvexBetterAuth(builder.Configuration.GetSection("BetterAuth"));
+
+// For Blazor WASM: Use localStorage for session persistence
+builder.Services.AddBetterAuthSessionStorage<LocalStorageSessionStorage>();
+
+await builder.Build().RunAsync();
+```
+
+```json
+// appsettings.json
+{
+  "Convex": {
+    "DeploymentUrl": "https://your-deployment.convex.cloud"
+  },
+  "BetterAuth": {
+    "SiteUrl": "https://your-deployment.convex.site"
+  }
+}
+```
+
+**Using the auth service in components:**
+
+```csharp
+@inject IBetterAuthService AuthService
+@inject IConvexClient ConvexClient
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Restore session on app start
+        await AuthService.TryRestoreSessionAsync();
+    }
+
+    private async Task SignIn()
+    {
+        var result = await AuthService.SignInAsync("user@example.com", "password");
+        if (result.IsSuccess)
+        {
+            // Convex client automatically uses the auth token
+            var data = await ConvexClient.Query<MyData>("myQuery").ExecuteAsync();
+        }
+    }
+
+    private async Task SignOut()
+    {
+        await AuthService.SignOutAsync();
+    }
+}
+```
+
+**Key Features:**
+
+- **Auto-wired authentication** - Token provider is automatically configured with the Convex client
+- **Session management** - Sign in, sign up, sign out, and session restoration
+- **JWT exchange** - Automatically exchanges Better Auth session tokens for Convex JWTs
+- **Pluggable storage** - Use `ISessionStorage` for custom token storage (localStorage, sessionStorage, etc.)
+- **Security hardened** - HTTPS enforced, input validation, rate limiting, no sensitive data logging
+
+**Authentication Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `SignInAsync(email, password)` | Sign in with email/password |
+| `SignUpAsync(email, password, name?)` | Create new account |
+| `SignOutAsync()` | Sign out and clear session |
+| `TryRestoreSessionAsync()` | Restore session from storage |
+| `GetSessionToken()` | Get current session token |
+| `CurrentUser` | Get authenticated user info |
+| `IsAuthenticated` | Check if user is authenticated |
+| `OnAuthStateChanged` | Event for auth state changes |
+
+**Custom Session Storage:**
+
+```csharp
+// Implement ISessionStorage for custom storage
+public class SecureStorageSessionStorage : ISessionStorage
+{
+    public Task StoreTokenAsync(string token) { /* ... */ }
+    public Task<string?> GetTokenAsync() { /* ... */ }
+    public Task RemoveTokenAsync() { /* ... */ }
+}
+
+// Register before AddConvexBetterAuth
+builder.Services.AddBetterAuthSessionStorage<SecureStorageSessionStorage>();
+builder.Services.AddConvexBetterAuth(config.GetSection("BetterAuth"));
+```
+
+**Learn more:** See [Convex.BetterAuth README](src/Convex.BetterAuth/README.md)
+
 ---
 
 ## 🛠️ Developer Tools
@@ -2121,15 +2234,16 @@ var client = new ConvexClientBuilder()
 
 ## 📦 Available Packages
 
-The Convex .NET SDK consists of 3 main packages:
+The Convex .NET SDK consists of several packages:
 
 | Package                    | Purpose                        | When to Use                                                                    |
 | -------------------------- | ------------------------------ | ------------------------------------------------------------------------------ |
 | **Convex.Client**          | Core client library            | Always required - includes real-time client, DI, extensions, Rx patterns, testing utilities, Clerk auth (core + desktop), source generator, and analyzers |
 | **Convex.Client.Blazor**   | Blazor extensions + Clerk      | For Blazor WebAssembly/Server apps (StateHasChanged integration, Clerk JS interop) |
 | **Convex.Client.AspNetCore** | ASP.NET Core middleware      | For ASP.NET Core server apps (middleware, health checks)                       |
+| **Convex.BetterAuth**      | Better Auth integration        | For apps using [Better Auth](https://www.better-auth.com/) for authentication  |
 
-**Quick Start:** Most apps only need `Convex.Client`. Add `Convex.Client.Blazor` for Blazor apps or `Convex.Client.AspNetCore` for server apps.
+**Quick Start:** Most apps only need `Convex.Client`. Add `Convex.Client.Blazor` for Blazor apps, `Convex.Client.AspNetCore` for server apps, or `Convex.BetterAuth` for Better Auth integration.
 
 ---
 
