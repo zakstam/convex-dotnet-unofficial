@@ -1,0 +1,111 @@
+@using Microsoft.AspNetCore.Components
+@using RealtimeChat.Frontend.Components
+@using RealtimeChat.Shared.Models
+@using MessageDto = RealtimeChat.Shared.Models.MessageDto
+@using MessageReadDto = RealtimeChat.Shared.Models.MessageReadDto
+
+<div class="message-group @(MessageGroup.IsOwnMessage ? "own-group" : "")">
+    @if (!MessageGroup.IsOwnMessage)
+    {
+        <div class="message-group-header">
+            <div class="user-avatar" style="background-color: @GetUserColorInternal(MessageGroup.Username)">@GetUserInitialInternal(MessageGroup.Username)</div>
+            <div class="message-group-info">
+                <span class="username">@MessageGroup.Username</span>
+                <span class="timestamp">@FormatTimestamp(MessageGroup.Messages.First().Timestamp)</span>
+            </div>
+        </div>
+    }
+    <div class="message-group-content">
+        @foreach (var message in MessageGroup.Messages)
+    {
+        <MessageItemRichEngagement Message="message"
+                                   CurrentUsername="@CurrentUsername"
+                                   HoveredMessageId="HoveredMessageId"
+                                   MessageReactions="MessageReactions"
+                                   MessageReadReceipts="MessageReadReceipts"
+                                   CurrentUserReadMessages="CurrentUserReadMessages"
+                                   IsLatestMessage="@(message.Id == MessageGroup.Messages.Last().Id)"
+                                   ParentMessage="@(message.ParentMessageId != null ? GetParentMessage(message.ParentMessageId) : null)"
+                                   MessageReplies="@(GetReplies(message.Id))"
+                                   ReplyCount="@(GetReplyCount(message.Id))"
+                                   ShowReplies="@(IsShowingReplies(message.Id))"
+                                   OnShowMessageMenu="OnShowMessageMenu"
+                                   OnHideMessageMenu="OnHideMessageMenu"
+                                   OnCopyMessage="OnCopyMessage"
+                                   OnStartEditMessage="@OnStartEditMessage"
+                                   OnDeleteMessage="OnDeleteMessage"
+                                   OnToggleReaction="OnToggleReaction"
+                                   OnShowReactionPicker="OnShowReactionPicker"
+                                   OnStartReply="@OnStartReply"
+                                   OnToggleReplies="OnToggleReplies"
+                                   OnScrollToMessage="OnScrollToMessage"
+                                   RenderMarkdown="RenderMarkdown"
+                                   FormatTimestamp="FormatTimestamp"
+                                   GetAttachmentUrlSync="GetAttachmentUrlSync"
+                                   FormatFileSize="FormatFileSize"
+                                   GetUserColor="GetUserColor"
+                                   GetUserInitial="GetUserInitial" />
+    }
+    </div>
+</div>
+
+@code {
+    [Parameter] public MessageGroup MessageGroup { get; set; } = default!;
+    [Parameter] public string CurrentUsername { get; set; } = "";
+    [Parameter] public string? HoveredMessageId { get; set; }
+    [Parameter] public Dictionary<string, List<ReactionDto>> MessageReactions { get; set; } = new();
+    [Parameter] public Dictionary<string, List<MessageReadDto>> MessageReadReceipts { get; set; } = new();
+    [Parameter] public HashSet<string> CurrentUserReadMessages { get; set; } = new();
+    [Parameter] public List<MessageDto> AllMessages { get; set; } = new();
+    [Parameter] public Dictionary<string, List<MessageDto>> MessageReplies { get; set; } = new();
+    [Parameter] public Dictionary<string, bool> ShowRepliesForMessage { get; set; } = new();
+    [Parameter] public EventCallback<string> OnShowMessageMenu { get; set; }
+    [Parameter] public EventCallback OnHideMessageMenu { get; set; }
+    [Parameter] public EventCallback<string> OnCopyMessage { get; set; }
+    [Parameter] public EventCallback<MessageDto> OnStartEditMessage { get; set; }
+    [Parameter] public EventCallback<string> OnDeleteMessage { get; set; }
+    [Parameter] public EventCallback<(string messageId, string emoji)> OnToggleReaction { get; set; }
+    [Parameter] public EventCallback<string> OnShowReactionPicker { get; set; }
+    [Parameter] public EventCallback<MessageDto> OnStartReply { get; set; }
+    [Parameter] public EventCallback<string> OnToggleReplies { get; set; }
+    [Parameter] public EventCallback<string> OnScrollToMessage { get; set; }
+    [Parameter] public Func<string, string> GetUserColor { get; set; } = _ => "#667eea";
+    [Parameter] public Func<string, string> GetUserInitial { get; set; } = _ => "?";
+    [Parameter] public Func<string, string> RenderMarkdown { get; set; } = text => text;
+    [Parameter] public Func<long, string> FormatTimestamp { get; set; } = _ => "";
+    [Parameter] public Func<string, string> GetAttachmentUrlSync { get; set; } = _ => "";
+    [Parameter] public Func<long, string> FormatFileSize { get; set; } = _ => "";
+
+    private MessageDto? GetParentMessage(string parentMessageId)
+    {
+        return AllMessages.FirstOrDefault(m => m.Id == parentMessageId);
+    }
+
+    private List<MessageDto> GetReplies(string messageId)
+    {
+        return MessageReplies.TryGetValue(messageId, out var replies) ? replies : new List<MessageDto>();
+    }
+
+    private int GetReplyCount(string messageId)
+    {
+        return MessageReplies.TryGetValue(messageId, out var replies) ? replies.Count : 0;
+    }
+
+    private bool IsShowingReplies(string messageId)
+    {
+        return ShowRepliesForMessage.TryGetValue(messageId, out var show) && show;
+    }
+
+    private string GetUserColorInternal(string username)
+    {
+        return GetUserColor?.Invoke(username) ?? "#667eea";
+    }
+
+    private string GetUserInitialInternal(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return "?";
+        return username.Substring(0, 1).ToUpperInvariant();
+    }
+}
+

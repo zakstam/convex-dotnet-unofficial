@@ -1,0 +1,260 @@
+@using Microsoft.AspNetCore.Components
+@using Convex.BetterAuth
+@using Convex.BetterAuth.Models
+@inject IBetterAuthService AuthService
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-icon"><i class="bi bi-chat-dots-fill"></i></div>
+        <h1>Welcome to Realtime Chat</h1>
+        <p class="login-subtitle">@(isSignUp ? "Create an account to get started" : "Sign in to connect and chat")</p>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @errorMessage
+            </div>
+        }
+
+        <div class="login-form">
+            @if (isSignUp)
+            {
+                <input type="text"
+                       @bind="nameInput"
+                       @bind:event="oninput"
+                       placeholder="Your name (optional)"
+                       class="form-control mb-2" />
+            }
+
+            <input type="email"
+                   @bind="emailInput"
+                   @bind:event="oninput"
+                   @onkeydown="HandleKeyDown"
+                   placeholder="Email address"
+                   class="form-control mb-2"
+                   autofocus />
+
+            <input type="password"
+                   @bind="passwordInput"
+                   @bind:event="oninput"
+                   @onkeydown="HandleKeyDown"
+                   placeholder="Password"
+                   class="form-control mb-3" />
+
+            @if (isSignUp)
+            {
+                <input type="password"
+                       @bind="confirmPasswordInput"
+                       @bind:event="oninput"
+                       @onkeydown="HandleKeyDown"
+                       placeholder="Confirm password"
+                       class="form-control mb-3" />
+            }
+
+            <button type="button"
+                    @onclick="HandleSubmit"
+                    disabled="@(!IsFormValid || isLoading)"
+                    class="login-btn">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>@(isSignUp ? "Creating account..." : "Signing in...")</span>
+                }
+                else
+                {
+                    <span>@(isSignUp ? "Create Account" : "Sign In")</span>
+                    <span class="btn-arrow"><i class="bi bi-arrow-right"></i></span>
+                }
+            </button>
+
+            <div class="mt-3 text-center">
+                <button type="button" class="btn btn-link" @onclick="ToggleMode">
+                    @(isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnLoginSuccess { get; set; }
+
+    private string emailInput = "";
+    private string passwordInput = "";
+    private string confirmPasswordInput = "";
+    private string nameInput = "";
+    private string? errorMessage;
+    private bool isSignUp = false;
+    private bool isLoading = false;
+
+    private bool IsFormValid =>
+        !string.IsNullOrWhiteSpace(emailInput) &&
+        !string.IsNullOrWhiteSpace(passwordInput) &&
+        emailInput.Contains("@") &&
+        passwordInput.Length >= 8 &&
+        (!isSignUp || passwordInput == confirmPasswordInput);
+
+    private void ToggleMode()
+    {
+        isSignUp = !isSignUp;
+        errorMessage = null;
+        confirmPasswordInput = "";
+        nameInput = "";
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && IsFormValid && !isLoading)
+        {
+            await HandleSubmit();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!IsFormValid || isLoading)
+            return;
+
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            AuthResult result;
+
+            if (isSignUp)
+            {
+                result = await AuthService.SignUpAsync(emailInput, passwordInput, nameInput);
+            }
+            else
+            {
+                result = await AuthService.SignInAsync(emailInput, passwordInput);
+            }
+
+            if (result.IsSuccess)
+            {
+                await OnLoginSuccess.InvokeAsync();
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Authentication failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .login-icon {
+        font-size: 48px;
+        color: #6366f1;
+        margin-bottom: 16px;
+    }
+
+    .login-card h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1f2937;
+    }
+
+    .login-subtitle {
+        color: #6b7280;
+        margin-bottom: 24px;
+    }
+
+    .login-form input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.2s;
+    }
+
+    .login-form input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .login-btn {
+        width: 100%;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .login-btn:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .login-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-arrow {
+        transition: transform 0.2s;
+    }
+
+    .login-btn:hover:not(:disabled) .btn-arrow {
+        transform: translateX(4px);
+    }
+
+    .alert-danger {
+        padding: 12px 16px;
+        background-color: #fef2f2;
+        border: 1px solid #fee2e2;
+        border-radius: 8px;
+        color: #991b1b;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .btn-link {
+        color: #6366f1;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .btn-link:hover {
+        text-decoration: underline;
+    }
+</style>

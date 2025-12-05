@@ -1,0 +1,93 @@
+@using Microsoft.AspNetCore.Components
+@using RealtimeChat.Frontend.Components
+@using RealtimeChat.Shared.Models
+@using MessageDto = RealtimeChat.Shared.Models.MessageDto
+
+@if (EditingMessage != null)
+{
+    <div class="edit-modal-overlay" @onclick="OnCancel">
+        <div class="edit-modal" @onclick:stopPropagation="true">
+            <h3>Edit Message</h3>
+            <textarea @bind="localEditMessageText"
+                      @oninput="HandleInputEvent"
+                      @onkeydown="HandleEditKeyDown"
+                      class="edit-input"
+                      rows="3"></textarea>
+            <div class="edit-actions">
+                <button @onclick="OnCancel" class="cancel-btn">Cancel</button>
+                <button @onclick="OnSave"
+                        disabled="@(string.IsNullOrWhiteSpace(localEditMessageText) || IsSaving)"
+                        class="save-btn">
+                    @if (IsSaving)
+                    {
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public MessageDto? EditingMessage { get; set; }
+    [Parameter] public string EditMessageText { get; set; } = "";
+    [Parameter] public EventCallback<string> EditMessageTextChanged { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string localEditMessageText = "";
+
+    protected override void OnParametersSet()
+    {
+        if (EditingMessage != null && localEditMessageText != EditingMessage.Text)
+        {
+            localEditMessageText = EditingMessage.Text;
+            EditMessageText = EditingMessage.Text;
+        }
+        else if (EditingMessage == null)
+        {
+            localEditMessageText = "";
+        }
+        else if (localEditMessageText != EditMessageText)
+        {
+            localEditMessageText = EditMessageText;
+        }
+    }
+
+    private async Task HandleInputChanged()
+    {
+        EditMessageText = localEditMessageText;
+        if (EditMessageTextChanged.HasDelegate)
+        {
+            await EditMessageTextChanged.InvokeAsync(localEditMessageText);
+        }
+    }
+
+    private async Task HandleInputEvent(ChangeEventArgs e)
+    {
+        if (e.Value is string value)
+        {
+            localEditMessageText = value;
+            await HandleInputChanged();
+        }
+    }
+
+    private async Task HandleEditKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && e.CtrlKey && !string.IsNullOrWhiteSpace(localEditMessageText))
+        {
+            await HandleInputChanged();
+            await OnSave.InvokeAsync();
+        }
+        else if (e.Key == "Escape")
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+}
+

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.BrowserConsole" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.Client\Convex.Client.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Blazor\Convex.Client.Blazor.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Convex.BetterAuth\Convex.BetterAuth.csproj" />
+    <ProjectReference Include="..\..\RealtimeChat.Shared\RealtimeChat.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- Include source generator and analyzers when using ProjectReference -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Convex.SourceGenerator\Convex.SourceGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\..\src\Convex.Client.Analyzer.CodeFixes\Convex.Client.Analyzer.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Import source generator props for ProjectReference usage -->
+  <Import Project="..\..\..\src\Convex.SourceGenerator\build\Convex.SourceGenerator.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CA1716</NoWarn>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <!-- Enable strongly-typed document IDs -->
+    <ConvexGenerateTypedIds>true</ConvexGenerateTypedIds>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Convex.Client\Convex.Client.csproj" />
+  </ItemGroup>
+
+  <!-- Include source generator and analyzers when using ProjectReference -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Convex.SourceGenerator\Convex.SourceGenerator.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Analyzer\Convex.Client.Analyzer.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\..\src\Convex.Client.Analyzer.CodeFixes\Convex.Client.Analyzer.CodeFixes.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <!-- Add TypeScript files for source generator -->
+  <ItemGroup>
+    <AdditionalFiles Include="..\backend\convex\functions\*.ts" />
+    <AdditionalFiles Include="..\backend\convex\schema.ts" />
+  </ItemGroup>
+
+</Project>
+

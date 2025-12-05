@@ -1,0 +1,136 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+@using RealtimeChat.Frontend.Components
+@using RealtimeChat.Shared.Models
+@using MessageDto = RealtimeChat.Shared.Models.MessageDto
+@using MessageReadDto = RealtimeChat.Shared.Models.MessageReadDto
+
+<div class="messages-container" @ref="_messagesContainerRef">
+    @if (CanLoadMore && !IsLoading)
+    {
+        <div class="load-more-container">
+            <button @onclick="OnLoadMoreMessages" class="load-more-btn" disabled="@IsLoadingMore">
+                @if (IsLoadingMore)
+                {
+                    <span>Loading...</span>
+                }
+                else
+                {
+                    <span>Load older messages</span>
+                }
+            </button>
+        </div>
+    }
+
+    @if (IsLoading && Messages.Count == 0)
+    {
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading messages...</p>
+        </div>
+    }
+    else if (Messages.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-chat-dots"></i></div>
+            <h2>No messages yet</h2>
+            <p>Be the first to start the conversation!</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var messageGroup in GroupedMessages)
+        {
+            <MessageGroupView MessageGroup="messageGroup"
+                          CurrentUsername="@CurrentUsername"
+                          HoveredMessageId="HoveredMessageId"
+                          MessageReactions="MessageReactions"
+                          MessageReadReceipts="MessageReadReceipts"
+                          CurrentUserReadMessages="CurrentUserReadMessages"
+                          AllMessages="Messages"
+                          MessageReplies="MessageReplies"
+                          ShowRepliesForMessage="ShowRepliesForMessage"
+                          OnShowMessageMenu="OnShowMessageMenu"
+                          OnHideMessageMenu="OnHideMessageMenu"
+                          OnCopyMessage="OnCopyMessage"
+                          OnStartEditMessage="OnStartEditMessage"
+                          OnDeleteMessage="OnDeleteMessage"
+                          OnToggleReaction="OnToggleReaction"
+                          OnShowReactionPicker="OnShowReactionPicker"
+                          OnStartReply="OnStartReply"
+                          OnToggleReplies="OnToggleReplies"
+                          OnScrollToMessage="OnScrollToMessage"
+                          GetUserColor="GetUserColor"
+                          GetUserInitial="GetUserInitial"
+                          RenderMarkdown="RenderMarkdown"
+                          FormatTimestamp="FormatTimestamp"
+                          GetAttachmentUrlSync="GetAttachmentUrlSync"
+                          FormatFileSize="FormatFileSize" />
+        }
+    }
+
+    <TypingIndicator TypingUsers="TypingUsers" />
+
+    <div @ref="_messagesEndRef"></div>
+</div>
+
+@code {
+    [Parameter] public List<MessageDto> Messages { get; set; } = new();
+    [Parameter] public List<MessageGroup> GroupedMessages { get; set; } = new();
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsLoadingMore { get; set; }
+    [Parameter] public bool CanLoadMore { get; set; }
+    [Parameter] public List<string> TypingUsers { get; set; } = new();
+    [Parameter] public string CurrentUsername { get; set; } = "";
+    [Parameter] public string? HoveredMessageId { get; set; }
+    [Parameter] public Dictionary<string, List<ReactionDto>> MessageReactions { get; set; } = new();
+    [Parameter] public Dictionary<string, List<MessageReadDto>> MessageReadReceipts { get; set; } = new();
+    [Parameter] public HashSet<string> CurrentUserReadMessages { get; set; } = new();
+    [Parameter] public Dictionary<string, List<MessageDto>> MessageReplies { get; set; } = new();
+    [Parameter] public Dictionary<string, bool> ShowRepliesForMessage { get; set; } = new();
+    [Parameter] public EventCallback OnLoadMoreMessages { get; set; }
+    [Parameter] public EventCallback<string> OnShowMessageMenu { get; set; }
+    [Parameter] public EventCallback OnHideMessageMenu { get; set; }
+    [Parameter] public EventCallback<string> OnCopyMessage { get; set; }
+    [Parameter] public EventCallback<MessageDto> OnStartEditMessage { get; set; }
+    [Parameter] public EventCallback<string> OnDeleteMessage { get; set; }
+    [Parameter] public EventCallback<(string messageId, string emoji)> OnToggleReaction { get; set; }
+    [Parameter] public EventCallback<string> OnShowReactionPicker { get; set; }
+    [Parameter] public EventCallback<MessageDto> OnStartReply { get; set; }
+    [Parameter] public EventCallback<string> OnToggleReplies { get; set; }
+    [Parameter] public EventCallback<string> OnScrollToMessage { get; set; }
+    [Parameter] public Func<string, string> GetUserColor { get; set; } = _ => "#667eea";
+    [Parameter] public Func<string, string> GetUserInitial { get; set; } = _ => "?";
+    [Parameter] public Func<string, string> RenderMarkdown { get; set; } = text => text;
+    [Parameter] public Func<long, string> FormatTimestamp { get; set; } = _ => "";
+    [Parameter] public Func<string, string> GetAttachmentUrlSync { get; set; } = _ => "";
+    [Parameter] public Func<long, string> FormatFileSize { get; set; } = _ => "";
+    public ElementReference MessagesContainerRef => _messagesContainerRef;
+    public ElementReference MessagesEndRef => _messagesEndRef;
+
+    private ElementReference _messagesContainerRef;
+    private ElementReference _messagesEndRef;
+
+    public async Task ScrollToBottom(IJSRuntime jsRuntime)
+    {
+        try
+        {
+            // Pass the container directly for more reliable scrolling
+            await jsRuntime.InvokeVoidAsync("scrollToBottom", _messagesContainerRef);
+        }
+        catch { }
+    }
+
+    public async Task<bool> IsNearBottomAsync(IJSRuntime jsRuntime)
+    {
+        try
+        {
+            return await jsRuntime.InvokeAsync<bool>("isNearBottom", _messagesContainerRef);
+        }
+        catch
+        {
+            return true; // Default to true if check fails (safer to scroll)
+        }
+    }
+}
+

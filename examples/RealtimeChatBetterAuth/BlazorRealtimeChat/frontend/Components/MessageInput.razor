@@ -1,0 +1,228 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using RealtimeChat.Frontend.Components
+@using RealtimeChat.Shared.Models
+@using MessageDto = RealtimeChat.Shared.Models.MessageDto
+@using System.Linq
+
+<div class="message-input-container">
+    <!-- Reply indicator -->
+    @if (ReplyingToMessage != null)
+    {
+        <div class="reply-indicator">
+            <div class="reply-indicator-line"></div>
+            <div class="reply-indicator-content">
+                <div class="reply-indicator-header">
+                    <i class="bi bi-reply reply-indicator-icon"></i>
+                    <span class="reply-label">Replying to <strong>@ReplyingToMessage.Username</strong></span>
+                    <button @onclick="OnCancelReply" class="reply-cancel" title="Cancel reply"><i class="bi bi-x"></i></button>
+                </div>
+                <div class="reply-indicator-text">
+                    @if (ReplyingToMessage.Attachments != null && ReplyingToMessage.Attachments.Any(a => a.ContentType.StartsWith("image/")))
+                    {
+                        <span class="reply-indicator-attachment-hint"><i class="bi bi-camera"></i> Image</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(ReplyingToMessage.Text))
+                    {
+                        <span>@(ReplyingToMessage.Text.Length > 80 ? ReplyingToMessage.Text.Substring(0, 80) + "..." : ReplyingToMessage.Text)</span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Pending files -->
+    @if (PendingFiles.Count > 0)
+    {
+        <div class="pending-files">
+            @foreach (var file in PendingFiles)
+            {
+                var isImage = file.ContentType.StartsWith("image/");
+                var previewUrl = isImage && PendingFilePreviewUrls.ContainsKey(file.Id)
+                    ? PendingFilePreviewUrls[file.Id]
+                    : null;
+
+                <div class="pending-file-item @(isImage ? "pending-image-item" : "")">
+                    @if (isImage && !string.IsNullOrEmpty(previewUrl))
+                    {
+                        <div class="pending-image-preview">
+                            <img src="@previewUrl" alt="@file.Filename" class="pending-image-thumbnail" />
+                            <button @onclick="() => OnRemovePendingFile.InvokeAsync(file.Id)" class="pending-image-remove" title="Remove"><i class="bi bi-x"></i></button>
+                        </div>
+                        <div class="pending-file-info">
+                            <span class="file-name">@file.Filename</span>
+                            <span class="file-size">@FormatFileSize(file.Size)</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <i class="bi bi-paperclip file-icon"></i>
+                        <span class="file-name">@file.Filename</span>
+                        <span class="file-size">@FormatFileSize(file.Size)</span>
+                        <button @onclick="() => OnRemovePendingFile.InvokeAsync(file.Id)" class="file-remove"><i class="bi bi-x"></i></button>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <div class="input-wrapper">
+        <button @onclick="OnToggleEmojiPicker" class="emoji-btn" title="Add emoji"><i class="bi bi-emoji-smile"></i></button>
+        <label for="file-input" class="file-btn" title="Attach file"><i class="bi bi-paperclip"></i></label>
+        <InputFile id="file-input" OnChange="OnFileSelected" multiple accept="image/*,.pdf,.doc,.docx,.txt" style="display: none;" />
+        <input @bind="localMessageText"
+               @bind:event="oninput"
+               @bind:after="HandleInputChanged"
+               @onkeydown="HandleKeyDown"
+               @onfocus="OnMentionInput"
+               placeholder="Type a message... (Use &#64; for mentions, **bold**, *italic*)"
+               disabled="@IsSending"
+               @ref="MessageInputRef" />
+        <button @onclick="OnSendMessage"
+                disabled="@((string.IsNullOrWhiteSpace(localMessageText) && PendingFiles.Count == 0) || IsSending)"
+                class="send-btn"
+                title="Send message">
+            @if (IsSending)
+            {
+                <div class="spinner-small"></div>
+            }
+            else
+            {
+                <i class="bi bi-arrow-right"></i>
+            }
+        </button>
+    </div>
+
+    <!-- Emoji Picker -->
+    @if (ShowEmojiPicker)
+    {
+        <div class="emoji-picker">
+            <div class="emoji-picker-header">
+                <span>Select Emoji</span>
+                <button @onclick="OnToggleEmojiPicker" class="emoji-picker-close"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="emoji-picker-content">
+                @foreach (var emoji in QuickReactions)
+                {
+                    <button @onclick="() => OnInsertEmoji.InvokeAsync(emoji)" class="emoji-picker-item">@emoji</button>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Mention Autocomplete -->
+    @if (ShowMentionSuggestions && MentionSuggestions.Count > 0)
+    {
+        <div class="mention-suggestions">
+            @foreach (var user in MentionSuggestions)
+            {
+                <button @onclick="() => OnInsertMention.InvokeAsync(user.Username)" class="mention-suggestion-item">
+                    <div class="user-avatar-small" style="background-color: @GetUserColorInternal(user.Username)">@GetUserInitialInternal(user.Username)</div>
+                    <span>@user.Username</span>
+                </button>
+            }
+        </div>
+    }
+
+    <!-- Reaction Picker -->
+    @if (ShowReactionPickerForMessageId != null)
+    {
+        <div class="reaction-picker">
+            <div class="reaction-picker-header">
+                <span>Quick Reactions</span>
+                <button @onclick="OnHideReactionPicker" class="reaction-picker-close"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="reaction-picker-content">
+                @foreach (var emoji in QuickReactions)
+                {
+                    var currentEmoji = emoji; // Capture for closure
+                    <button @onclick="() => OnAddReaction.InvokeAsync((ShowReactionPickerForMessageId, currentEmoji))"
+                            class="reaction-picker-item">@emoji</button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string MessageText { get; set; } = "";
+    [Parameter] public EventCallback<string> MessageTextChanged { get; set; }
+    [Parameter] public bool IsSending { get; set; }
+    [Parameter] public bool ShowEmojiPicker { get; set; }
+    [Parameter] public bool ShowMentionSuggestions { get; set; }
+    [Parameter] public string? ShowReactionPickerForMessageId { get; set; }
+    [Parameter] public List<string> QuickReactions { get; set; } = new() { "👍", "❤️", "😂", "😮", "😢", "🔥" };
+    [Parameter] public List<OnlineUserDto> MentionSuggestions { get; set; } = new();
+    [Parameter] public List<PendingFile> PendingFiles { get; set; } = new();
+    [Parameter] public Dictionary<string, string> PendingFilePreviewUrls { get; set; } = new();
+    [Parameter] public MessageDto? ReplyingToMessage { get; set; }
+    [Parameter] public EventCallback OnTypingInput { get; set; }
+    [Parameter] public EventCallback OnSendMessage { get; set; }
+    [Parameter] public EventCallback OnToggleEmojiPicker { get; set; }
+    [Parameter] public EventCallback<string> OnInsertEmoji { get; set; }
+    [Parameter] public EventCallback OnMentionInput { get; set; }
+    [Parameter] public EventCallback<string> OnInsertMention { get; set; }
+    [Parameter] public EventCallback OnHideReactionPicker { get; set; }
+    [Parameter] public EventCallback<(string messageId, string emoji)> OnAddReaction { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnFileSelected { get; set; }
+    [Parameter] public EventCallback<string> OnRemovePendingFile { get; set; }
+    [Parameter] public EventCallback OnCancelReply { get; set; }
+    [Parameter] public Func<string, string> GetUserColor { get; set; } = _ => "#667eea";
+    [Parameter] public Func<string, string> GetUserInitial { get; set; } = _ => "?";
+    public ElementReference MessageInputRef { get; set; }
+
+    private string localMessageText = "";
+
+    protected override void OnParametersSet()
+    {
+        if (localMessageText != MessageText)
+        {
+            localMessageText = MessageText;
+        }
+    }
+
+    private async Task HandleInputChanged()
+    {
+        MessageText = localMessageText;
+        if (MessageTextChanged.HasDelegate)
+        {
+            await MessageTextChanged.InvokeAsync(localMessageText);
+        }
+        await OnTypingInput.InvokeAsync();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey && (!string.IsNullOrWhiteSpace(localMessageText) || PendingFiles.Count > 0))
+        {
+            await HandleInputChanged();
+            await OnSendMessage.InvokeAsync();
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private string GetUserColorInternal(string username)
+    {
+        return GetUserColor?.Invoke(username) ?? "#667eea";
+    }
+
+    private string GetUserInitialInternal(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return "?";
+        return username.Substring(0, 1).ToUpperInvariant();
+    }
+}
+

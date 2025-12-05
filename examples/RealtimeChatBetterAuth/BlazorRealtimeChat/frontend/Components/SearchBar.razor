@@ -1,0 +1,72 @@
+@using Microsoft.AspNetCore.Components
+@using RealtimeChat.Frontend.Components
+@using RealtimeChat.Shared.Models
+
+@if (ShowSearch)
+{
+    <div class="search-bar">
+        <input @bind="localSearchText"
+               @bind:event="oninput"
+               @bind:after="HandleInputChanged"
+               @onkeydown="HandleSearchKeyDown"
+               placeholder="Search messages..."
+               @ref="SearchInputRef" />
+        <button @onclick="OnClearSearch" class="search-close-btn"><i class="bi bi-x"></i></button>
+    </div>
+}
+
+@if (ShowSearch && SearchResults.Count > 0)
+{
+    <div class="search-results">
+        <div class="search-results-header">
+            <span>Found @SearchResults.Count result(s)</span>
+        </div>
+        @foreach (var message in SearchResults)
+        {
+            <div class="search-result-item" @onclick="() => OnScrollToMessage.InvokeAsync(message.Id)">
+                <div class="search-result-username">@message.Username</div>
+                <div class="search-result-text">@message.Text</div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public bool ShowSearch { get; set; }
+    [Parameter] public string SearchText { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchTextChanged { get; set; }
+    [Parameter] public EventCallback OnSearch { get; set; }
+    [Parameter] public EventCallback OnClearSearch { get; set; }
+    [Parameter] public EventCallback<string> OnScrollToMessage { get; set; }
+    [Parameter] public List<MessageDto> SearchResults { get; set; } = new();
+    public ElementReference SearchInputRef { get; set; }
+
+    private string localSearchText = "";
+
+    protected override void OnParametersSet()
+    {
+        if (localSearchText != SearchText)
+        {
+            localSearchText = SearchText;
+        }
+    }
+
+    private async Task HandleInputChanged()
+    {
+        SearchText = localSearchText;
+        if (SearchTextChanged.HasDelegate)
+        {
+            await SearchTextChanged.InvokeAsync(localSearchText);
+        }
+        await OnSearch.InvokeAsync();
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await OnClearSearch.InvokeAsync();
+        }
+    }
+}
+
