@@ -1,3 +1,6 @@
 [submodule "@better-auth"]
 	path = @better-auth
 	url = https://github.com/get-convex/better-auth
+[submodule "@convex-js"]
+	path = @convex-js
+	url = https://github.com/get-convex/convex-js
