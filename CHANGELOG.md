@@ -5,6 +5,18 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.0.0-beta...v5.1.0-beta) (2025-12-04)
+
+
+### Features
+
+* enhance source generator diagnostics and README ([feb2521](https://github.com/zakstam/convex-dotnet-unofficial/commit/feb2521258e8bcda93fbb5897372cecd95939731))
+
+
+### Bug Fixes
+
+* remove specific beta versioning from release configuration ([4cf0e44](https://github.com/zakstam/convex-dotnet-unofficial/commit/4cf0e446abe6a4bd0514eae8a39a0722c2ef8f66))
+
 ## [4.2.0-alpha](https://github.com/zakstam/convex-dotnet-unofficial/compare/v4.1.0-alpha...v4.2.0-alpha) (2025-12-03)
 
 
