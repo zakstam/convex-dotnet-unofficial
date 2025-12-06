@@ -123,11 +123,120 @@ protected override async Task OnInitializedAsync()
 }
 ```
 
+## Unity & Godot Setup (Direct Instantiation)
+
+For Unity, Godot, and other platforms without Microsoft.Extensions.DependencyInjection, instantiate the services directly:
+
+```csharp
+using Convex.BetterAuth;
+using Convex.Client;
+
+// 1. Create options
+var options = new BetterAuthOptions
+{
+    SiteUrl = "https://your-deployment.convex.site"
+};
+
+// 2. Create session storage (implement ISessionStorage for your platform)
+var sessionStorage = new InMemorySessionStorage(); // Or your custom storage
+
+// 3. Create HttpClient
+var httpClient = new HttpClient();
+
+// 4. Create auth service (logger is optional)
+var authService = new BetterAuthService(httpClient, sessionStorage, options);
+
+// 5. Create token provider
+var tokenProvider = new BetterAuthTokenProvider(authService, httpClient, options);
+
+// 6. Create Convex client and wire up authentication
+var client = new ConvexClientBuilder()
+    .UseDeployment("https://your-deployment.convex.cloud")
+    .Build();
+await client.Auth.SetAuthTokenProviderAsync(tokenProvider);
+
+// Now use authService for sign-in/sign-up and client for Convex operations
+var result = await authService.SignInAsync("user@example.com", "password");
+if (result.IsSuccess)
+{
+    // Convex client is now authenticated
+    var data = await client.Query<List<Message>>("messages:list");
+}
+```
+
+### Unity-Specific Notes
+
+For Unity, create a persistent session storage using `PlayerPrefs`:
+
+```csharp
+public class UnitySessionStorage : ISessionStorage
+{
+    private const string StorageKey = "better_auth_session";
+
+    public Task StoreTokenAsync(string token)
+    {
+        PlayerPrefs.SetString(StorageKey, token);
+        PlayerPrefs.Save();
+        return Task.CompletedTask;
+    }
+
+    public Task<string?> GetTokenAsync()
+    {
+        var token = PlayerPrefs.GetString(StorageKey, null);
+        return Task.FromResult(string.IsNullOrEmpty(token) ? null : token);
+    }
+
+    public Task RemoveTokenAsync()
+    {
+        PlayerPrefs.DeleteKey(StorageKey);
+        PlayerPrefs.Save();
+        return Task.CompletedTask;
+    }
+}
+```
+
+### Godot-Specific Notes
+
+For Godot, use `ConfigFile` or `FileAccess` for token persistence:
+
+```csharp
+public class GodotSessionStorage : ISessionStorage
+{
+    private const string ConfigPath = "user://auth_session.cfg";
+
+    public Task StoreTokenAsync(string token)
+    {
+        var config = new ConfigFile();
+        config.SetValue("auth", "token", token);
+        config.Save(ConfigPath);
+        return Task.CompletedTask;
+    }
+
+    public Task<string?> GetTokenAsync()
+    {
+        var config = new ConfigFile();
+        if (config.Load(ConfigPath) == Error.Ok)
+        {
+            return Task.FromResult((string?)config.GetValue("auth", "token").AsString());
+        }
+        return Task.FromResult<string?>(null);
+    }
+
+    public Task RemoveTokenAsync()
+    {
+        DirAccess.RemoveAbsolute(ConfigPath);
+        return Task.CompletedTask;
+    }
+}
+```
+
 ## Features
 
+- **Multi-Platform Support**: Works on .NET 8+, Unity, Godot, Xamarin, and any netstandard2.1 platform
 - **Email/Password Authentication**: Sign up and sign in with email and password
 - **Session Management**: Automatic session persistence and restoration
-- **Auto-Wired Token Provider**: Token provider is automatically configured with the Convex client - no manual setup required
+- **Auto-Wired Token Provider**: Token provider is automatically configured with the Convex client - no manual setup required (DI-enabled platforms)
+- **Direct Instantiation**: Create services directly without DI for Unity/Godot
 - **JWT Exchange**: Automatically exchanges Better Auth session tokens for Convex JWTs
 - **Event-Driven**: Subscribe to auth state changes via `OnAuthStateChanged` event
 - **Pluggable Storage**: Implement `ISessionStorage` for custom token storage

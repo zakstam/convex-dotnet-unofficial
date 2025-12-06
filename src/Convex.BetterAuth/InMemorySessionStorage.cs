@@ -3,10 +3,11 @@ namespace Convex.BetterAuth;
 /// <summary>
 /// In-memory session storage. Tokens are lost when the application restarts.
 /// Use this for testing or when persistent storage is not needed.
+/// This class is thread-safe.
 /// </summary>
 public class InMemorySessionStorage : ISessionStorage
 {
-    private string? _token;
+    private volatile string? _token;
 
     /// <inheritdoc />
     public Task StoreTokenAsync(string token)
@@ -16,10 +17,7 @@ public class InMemorySessionStorage : ISessionStorage
     }
 
     /// <inheritdoc />
-    public Task<string?> GetTokenAsync()
-    {
-        return Task.FromResult(_token);
-    }
+    public Task<string?> GetTokenAsync() => Task.FromResult(_token);
 
     /// <inheritdoc />
     public Task RemoveTokenAsync()

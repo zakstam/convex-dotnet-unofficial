@@ -96,11 +96,11 @@ public static class ServiceCollectionExtensions
         // Register the auth service as singleton so auth state is shared across components
         services.TryAddSingleton<IBetterAuthService>(sp =>
         {
-            var httpClientFactory = sp.GetService<IHttpClientFactory>();
-            var httpClient = httpClientFactory?.CreateClient() ?? new HttpClient();
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
             var sessionStorage = sp.GetRequiredService<ISessionStorage>();
-            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BetterAuthOptions>>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BetterAuthService>>();
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BetterAuthOptions>>().Value;
+            var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<BetterAuthService>>();
             return new BetterAuthService(httpClient, sessionStorage, options, logger);
         });
 
@@ -108,9 +108,9 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<BetterAuthTokenProvider>(sp =>
         {
             var authService = sp.GetRequiredService<IBetterAuthService>();
-            var httpClientFactory = sp.GetService<IHttpClientFactory>();
-            var httpClient = httpClientFactory?.CreateClient() ?? new HttpClient();
-            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BetterAuthOptions>>();
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BetterAuthOptions>>().Value;
             var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<BetterAuthTokenProvider>>();
             return new BetterAuthTokenProvider(authService, httpClient, options, logger);
         });
@@ -126,6 +126,9 @@ public static class ServiceCollectionExtensions
         }
 
         // Re-register IConvexClient with Better Auth token provider wired up
+        // Note: The synchronous GetAwaiter().GetResult() is used here because DI factory
+        // methods must be synchronous. This is safe in Blazor WASM and most DI scenarios
+        // as SetAuthTokenProviderAsync is typically a quick in-memory operation.
         services.AddScoped<IConvexClient>(sp =>
         {
             var factory = sp.GetRequiredService<IConvexClientFactory>();
@@ -133,7 +136,6 @@ public static class ServiceCollectionExtensions
             var tokenProvider = sp.GetRequiredService<BetterAuthTokenProvider>();
 
             // Configure client with Better Auth authentication
-            // GetAwaiter().GetResult() is safe here during DI resolution
             client.Auth.SetAuthTokenProviderAsync(tokenProvider).GetAwaiter().GetResult();
 
             return client;

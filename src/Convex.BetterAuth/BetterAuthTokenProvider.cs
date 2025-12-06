@@ -1,14 +1,13 @@
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Convex.Client.Infrastructure.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Convex.BetterAuth;
 
 /// <summary>
 /// Token provider that supplies Convex JWTs from Better Auth to the Convex client.
 /// This exchanges Better Auth session tokens for JWTs that Convex can validate.
+/// This class is thread-safe.
 /// </summary>
 public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
 {
@@ -16,6 +15,7 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
     private readonly HttpClient _httpClient;
     private readonly BetterAuthOptions _options;
     private readonly ILogger<BetterAuthTokenProvider>? _logger;
+    private readonly object _cacheLock = new();
 
     private string? _cachedJwt;
     private DateTime _jwtExpiry = DateTime.MinValue;
@@ -37,13 +37,22 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
     public BetterAuthTokenProvider(
         IBetterAuthService authService,
         HttpClient httpClient,
-        IOptions<BetterAuthOptions> options,
+        BetterAuthOptions options,
         ILogger<BetterAuthTokenProvider>? logger = null)
     {
-        _authService = authService;
-        _httpClient = httpClient;
-        _options = options.Value;
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger;
+
+        // Subscribe to auth state changes to invalidate cache on sign-out
+        _authService.OnAuthStateChanged += OnAuthStateChanged;
+    }
+
+    private void OnAuthStateChanged()
+    {
+        // Clear cache when auth state changes (sign-in, sign-out, session restore)
+        ClearCache();
     }
 
     /// <inheritdoc />
@@ -58,21 +67,35 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
 
         _logger?.LogDebug("Session token available, length: {Length}", sessionToken.Length);
 
-        // Check if we have a valid cached JWT
-        if (_cachedJwt != null && DateTime.UtcNow < _jwtExpiry - RefreshBuffer)
+        // If configured to use session token directly (default for @convex-dev/better-auth),
+        // return the session token without exchanging for a JWT
+        if (_options.UseSessionTokenDirectly)
         {
-            _logger?.LogDebug("Returning cached JWT");
-            return _cachedJwt;
+            _logger?.LogDebug("Using session token directly (UseSessionTokenDirectly=true)");
+            return sessionToken;
+        }
+
+        // Check if we have a valid cached JWT (thread-safe read)
+        lock (_cacheLock)
+        {
+            if (_cachedJwt != null && DateTime.UtcNow < _jwtExpiry - RefreshBuffer)
+            {
+                _logger?.LogDebug("Returning cached JWT");
+                return _cachedJwt;
+            }
         }
 
         // Need to refresh the JWT
-        await _tokenLock.WaitAsync(cancellationToken);
+        await _tokenLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             // Double-check after acquiring lock
-            if (_cachedJwt != null && DateTime.UtcNow < _jwtExpiry - RefreshBuffer)
+            lock (_cacheLock)
             {
-                return _cachedJwt;
+                if (_cachedJwt != null && DateTime.UtcNow < _jwtExpiry - RefreshBuffer)
+                {
+                    return _cachedJwt;
+                }
             }
 
             var tokenEndpoint = $"{_options.SiteUrl}/api/auth/convex/token";
@@ -81,24 +104,33 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
             var request = new HttpRequestMessage(
                 HttpMethod.Get,
                 tokenEndpoint);
-            request.Headers.Add("Authorization", $"Bearer {sessionToken}");
+            // Cross-domain plugin expects session cookies via better-auth-cookie header
+            // The session token contains the full cookie string (token + signature)
+            request.Headers.Add("better-auth-cookie", sessionToken);
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
             _logger?.LogDebug("JWT endpoint response: {StatusCode}", response.StatusCode);
 
             if (response.IsSuccessStatusCode)
             {
-                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+#if NET5_0_OR_GREATER
+                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
 
                 var result = System.Text.Json.JsonSerializer.Deserialize<ConvexTokenResponse>(responseContent);
 
                 if (!string.IsNullOrEmpty(result?.Token))
                 {
-                    _cachedJwt = result.Token;
-                    _jwtExpiry = ParseJwtExpiry(result.Token) ?? DateTime.UtcNow + DefaultJwtExpiration;
+                    lock (_cacheLock)
+                    {
+                        _cachedJwt = result.Token;
+                        _jwtExpiry = ParseJwtExpiry(result.Token) ?? DateTime.UtcNow + DefaultJwtExpiration;
+                    }
                     _logger?.LogDebug("Successfully obtained Convex JWT, expires at {Expiry}", _jwtExpiry);
-                    return _cachedJwt;
+                    return result.Token;
                 }
                 else
                 {
@@ -106,7 +138,11 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
                 }
             }
 
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+#if NET5_0_OR_GREATER
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+            var errorContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
             _logger?.LogWarning(
                 "Failed to get Convex JWT: {StatusCode} - {Error}",
                 response.StatusCode,
@@ -114,6 +150,10 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
 
             // Return null if JWT exchange fails
             return null;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -173,8 +213,11 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
     /// </summary>
     public void ClearCache()
     {
-        _cachedJwt = null;
-        _jwtExpiry = DateTime.MinValue;
+        lock (_cacheLock)
+        {
+            _cachedJwt = null;
+            _jwtExpiry = DateTime.MinValue;
+        }
         _logger?.LogDebug("Cleared JWT cache");
     }
 
@@ -198,8 +241,14 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
 
         if (disposing)
         {
+            // Unsubscribe from auth state changes
+            _authService.OnAuthStateChanged -= OnAuthStateChanged;
+
             _tokenLock.Dispose();
-            _cachedJwt = null;
+            lock (_cacheLock)
+            {
+                _cachedJwt = null;
+            }
         }
 
         _disposed = true;
