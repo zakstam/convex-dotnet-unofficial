@@ -5,6 +5,21 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.1.0-beta...v5.2.0-beta) (2025-12-06)
+
+
+### Features
+
+* add Convex.BetterAuth integration ([98078c4](https://github.com/zakstam/convex-dotnet-unofficial/commit/98078c4a2238b278c45db6868352330aeaa2b0e6))
+* Added better auth example ([0864753](https://github.com/zakstam/convex-dotnet-unofficial/commit/0864753826f257363d4e6d23528e965c2c57f8f5))
+* enhance BetterAuth with session token handling and thread safety ([a88c7f3](https://github.com/zakstam/convex-dotnet-unofficial/commit/a88c7f3085f74a7b58f5544c0749d6b3eac192db))
+
+
+### Bug Fixes
+
+* correct timestamp handling in CursorCanvas and ChatService ([102fe24](https://github.com/zakstam/convex-dotnet-unofficial/commit/102fe249fb7790f4800d3851c18f5ea45909f7b5))
+* remove optimistic update feature from MutationBuilder because the behavior was miss-leading ([e59d7b7](https://github.com/zakstam/convex-dotnet-unofficial/commit/e59d7b74d17b61fa04ce6639c432e5dc2e86b741))
+
 ## [5.1.0-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.0.0-beta...v5.1.0-beta) (2025-12-04)
 
 
