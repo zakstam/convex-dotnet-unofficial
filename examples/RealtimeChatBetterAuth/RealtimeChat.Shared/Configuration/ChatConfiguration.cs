@@ -27,30 +27,15 @@ public class ChatConfiguration
     public bool EnableDebugLogging { get; set; } = false;
 
     /// <summary>
-    /// Clerk publishable key for authentication.
+    /// Better Auth site URL (e.g., "https://your-deployment.convex.site").
     /// </summary>
-    public string? ClerkPublishableKey { get; set; }
+    public string? BetterAuthSiteUrl { get; set; }
 
     /// <summary>
-    /// Clerk JWT template name (default: "convex").
+    /// Whether Better Auth is configured for this application.
     /// </summary>
-    public string ClerkTokenTemplate { get; set; } = "convex";
-
-    /// <summary>
-    /// Clerk domain (Frontend API URL without https://).
-    /// Example: "your-instance.clerk.accounts.dev"
-    /// </summary>
-    public string? ClerkDomain { get; set; }
-
-    /// <summary>
-    /// Port for OAuth callback server (default: 8080).
-    /// </summary>
-    public int ClerkCallbackPort { get; set; } = 8080;
-
-    /// <summary>
-    /// Path for OAuth callback (default: "/callback").
-    /// </summary>
-    public string ClerkCallbackPath { get; set; } = "/callback";
+    public bool HasBetterAuth => !string.IsNullOrWhiteSpace(BetterAuthSiteUrl)
+                                  && BetterAuthSiteUrl != "https://your-deployment.convex.site";
 
     /// <summary>
     /// Loads configuration from environment variables.
@@ -100,12 +85,8 @@ public class ChatConfiguration
         int initialMessageLimit = 10;
         bool enableDebugLogging = false;
 
-        // Clerk configuration
-        string? clerkPublishableKey = null;
-        string clerkTokenTemplate = "convex";
-        string? clerkDomain = null;
-        int clerkCallbackPort = 8080;
-        string clerkCallbackPath = "/callback";
+        // Better Auth configuration
+        string? betterAuthSiteUrl = null;
 
         // Try to read from "Convex" section
         if (jsonDoc.RootElement.TryGetProperty("Convex", out var convexElement))
@@ -135,43 +116,12 @@ public class ChatConfiguration
             }
         }
 
-        // Try to read from "Clerk" section
-        if (jsonDoc.RootElement.TryGetProperty("Clerk", out var clerkElement))
+        // Try to read from "BetterAuth" section
+        if (jsonDoc.RootElement.TryGetProperty("BetterAuth", out var betterAuthElement))
         {
-            if (clerkElement.TryGetProperty("PublishableKey", out var keyElement))
+            if (betterAuthElement.TryGetProperty("SiteUrl", out var siteUrlElement))
             {
-                clerkPublishableKey = keyElement.GetString();
-            }
-
-            if (clerkElement.TryGetProperty("TokenTemplate", out var templateElement))
-            {
-                var template = templateElement.GetString();
-                if (!string.IsNullOrEmpty(template))
-                {
-                    clerkTokenTemplate = template;
-                }
-            }
-
-            if (clerkElement.TryGetProperty(nameof(ClerkDomain), out var domainElement))
-            {
-                clerkDomain = domainElement.GetString();
-            }
-
-            if (clerkElement.TryGetProperty("CallbackPort", out var portElement))
-            {
-                if (portElement.ValueKind == System.Text.Json.JsonValueKind.Number)
-                {
-                    clerkCallbackPort = portElement.GetInt32();
-                }
-            }
-
-            if (clerkElement.TryGetProperty("CallbackPath", out var pathElement))
-            {
-                var path = pathElement.GetString();
-                if (!string.IsNullOrEmpty(path))
-                {
-                    clerkCallbackPath = path;
-                }
+                betterAuthSiteUrl = siteUrlElement.GetString();
             }
         }
 
@@ -187,11 +137,7 @@ public class ChatConfiguration
             DeploymentUrl = deploymentUrl ?? string.Empty,
             InitialMessageLimit = initialMessageLimit,
             EnableDebugLogging = enableDebugLogging,
-            ClerkPublishableKey = clerkPublishableKey,
-            ClerkTokenTemplate = clerkTokenTemplate,
-            ClerkDomain = clerkDomain,
-            ClerkCallbackPort = clerkCallbackPort,
-            ClerkCallbackPath = clerkCallbackPath
+            BetterAuthSiteUrl = betterAuthSiteUrl
         };
     }
 

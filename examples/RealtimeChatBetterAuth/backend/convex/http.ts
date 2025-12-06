@@ -11,8 +11,8 @@ authComponent.registerRoutes(http, createAuth, {
       "http://localhost:5004",
       "https://localhost:7135",
     ],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Length"],
+    allowedHeaders: ["Content-Type", "Authorization", "better-auth-cookie"],
+    exposedHeaders: ["Content-Length", "Set-Better-Auth-Cookie"],
   },
 });
 

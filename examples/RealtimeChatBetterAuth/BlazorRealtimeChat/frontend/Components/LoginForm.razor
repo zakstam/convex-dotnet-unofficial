@@ -91,7 +91,7 @@
         !string.IsNullOrWhiteSpace(emailInput) &&
         !string.IsNullOrWhiteSpace(passwordInput) &&
         emailInput.Contains("@") &&
-        passwordInput.Length >= 8 &&
+        passwordInput.Length >= 6 &&
         (!isSignUp || passwordInput == confirmPasswordInput);
 
     private void ToggleMode()
