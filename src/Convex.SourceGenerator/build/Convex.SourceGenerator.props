@@ -22,7 +22,11 @@
 
   <!-- Auto-discover Convex backend folder (evaluation phase - before targets run) -->
   <PropertyGroup Condition="'$(ConvexBackendPath)' == ''">
+    <!-- Same directory patterns -->
     <ConvexBackendPath Condition="Exists('$(MSBuildProjectDirectory)\convex\')">$(MSBuildProjectDirectory)\convex</ConvexBackendPath>
+    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\backend\convex\')">$(MSBuildProjectDirectory)\backend\convex</ConvexBackendPath>
+
+    <!-- Parent directory patterns -->
     <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\..\convex\')">$(MSBuildProjectDirectory)\..\convex</ConvexBackendPath>
     <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\..\backend\convex\')">$(MSBuildProjectDirectory)\..\backend\convex</ConvexBackendPath>
     <ConvexBackendPath Condition="'$(ConvexBackendPath)' == '' And Exists('$(MSBuildProjectDirectory)\..\..\backend\convex\')">$(MSBuildProjectDirectory)\..\..\backend\convex</ConvexBackendPath>

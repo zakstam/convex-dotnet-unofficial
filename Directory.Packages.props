@@ -33,6 +33,8 @@
     <!-- SourceLink for Debugging Support -->
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <!-- Test Dependencies -->
+    <PackageVersion Include="Microsoft.Build.Locator" Version="1.7.8" />
+    <PackageVersion Include="Microsoft.Build" Version="17.13.9" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.6.1" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.6.1" />
