@@ -5,6 +5,14 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.3-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.2-beta...v5.2.3-beta) (2026-02-07)
+
+
+### Bug Fixes
+
+* surface actionable generator misconfiguration diagnostics ([5bcd88e](https://github.com/zakstam/convex-dotnet-unofficial/commit/5bcd88eb11c0160da09b18deeb52dd6fe759279d))
+* **tests:** handle preloaded MSBuild assemblies in locator setup ([5035198](https://github.com/zakstam/convex-dotnet-unofficial/commit/5035198c419f3432a73504aeb8abfd26ad94700e))
+
 ## [5.2.2-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.1-beta...v5.2.2-beta) (2026-02-07)
 
 
