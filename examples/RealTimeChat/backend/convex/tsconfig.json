@@ -21,9 +21,5 @@
     "noEmit": true
   },
   "include": ["./**/*"],
-  "exclude": ["./_generated", "../node_modules", "node_modules"]
+  "exclude": ["./_generated"]
 }
-
-
-
-
