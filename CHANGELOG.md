@@ -5,6 +5,13 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.2-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.1-beta...v5.2.2-beta) (2026-02-07)
+
+
+### Bug Fixes
+
+* harden generated DateTimeOffset types for Godot builds ([9e95f65](https://github.com/zakstam/convex-dotnet-unofficial/commit/9e95f65286ef8a55a46e3193acc8a883fa58f94d))
+
 ## [5.2.1-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.0-beta...v5.2.1-beta) (2026-02-03)
 
 
