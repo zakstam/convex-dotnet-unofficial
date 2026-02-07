@@ -143,8 +143,17 @@ client.Query<List<Todo>>("todos.list")
    ```
 
 4. **Check build output:**
-   - Look for generator messages in build output
+   - Look for Convex generator warnings in build output
    - Generated files are in `obj/Debug/generated/Convex.SourceGenerator/`
+
+5. **Enable stricter checks for CI:**
+   ```xml
+   <PropertyGroup>
+     <ConvexDiagnosticMode>error</ConvexDiagnosticMode>
+     <!-- or -->
+     <ConvexFailOnGeneratorMisconfig>true</ConvexFailOnGeneratorMisconfig>
+   </PropertyGroup>
+   ```
 
 ### Wrong Function Type
 

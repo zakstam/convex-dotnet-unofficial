@@ -176,6 +176,9 @@ The generator will automatically include all `.ts` files (excluding `_generated/
   <ConvexGenerateTypedIds>false</ConvexGenerateTypedIds>
   <ConvexGenerateServices>false</ConvexGenerateServices>
   <ConvexGenerateDI>false</ConvexGenerateDI>
+  <ConvexDiagnosticMode>warning</ConvexDiagnosticMode> <!-- warning|error|silent -->
+  <ConvexSuppressGeneratorWarnings>false</ConvexSuppressGeneratorWarnings>
+  <ConvexFailOnGeneratorMisconfig>false</ConvexFailOnGeneratorMisconfig>
 </PropertyGroup>
 ```
 
@@ -189,6 +192,9 @@ The generator will automatically include all `.ts` files (excluding `_generated/
 | `ConvexGenerateTypedIds` | `false` | Generate strongly-typed ID wrappers |
 | `ConvexGenerateServices` | `false` | Generate `IConvexFunctionsService` interface |
 | `ConvexGenerateDI` | `false` | Generate DI extension method |
+| `ConvexDiagnosticMode` | `warning` | Generator diagnostics mode: `warning`, `error`, or `silent` |
+| `ConvexSuppressGeneratorWarnings` | `false` | Suppress build-time generator misconfiguration warnings |
+| `ConvexFailOnGeneratorMisconfig` | `false` | Fail build on generator misconfiguration (CI-friendly) |
 
 Build your project - the generator creates C# constants from your TypeScript functions:
 
@@ -2369,6 +2375,8 @@ await client.Mutate<Todo>("todos:create")
 
 **Source Generator Issues?**
 
+- If generation is misconfigured, build now reports actionable Convex warnings by default
+- Set `<ConvexDiagnosticMode>error</ConvexDiagnosticMode>` or `<ConvexFailOnGeneratorMisconfig>true</ConvexFailOnGeneratorMisconfig>` to fail CI
 - **CVX013 info**: No TypeScript files found. Set `<ConvexBackendPath>` or check auto-discovery paths
 - **CVX001 info**: No schema.ts found. Ensure schema.ts is in your convex folder
 - **CVX009 info**: No functions found. Ensure files have `export const x = query(...)` exports

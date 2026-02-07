@@ -224,7 +224,15 @@ public readonly record struct NoteId(string Value)
 1. **Verify TypeScript files are included** - Check that the path in `<AdditionalFiles>` points to your actual `.ts` files (not `api.d.ts`)
 2. **Check files exist** - Ensure your TypeScript function files exist at the specified path
 3. **Rebuild project** - Run `dotnet clean && dotnet build`
-4. **Check build output** - Look for generator messages in build output
+4. **Check build output** - Look for Convex generator warnings in build output
+5. **Use stricter diagnostics in CI**:
+   ```xml
+   <PropertyGroup>
+     <ConvexDiagnosticMode>error</ConvexDiagnosticMode>
+     <!-- or -->
+     <ConvexFailOnGeneratorMisconfig>true</ConvexFailOnGeneratorMisconfig>
+   </PropertyGroup>
+   ```
 
 ### Wrong Function Type
 

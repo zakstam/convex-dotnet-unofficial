@@ -18,6 +18,12 @@
 
     <!-- Type safety features (opt-in) -->
     <ConvexGenerateTypedIds Condition="'$(ConvexGenerateTypedIds)' == ''">false</ConvexGenerateTypedIds>
+
+    <!-- Generator diagnostics -->
+    <!-- Modes: warning (default), error, silent -->
+    <ConvexDiagnosticMode Condition="'$(ConvexDiagnosticMode)' == ''">warning</ConvexDiagnosticMode>
+    <ConvexSuppressGeneratorWarnings Condition="'$(ConvexSuppressGeneratorWarnings)' == ''">false</ConvexSuppressGeneratorWarnings>
+    <ConvexFailOnGeneratorMisconfig Condition="'$(ConvexFailOnGeneratorMisconfig)' == ''">false</ConvexFailOnGeneratorMisconfig>
   </PropertyGroup>
 
   <!-- Auto-discover Convex backend folder (evaluation phase - before targets run) -->

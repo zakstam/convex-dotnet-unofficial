@@ -7,8 +7,8 @@
     <!-- Set ConvexEnableBackendGeneration=true and ConvexBackendGeneratorPath to enable -->
     <ConvexEnableBackendGeneration Condition="'$(ConvexEnableBackendGeneration)' == ''">false</ConvexEnableBackendGeneration>
 
-    <!-- Default backend path - users can override -->
-    <ConvexBackendPath Condition="'$(ConvexBackendPath)' == ''">$(MSBuildProjectDirectory)\convex</ConvexBackendPath>
+    <!-- Default backend path for backend generation only (source generator auto-discovery is in .props) -->
+    <ConvexBackendPath Condition="'$(ConvexEnableBackendGeneration)' == 'true' And '$(ConvexBackendPath)' == ''">$(MSBuildProjectDirectory)\convex</ConvexBackendPath>
 
     <!-- Path to BackendGenerator tool - must be set by user if backend generation is enabled -->
     <!-- Example: <ConvexBackendGeneratorPath>C:\path\to\BackendGenerator</ConvexBackendGeneratorPath> -->
@@ -19,6 +19,51 @@
     <!-- Example: <ConvexApiDefinitionPath>convex\_generated\api.d.ts</ConvexApiDefinitionPath> -->
     <ConvexApiDefinitionPath Condition="'$(ConvexApiDefinitionPath)' == ''"></ConvexApiDefinitionPath>
   </PropertyGroup>
+
+  <!-- Validate source-generator configuration and make misconfiguration visible -->
+  <Target Name="ConvexValidateGeneratorConfiguration" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_ConvexGenerationEnabled>false</_ConvexGenerationEnabled>
+      <_ConvexGenerationEnabled Condition="'$(ConvexGenerateModels)' == 'true' Or '$(ConvexGenerateFunctions)' == 'true' Or '$(ConvexGenerateArgs)' == 'true' Or '$(ConvexGenerateServices)' == 'true' Or '$(ConvexGenerateDI)' == 'true' Or '$(ConvexGenerateTypedIds)' == 'true'">true</_ConvexGenerationEnabled>
+      <_ConvexDiagnosticsSilent>false</_ConvexDiagnosticsSilent>
+      <_ConvexDiagnosticsSilent Condition="'$(ConvexDiagnosticMode)' == 'silent' Or '$(ConvexSuppressGeneratorWarnings)' == 'true'">true</_ConvexDiagnosticsSilent>
+      <_ConvexMisconfigIsError>false</_ConvexMisconfigIsError>
+      <_ConvexMisconfigIsError Condition="'$(ConvexDiagnosticMode)' == 'error' Or '$(ConvexFailOnGeneratorMisconfig)' == 'true'">true</_ConvexMisconfigIsError>
+      <_ConvexSchemaFileCount>0</_ConvexSchemaFileCount>
+      <_ConvexFunctionFileCount>0</_ConvexFunctionFileCount>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(ConvexBackendPath)' != '' And Exists('$(ConvexBackendPath)')">
+      <_ConvexSchemaFiles Include="$(ConvexBackendPath)\**\schema.ts"
+                          Exclude="$(ConvexBackendPath)\_generated\**;$(ConvexBackendPath)\node_modules\**" />
+      <_ConvexFunctionFiles Include="$(ConvexBackendPath)\**\*.ts"
+                            Exclude="$(ConvexBackendPath)\_generated\**;$(ConvexBackendPath)\node_modules\**;$(ConvexBackendPath)\**\*.d.ts;$(ConvexBackendPath)\**\schema.ts" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(ConvexBackendPath)' != '' And Exists('$(ConvexBackendPath)')">
+      <_ConvexSchemaFileCount>@(_ConvexSchemaFiles->Count())</_ConvexSchemaFileCount>
+      <_ConvexFunctionFileCount>@(_ConvexFunctionFiles->Count())</_ConvexFunctionFileCount>
+    </PropertyGroup>
+
+    <Message Text="Convex: Backend path = $(ConvexBackendPath), schema files = $(_ConvexSchemaFileCount), function files = $(_ConvexFunctionFileCount)"
+             Importance="high"
+             Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true'" />
+
+    <Warning Text="Convex: No backend path configured and auto-discovery failed. Set ConvexBackendPath in your .csproj or place backend files under convex/ or backend/convex."
+             Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true' And '$(_ConvexMisconfigIsError)' != 'true' And '$(ConvexBackendPath)' == ''" />
+    <Error Text="Convex: No backend path configured and auto-discovery failed. Set ConvexBackendPath in your .csproj or place backend files under convex/ or backend/convex."
+           Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true' And '$(_ConvexMisconfigIsError)' == 'true' And '$(ConvexBackendPath)' == ''" />
+
+    <Warning Text="Convex: ConvexBackendPath is set to '$(ConvexBackendPath)' but this folder does not exist."
+             Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true' And '$(_ConvexMisconfigIsError)' != 'true' And '$(ConvexBackendPath)' != '' And !Exists('$(ConvexBackendPath)')" />
+    <Error Text="Convex: ConvexBackendPath is set to '$(ConvexBackendPath)' but this folder does not exist."
+           Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true' And '$(_ConvexMisconfigIsError)' == 'true' And '$(ConvexBackendPath)' != '' And !Exists('$(ConvexBackendPath)')" />
+
+    <Warning Text="Convex: Found backend folder at '$(ConvexBackendPath)' but no schema.ts and no function .ts files. Check file location/excludes."
+             Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true' And '$(_ConvexMisconfigIsError)' != 'true' And '$(ConvexBackendPath)' != '' And Exists('$(ConvexBackendPath)') And '$(_ConvexSchemaFileCount)' == '0' And '$(_ConvexFunctionFileCount)' == '0'" />
+    <Error Text="Convex: Found backend folder at '$(ConvexBackendPath)' but no schema.ts and no function .ts files. Check file location/excludes."
+           Condition="'$(_ConvexGenerationEnabled)' == 'true' And '$(_ConvexDiagnosticsSilent)' != 'true' And '$(_ConvexMisconfigIsError)' == 'true' And '$(ConvexBackendPath)' != '' And Exists('$(ConvexBackendPath)') And '$(_ConvexSchemaFileCount)' == '0' And '$(_ConvexFunctionFileCount)' == '0'" />
+  </Target>
 
   <!-- Automatically include api.d.ts for source generator if path is configured -->
   <ItemGroup Condition="'$(ConvexApiDefinitionPath)' != '' And Exists('$(ConvexApiDefinitionPath)')">
