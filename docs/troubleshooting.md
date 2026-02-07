@@ -173,6 +173,27 @@ See [Source Generator documentation](source-generator.md) for details.
 
 3. **Schema not included** - Ensure your schema.ts is in `<AdditionalFiles>`
 
+### CS0246: DateTimeOffset Not Found in Generated `.g.cs` (Godot / ImplicitUsings Disabled)
+
+**Symptoms:** Build fails in generated files with errors like:
+- `CS0246: The type or namespace name 'DateTimeOffset' could not be found`
+
+**Cause:** Older generator versions could emit timestamp model properties that relied on implicit global usings.
+
+**Temporary Workarounds (older package versions):**
+1. Enable implicit usings in your project:
+   ```xml
+   <PropertyGroup>
+     <ImplicitUsings>enable</ImplicitUsings>
+   </PropertyGroup>
+   ```
+2. Or add a global using:
+   ```csharp
+   global using System;
+   ```
+
+**Permanent Fix:** Upgrade to a version that includes globally qualified `DateTimeOffset` in generated schema code.
+
 ### Glob Pattern Including node_modules
 
 **Symptoms:** Build is slow or generator produces unexpected output
@@ -400,4 +421,3 @@ var observable = client.Observe<List<Todo>, object>("todos:search", new { term }
   - Code that reproduces the issue
   - .NET version and platform
   - Convex deployment URL (if safe to share)
-

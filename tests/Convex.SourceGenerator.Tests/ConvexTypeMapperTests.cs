@@ -219,6 +219,8 @@ public class ConvexTypeMapperTests
     [InlineData("int", true)]
     [InlineData("float", true)]
     [InlineData("decimal", true)]
+    [InlineData("global::System.DateTimeOffset", true)]
+    [InlineData("global::System.DateTime", true)]
     [InlineData("string", false)]
     [InlineData("byte[]", false)]
     [InlineData("object", false)]

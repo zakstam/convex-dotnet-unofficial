@@ -158,7 +158,13 @@ public static class ConvexTypeMapper
     /// </summary>
     public static bool IsValueType(string csharpType)
     {
-        return csharpType switch
+        var normalizedType = csharpType.Replace("global::", string.Empty);
+        if (normalizedType.StartsWith("System.", StringComparison.Ordinal))
+        {
+            normalizedType = normalizedType.Substring("System.".Length);
+        }
+
+        return normalizedType switch
         {
             "double" => true,
             "long" => true,
