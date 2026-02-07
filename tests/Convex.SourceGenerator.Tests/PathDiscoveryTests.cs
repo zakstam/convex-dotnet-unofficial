@@ -26,7 +26,7 @@ public class PathDiscoveryTests : IDisposable
         {
             if (!s_msBuildRegistered)
             {
-                MSBuildLocator.RegisterDefaults();
+                TryRegisterMSBuild();
                 s_msBuildRegistered = true;
             }
         }
@@ -343,5 +343,23 @@ public class PathDiscoveryTests : IDisposable
     {
         // Normalize path separators and resolve any .. or . segments
         return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static void TryRegisterMSBuild()
+    {
+        if (MSBuildLocator.IsRegistered)
+        {
+            return;
+        }
+
+        try
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
+        catch (InvalidOperationException)
+        {
+            // In some test hosts, Microsoft.Build assemblies may already be loaded
+            // before tests run. In that case registration is not possible/needed.
+        }
     }
 }

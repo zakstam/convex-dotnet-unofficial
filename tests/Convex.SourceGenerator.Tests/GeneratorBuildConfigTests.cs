@@ -24,7 +24,7 @@ public class GeneratorBuildConfigTests : IDisposable
         {
             if (!s_msBuildRegistered)
             {
-                MSBuildLocator.RegisterDefaults();
+                TryRegisterMSBuild();
                 s_msBuildRegistered = true;
             }
         }
@@ -145,5 +145,23 @@ public class GeneratorBuildConfigTests : IDisposable
 
         return Path.GetFullPath(path.Replace('\\', Path.DirectorySeparatorChar))
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static void TryRegisterMSBuild()
+    {
+        if (MSBuildLocator.IsRegistered)
+        {
+            return;
+        }
+
+        try
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
+        catch (InvalidOperationException)
+        {
+            // In some test hosts, Microsoft.Build assemblies may already be loaded
+            // before tests run. In that case registration is not possible/needed.
+        }
     }
 }
