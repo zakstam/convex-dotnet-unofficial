@@ -4,7 +4,8 @@ import { components } from "./_generated/api";
 import { DataModel } from "./_generated/dataModel";
 import { betterAuth } from "better-auth";
 
-const siteUrl = process.env.SITE_URL!;
+// Validate early so misconfiguration surfaces clearly instead of opaque runtime errors.
+const siteUrl = resolveSiteUrl();
 
 // Frontend origins for CORS (localhost for development)
 const frontendOrigins = [
@@ -64,3 +65,30 @@ export const createAuth = (
  * Use this in your Convex functions to verify authentication.
  */
 export const getAuthUser = authComponent.getAuthUser;
+
+function resolveSiteUrl(): string {
+  const rawSiteUrl = process.env.SITE_URL?.trim();
+
+  if (!rawSiteUrl) {
+    throw new Error(
+      "Missing required Convex env var SITE_URL. Set it with: npx convex env set SITE_URL https://<your-deployment>.convex.site",
+    );
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(rawSiteUrl);
+  } catch {
+    throw new Error(
+      `Invalid SITE_URL "${rawSiteUrl}". Expected a full HTTPS URL like https://<your-deployment>.convex.site`,
+    );
+  }
+
+  if (parsedUrl.protocol !== "https:") {
+    throw new Error(
+      `Invalid SITE_URL "${rawSiteUrl}". SITE_URL must use HTTPS (https://...)`,
+    );
+  }
+
+  return parsedUrl.origin;
+}

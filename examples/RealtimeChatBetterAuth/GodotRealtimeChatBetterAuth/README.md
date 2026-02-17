@@ -65,7 +65,29 @@ npx convex deploy
 
 This will output your deployment URL like: `https://your-deployment.convex.cloud`
 
-### Step 2: Update Deployment URL
+### Step 2: Configure Better Auth URLs
+
+Better Auth signup/signin requires matching URLs in both backend and client configuration:
+
+1. In `../backend`, set Convex env var:
+
+```bash
+npx convex env set SITE_URL https://your-deployment.convex.site
+```
+
+2. In `../appsettings.json`, set:
+
+```json
+{
+  "BetterAuth": {
+    "SiteUrl": "https://your-deployment.convex.site"
+  }
+}
+```
+
+`SITE_URL` and `BetterAuth:SiteUrl` should be the same value. If they are missing or mismatched, auth requests can fail.
+
+### Step 3: Update Deployment URL
 
 In `ConvexManager.cs`, line 67, replace with your actual deployment URL:
 
@@ -73,14 +95,14 @@ In `ConvexManager.cs`, line 67, replace with your actual deployment URL:
 const string deploymentUrl = "https://your-deployment.convex.cloud";
 ```
 
-### Step 3: Open in Godot
+### Step 4: Open in Godot
 
 1. Open Godot 4.2+
 2. Click "Open Project"
 3. Navigate to `examples/GodotRealtimeChat/` and select `project.godot`
 4. Godot will build the C# project automatically
 
-### Step 4: Run the Chat
+### Step 5: Run the Chat
 
 Press `F5` or click "Run" to start the chat application.
 

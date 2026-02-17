@@ -42,10 +42,28 @@ type Message = {
 ## Quick start
 
 ```powershell
-cd examples/RealtimeChat/backend
+cd examples/RealtimeChatBetterAuth/backend
 npm install
 npx convex dev
 ```
+
+## Required Better Auth environment
+
+This example's Better Auth routes require a Convex environment variable named `SITE_URL`.
+
+Set it from this directory:
+
+```powershell
+npx convex env set SITE_URL https://your-deployment.convex.site
+```
+
+Verify it:
+
+```powershell
+npx convex env list
+```
+
+`SITE_URL` must match the client `BetterAuth:SiteUrl` value in your example app configuration.
 
 ## Notes
 
