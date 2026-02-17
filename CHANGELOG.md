@@ -5,6 +5,13 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.4-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.3-beta...v5.2.4-beta) (2026-02-17)
+
+
+### Bug Fixes
+
+* validate SITE_URL in BetterAuth example backend ([7c270af](https://github.com/zakstam/convex-dotnet-unofficial/commit/7c270afcf289875f8502b6a3dc0f55cba9e47717))
+
 ## [5.2.3-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.2-beta...v5.2.3-beta) (2026-02-07)
 
 
