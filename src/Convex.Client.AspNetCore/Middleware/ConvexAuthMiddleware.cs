@@ -17,6 +17,9 @@ public class ConvexAuthMiddleware(
     private readonly ILogger<ConvexAuthMiddleware> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConvexAuthMiddlewareOptions _options = options ?? new ConvexAuthMiddlewareOptions();
 
+    /// <summary>
+    /// Executes the invoke operation.
+    /// </summary>
     public async Task InvokeAsync(HttpContext context, IConvexClient convexClient)
     {
         if (convexClient == null)
@@ -121,33 +124,33 @@ public class ConvexAuthMiddleware(
 public class ConvexAuthMiddlewareOptions
 {
     /// <summary>
-    /// Gets or sets whether to log authentication changes (default: false).
+    /// Gets or sets a value indicating whether log authentication changes.
     /// </summary>
     public bool LogAuthenticationChanges { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets whether to reject requests with invalid tokens (default: false).
+    /// Gets or sets a value indicating whether reject invalid tokens.
     /// If false, invalid tokens are ignored and the request continues.
     /// </summary>
     public bool RejectInvalidTokens { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets whether to clear authentication if no token is present (default: false).
+    /// Gets or sets a value indicating whether clear auth if no token.
     /// </summary>
     public bool ClearAuthIfNoToken { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets a custom header name to extract tokens from (optional).
+    /// Gets or sets the custom token header.
     /// </summary>
     public string? CustomTokenHeader { get; set; }
 
     /// <summary>
-    /// Gets or sets a custom authentication scheme name (optional).
+    /// Gets or sets the custom auth scheme.
     /// </summary>
     public string? CustomAuthScheme { get; set; }
 
     /// <summary>
-    /// Gets or sets a custom function to extract tokens from custom auth schemes.
+    /// Gets or sets the string.
     /// </summary>
     public Func<string, string?>? CustomTokenExtractor { get; set; }
 }

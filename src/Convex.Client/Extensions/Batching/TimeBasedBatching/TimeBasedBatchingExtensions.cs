@@ -11,7 +11,7 @@ namespace Convex.Client.Extensions.Batching.TimeBasedBatching;
 public static class TimeBasedBatchingExtensions
 {
     /// <summary>
-    /// Creates a time-based batcher for high-frequency events.
+    /// Creates time based batcher.
     /// </summary>
     /// <typeparam name="TEvent">The type of events to batch.</typeparam>
     /// <param name="client">The Convex client.</param>
@@ -52,7 +52,7 @@ public static class TimeBasedBatchingExtensions
     }
 
     /// <summary>
-    /// Creates a batch replay manager for replaying batches on remote clients.
+    /// Creates batch replay manager.
     /// </summary>
     /// <typeparam name="TEvent">The type of events to replay.</typeparam>
     /// <param name="client">The Convex client (used for consistency, but not directly used).</param>
@@ -82,7 +82,7 @@ public static class TimeBasedBatchingExtensions
     }
 
     /// <summary>
-    /// Creates an observable stream of batches from a Convex query.
+    /// Executes the observe batches operation.
     /// </summary>
     /// <typeparam name="TEvent">The type of events in the batches.</typeparam>
     /// <param name="client">The Convex client.</param>

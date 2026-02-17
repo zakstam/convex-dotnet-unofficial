@@ -22,7 +22,7 @@ internal sealed class OptimisticLocalStore : IOptimisticLocalStore
     private readonly Dictionary<string, object?> _originalValues = [];
 
     /// <summary>
-    /// Creates a new OptimisticLocalStore with a reactive cache.
+    /// Initializes a new instance of the <see cref="OptimisticLocalStore"/> class.
     /// </summary>
     /// <param name="reactiveCache">The reactive cache for optimistic updates with subscriber notifications.</param>
     /// <param name="serializer">The serializer for cache key generation.</param>
@@ -33,12 +33,12 @@ internal sealed class OptimisticLocalStore : IOptimisticLocalStore
     }
 
     /// <summary>
-    /// Gets the set of query keys that were modified during the optimistic update.
+    /// Gets the modified queries.
     /// </summary>
     public IReadOnlyCollection<string> ModifiedQueries => _modifiedQueries;
 
     /// <summary>
-    /// Gets the original values of queries before they were modified.
+    /// Gets the string.
     /// Used for rollback purposes.
     /// </summary>
     public IReadOnlyDictionary<string, object?> OriginalValues => _originalValues;

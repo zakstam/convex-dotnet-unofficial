@@ -28,7 +28,7 @@ namespace Convex.Client.Features.RealTime.Subscriptions;
 /// </code>
 /// </example>
 /// <remarks>
-/// Creates a new observable list with optional synchronization context.
+/// Executes the observable convex list operation.
 /// </remarks>
 /// <param name="synchronizationContext">
 /// Optional synchronization context for marshalling change notifications to a specific thread (e.g., UI thread).
@@ -53,7 +53,7 @@ public sealed class ObservableConvexList<T>(SynchronizationContext? synchronizat
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Creates a new observable list with initial items.
+    /// Initializes a new instance of the <see cref="ObservableConvexList{T}"/> class.
     /// </summary>
     /// <param name="items">Initial items to populate the collection.</param>
     /// <param name="synchronizationContext">Optional synchronization context.</param>
@@ -86,7 +86,7 @@ public sealed class ObservableConvexList<T>(SynchronizationContext? synchronizat
     }
 
     /// <summary>
-    /// Gets a value indicating whether the collection is read-only.
+    /// Gets or sets a value indicating whether read only.
     /// </summary>
     public bool IsReadOnly => false;
 

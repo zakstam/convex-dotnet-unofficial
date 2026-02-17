@@ -17,12 +17,12 @@ public interface IHttpClientProvider
     Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets or sets the timeout for HTTP requests.
+    /// Gets or sets the timeout.
     /// </summary>
     TimeSpan Timeout { get; set; }
 
     /// <summary>
-    /// Gets the base deployment URL for the Convex backend.
+    /// Gets the deployment url.
     /// </summary>
     string DeploymentUrl { get; }
 }

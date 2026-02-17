@@ -8,47 +8,47 @@ namespace Convex.Client.Infrastructure.ErrorHandling;
 public class ConvexErrorDetails
 {
     /// <summary>
-    /// Gets or sets the function name that failed.
+    /// Gets or sets the function name.
     /// </summary>
     public string? FunctionName { get; set; }
 
     /// <summary>
-    /// Gets or sets the request type (query, mutation, action).
+    /// Gets or sets the request type.
     /// </summary>
     public string? RequestType { get; set; }
 
     /// <summary>
-    /// Gets or sets the arguments that were passed to the function.
+    /// Gets or sets the arguments.
     /// </summary>
     public object? Arguments { get; set; }
 
     /// <summary>
-    /// Gets or sets the timestamp when the error occurred.
+    /// Gets or sets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// Gets or sets the request ID, if available.
+    /// Gets or sets the unique ID.
     /// </summary>
     public string? RequestId { get; set; }
 
     /// <summary>
-    /// Gets or sets additional error data from the server.
+    /// Gets or sets the error data.
     /// </summary>
     public JsonElement? ErrorData { get; set; }
 
     /// <summary>
-    /// Gets or sets the HTTP status code, if applicable.
+    /// Gets or sets the status code.
     /// </summary>
     public int? StatusCode { get; set; }
 
     /// <summary>
-    /// Gets or sets suggested actions to resolve the error.
+    /// Gets or sets the new.
     /// </summary>
     public List<string> Suggestions { get; set; } = new();
 
     /// <summary>
-    /// Creates error details from a ConvexException.
+    /// Creates from exception.
     /// This method should be called after the exception is fully constructed.
     /// </summary>
     /// <param name="exception">The exception to extract details from.</param>

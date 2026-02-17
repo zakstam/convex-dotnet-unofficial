@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Convex.BetterAuth.Models;
 
 /// <summary>
-/// Represents an authenticated user from Better Auth.
+/// Represents auth user.
 /// </summary>
 public class AuthUser
 {

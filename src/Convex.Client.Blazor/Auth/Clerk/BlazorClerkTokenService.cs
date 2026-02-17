@@ -23,17 +23,17 @@ public class BlazorClerkTokenService(IJSRuntime jsRuntime, IConfiguration config
     private bool _isInitializing = false;
 
     /// <summary>
-    /// Gets whether the user is currently authenticated.
+    /// Gets or sets a value indicating whether authenticated.
     /// </summary>
     public bool IsAuthenticated => _isAuthenticated;
 
     /// <summary>
-    /// Gets whether the authentication state is still loading.
+    /// Gets or sets a value indicating whether loading.
     /// </summary>
     public bool IsLoading => !_isLoaded || _isInitializing;
 
     /// <summary>
-    /// Gets the current authentication token from Clerk.
+    /// Gets token.
     /// </summary>
     public async Task<string?> GetTokenAsync(string tokenTemplate = "convex", bool skipCache = false, CancellationToken cancellationToken = default)
     {
@@ -149,7 +149,7 @@ public class BlazorClerkTokenService(IJSRuntime jsRuntime, IConfiguration config
     }
 
     /// <summary>
-    /// Updates the authentication state. Call this when Clerk authentication state changes.
+    /// Updates auth state.
     /// </summary>
     public async Task UpdateAuthStateAsync()
     {
@@ -167,7 +167,7 @@ public class BlazorClerkTokenService(IJSRuntime jsRuntime, IConfiguration config
     }
 
     /// <summary>
-    /// Gets the current user's ID from Clerk.
+    /// Gets user ID.
     /// </summary>
     public async Task<string?> GetUserIdAsync()
     {
@@ -186,7 +186,7 @@ public class BlazorClerkTokenService(IJSRuntime jsRuntime, IConfiguration config
     }
 
     /// <summary>
-    /// Gets the current user's email from Clerk.
+    /// Gets user email.
     /// </summary>
     public async Task<string?> GetUserEmailAsync()
     {
@@ -224,7 +224,7 @@ public class BlazorClerkTokenService(IJSRuntime jsRuntime, IConfiguration config
     }
 
     /// <summary>
-    /// Sets up a listener for Clerk authentication state changes.
+    /// Sets up auth state listener.
     /// </summary>
     public async Task SetupAuthStateListenerAsync<T>(DotNetObjectReference<T> dotNetHelper, string methodName) where T : class
     {

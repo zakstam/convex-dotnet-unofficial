@@ -27,7 +27,7 @@ public class ArgumentBuilder<TArgs> where TArgs : class, new()
     }
 
     /// <summary>
-    /// Sets a property value using a fluent API.
+    /// Sets the operation.
     /// </summary>
     /// <param name="setter">Action that sets the property value.</param>
     /// <returns>The builder for method chaining.</returns>
@@ -79,7 +79,7 @@ public class ArgumentBuilder<TArgs> where TArgs : class, new()
 public static class ArgumentBuilder
 {
     /// <summary>
-    /// Creates a new argument builder for the specified type.
+    /// Creates the operation.
     /// </summary>
     /// <typeparam name="TArgs">The type of arguments to build.</typeparam>
     /// <returns>A new argument builder.</returns>
@@ -97,7 +97,7 @@ public static class ArgumentBuilder
     }
 
     /// <summary>
-    /// Creates a new argument builder from existing arguments.
+    /// Creates from the operation.
     /// </summary>
     /// <typeparam name="TArgs">The type of arguments.</typeparam>
     /// <param name="args">Existing arguments to build upon.</param>

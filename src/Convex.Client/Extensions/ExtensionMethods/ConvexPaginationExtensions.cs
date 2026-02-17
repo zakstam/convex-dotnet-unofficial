@@ -8,7 +8,7 @@ namespace Convex.Client.Extensions.ExtensionMethods;
 public static class ConvexPaginationExtensions
 {
     /// <summary>
-    /// Creates a simplified paginated query builder with convention-based defaults.
+    /// Executes the paginate operation.
     /// This is the recommended entry point for pagination when your DTOs follow conventions.
     /// </summary>
     /// <typeparam name="T">
@@ -64,7 +64,7 @@ public static class ConvexPaginationExtensions
     }
 
     /// <summary>
-    /// Creates a simplified paginated query builder with convention-based defaults and arguments.
+    /// Executes the paginate operation.
     /// </summary>
     /// <typeparam name="T">The type of items being paginated.</typeparam>
     /// <typeparam name="TArgs">The type of arguments to pass to the query.</typeparam>
@@ -99,7 +99,7 @@ public static class ConvexPaginationExtensions
     }
 
     /// <summary>
-    /// Creates a paginated query and immediately initializes it with real-time subscription support.
+    /// Executes the paginate operation.
     /// This is the most concise way to start paginating when using convention-based DTOs.
     /// </summary>
     /// <typeparam name="T">The type of items being paginated (must follow ID/sort conventions).</typeparam>
@@ -143,7 +143,7 @@ public static class ConvexPaginationExtensions
     }
 
     /// <summary>
-    /// Creates a paginated query with arguments and immediately initializes it.
+    /// Executes the paginate operation.
     /// </summary>
     /// <typeparam name="T">The type of items being paginated.</typeparam>
     /// <typeparam name="TArgs">The type of arguments to pass to the query.</typeparam>

@@ -13,6 +13,9 @@ public class SourceBuilder
     private int _indentLevel;
     private readonly string _indentString;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SourceBuilder"/> class.
+    /// </summary>
     public SourceBuilder(string indentString = "    ")
     {
         _indentString = indentString;

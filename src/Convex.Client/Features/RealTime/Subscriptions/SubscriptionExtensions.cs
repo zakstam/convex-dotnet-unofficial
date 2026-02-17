@@ -19,7 +19,7 @@ public static class SubscriptionExtensions
     #region Collection Sync Extensions
 
     /// <summary>
-    /// Creates an observable list that automatically synchronizes with the observable stream.
+    /// Converts to observable list.
     /// The list will update whenever new data arrives from the server.
     /// </summary>
     /// <typeparam name="T">The type of elements in the collection.</typeparam>
@@ -132,7 +132,7 @@ public static class SubscriptionExtensions
 
     /// <summary>
     /// Synchronizes a single value observable to a mutable reference.
-    /// Updates the reference whenever the observable value changes.
+    /// Executes the sync to operation.
     /// </summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="observable">The observable providing the value.</param>

@@ -6,7 +6,7 @@ namespace Convex.Client.Infrastructure.Validation;
 /// Exception thrown when schema validation fails.
 /// </summary>
 /// <remarks>
-/// Creates a new schema validation exception.
+/// Executes the schema validation exception operation.
 /// </remarks>
 public sealed class SchemaValidationException(
     string functionName,
@@ -15,17 +15,17 @@ public sealed class SchemaValidationException(
     IReadOnlyList<string> validationErrors) : ConvexException($"Schema validation failed for '{functionName}': Expected {expectedType}, got {actualType}")
 {
     /// <summary>
-    /// Gets the function name that failed validation.
+    /// Gets the function name.
     /// </summary>
     public string FunctionName { get; } = functionName;
 
     /// <summary>
-    /// Gets the expected type name.
+    /// Gets the expected type.
     /// </summary>
     public string ExpectedType { get; } = expectedType;
 
     /// <summary>
-    /// Gets the actual type name received.
+    /// Gets the actual type.
     /// </summary>
     public string ActualType { get; } = actualType;
 
@@ -35,7 +35,7 @@ public sealed class SchemaValidationException(
     public IReadOnlyList<string> ValidationErrors { get; } = validationErrors;
 
     /// <summary>
-    /// Creates a new schema validation exception with a single error.
+    /// Initializes a new instance of the <see cref="SchemaValidationException"/> class.
     /// </summary>
     public SchemaValidationException(
         string functionName,

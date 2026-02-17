@@ -12,13 +12,13 @@ namespace Convex.Client.Extensions.Gaming.Sync;
 public class GameSyncOptions
 {
     /// <summary>
-    /// Gets or sets the batching options for high-frequency input.
+    /// Gets or sets the input batching.
     /// Set to null to disable input batching (send immediately).
     /// </summary>
     public BatchingOptions? InputBatching { get; set; }
 
     /// <summary>
-    /// Gets or sets the subscription throttle interval.
+    /// Gets or sets the subscription throttle.
     /// Server updates will be sampled at this rate.
     /// Set to null to receive all updates in real-time.
     /// </summary>
@@ -31,7 +31,7 @@ public class GameSyncOptions
     public TimeSpan? SubscriptionThrottle { get; set; }
 
     /// <summary>
-    /// Gets or sets the interpolation delay in milliseconds.
+    /// Gets or sets the interpolation delay ms.
     /// Higher values provide smoother interpolation but increase visual latency.
     /// Set to 0 to disable interpolation.
     /// </summary>
@@ -44,33 +44,33 @@ public class GameSyncOptions
     public double InterpolationDelayMs { get; set; }
 
     /// <summary>
-    /// Gets or sets whether client-side prediction is enabled.
+    /// Gets or sets a value indicating whether enable prediction.
     /// When enabled, local inputs are applied immediately and reconciled with server state.
     /// </summary>
     public bool EnablePrediction { get; set; }
 
     /// <summary>
-    /// Gets or sets the maximum extrapolation time in milliseconds.
+    /// Gets or sets the max extrapolation ms.
     /// If no server update arrives within this time, extrapolation stops.
     /// Only applies when interpolation is enabled.
     /// </summary>
     public double MaxExtrapolationMs { get; set; } = 250;
 
     /// <summary>
-    /// Gets or sets the maximum number of pending inputs to keep for reconciliation.
+    /// Gets or sets the max pending inputs.
     /// Only applies when prediction is enabled.
     /// </summary>
     public int MaxPendingInputs { get; set; } = 60;
 
     /// <summary>
-    /// Creates a new instance with default settings (no optimizations).
+    /// Initializes a new instance of the <see cref="GameSyncOptions"/> class.
     /// </summary>
     public GameSyncOptions()
     {
     }
 
     /// <summary>
-    /// Creates a copy of the specified options.
+    /// Initializes a new instance of the <see cref="GameSyncOptions"/> class.
     /// </summary>
     /// <param name="other">The options to copy.</param>
     public GameSyncOptions(GameSyncOptions other)

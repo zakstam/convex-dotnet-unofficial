@@ -16,7 +16,7 @@ public static class ConvexTestingExtensions
     #region Mock Client Builder
 
     /// <summary>
-    /// Creates a mock Convex client with controllable observables for testing.
+    /// Creates mock client.
     /// </summary>
     /// <param name="configure">Action to configure the mock client.</param>
     /// <returns>A configured mock Convex client.</returns>
@@ -213,7 +213,7 @@ public static class ConvexTestingExtensions
 }
 
 /// <summary>
-/// Represents a recorded observable that captures all emissions for testing.
+/// Represents recorded observable t.
 /// </summary>
 /// <typeparam name="T">The type of values emitted.</typeparam>
 public class RecordedObservable<T>
@@ -222,22 +222,22 @@ public class RecordedObservable<T>
     private readonly List<Exception> _errors = [];
 
     /// <summary>
-    /// Gets all values that have been emitted.
+    /// Gets the values.
     /// </summary>
     public IReadOnlyList<T> Values => _values;
 
     /// <summary>
-    /// Gets all errors that have been emitted.
+    /// Gets the errors.
     /// </summary>
     public IReadOnlyList<Exception> Errors => _errors;
 
     /// <summary>
-    /// Gets whether the observable has completed.
+    /// Gets or sets a value indicating whether completed.
     /// </summary>
     public bool Completed { get; private set; }
 
     /// <summary>
-    /// Gets the last emitted value, or default(T) if no values have been emitted.
+    /// Gets the last or default.
     /// </summary>
     public T? LastValue => _values.LastOrDefault();
 
@@ -266,7 +266,7 @@ public class MockConvexClientBuilder
     private ConnectionQuality _connectionQuality = ConnectionQuality.Good;
 
     /// <summary>
-    /// Sets up a query to return a specific response.
+    /// Sets up query.
     /// </summary>
     /// <typeparam name="TResult">The type of the query result.</typeparam>
     /// <param name="functionName">The name of the query function.</param>
@@ -279,7 +279,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets up a query to throw a specific exception.
+    /// Sets up query exception.
     /// </summary>
     /// <param name="functionName">The name of the query function.</param>
     /// <param name="exception">The exception to throw.</param>
@@ -291,7 +291,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets up a mutation to return a specific response.
+    /// Sets up mutation.
     /// </summary>
     /// <typeparam name="TResult">The type of the mutation result.</typeparam>
     /// <param name="functionName">The name of the mutation function.</param>
@@ -304,7 +304,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets up a mutation to throw a specific exception.
+    /// Sets up mutation exception.
     /// </summary>
     /// <param name="functionName">The name of the mutation function.</param>
     /// <param name="exception">The exception to throw.</param>
@@ -316,7 +316,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets up an action to return a specific response.
+    /// Sets up action.
     /// </summary>
     /// <typeparam name="TResult">The type of the action result.</typeparam>
     /// <param name="functionName">The name of the action function.</param>
@@ -329,7 +329,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets up an action to throw a specific exception.
+    /// Sets up action exception.
     /// </summary>
     /// <param name="functionName">The name of the action function.</param>
     /// <param name="exception">The exception to throw.</param>
@@ -341,7 +341,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets the mock connection state.
+    /// Sets up connection state.
     /// </summary>
     /// <param name="state">The connection state to simulate.</param>
     /// <returns>This builder instance for method chaining.</returns>
@@ -352,7 +352,7 @@ public class MockConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets the mock connection quality.
+    /// Sets up connection quality.
     /// </summary>
     /// <param name="quality">The connection quality to simulate.</param>
     /// <returns>This builder instance for method chaining.</returns>

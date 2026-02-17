@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Convex.Client.Extensions.Gaming.Sync;
 
 /// <summary>
-/// Represents a timestamped input with a unique sequence ID for reconciliation.
+/// Executes the timestamped input operation.
 /// </summary>
 /// <typeparam name="TInput">The input type.</typeparam>
 /// <param name="SequenceId">The unique sequence ID for this input.</param>
@@ -151,7 +151,7 @@ public sealed class PredictedState<TState, TInput>
     }
 
     /// <summary>
-    /// Gets or sets whether prediction is enabled.
+    /// Gets or sets a value indicating whether enabled.
     /// When disabled, inputs are not applied locally and <see cref="CurrentState"/>
     /// returns the confirmed state.
     /// </summary>

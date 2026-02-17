@@ -8,17 +8,17 @@ namespace Convex.Client.Infrastructure.Resilience;
 public interface ICircuitBreakerPolicy
 {
     /// <summary>
-    /// Gets the failure threshold before opening the circuit.
+    /// Gets the failure threshold.
     /// </summary>
     int FailureThreshold { get; }
 
     /// <summary>
-    /// Gets the duration to keep the circuit open.
+    /// Gets the break duration.
     /// </summary>
     TimeSpan BreakDuration { get; }
 
     /// <summary>
-    /// Gets the current circuit breaker state.
+    /// Gets the state.
     /// </summary>
     CircuitBreakerState State { get; }
 
@@ -56,17 +56,17 @@ public class CircuitBreakerPolicy(int failureThreshold = 5, TimeSpan? breakDurat
     private CircuitBreakerState _state = CircuitBreakerState.Closed;
 
     /// <summary>
-    /// Gets the failure threshold before opening the circuit.
+    /// Gets the failure threshold.
     /// </summary>
     public int FailureThreshold { get; } = failureThreshold;
 
     /// <summary>
-    /// Gets the duration to keep the circuit open.
+    /// Gets the from seconds.
     /// </summary>
     public TimeSpan BreakDuration { get; } = breakDuration ?? TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Gets the current circuit breaker state.
+    /// Gets the state.
     /// </summary>
     public CircuitBreakerState State => _state;
 
@@ -146,7 +146,7 @@ public class CircuitBreakerPolicy(int failureThreshold = 5, TimeSpan? breakDurat
 public interface IReconnectPolicy
 {
     /// <summary>
-    /// Gets the delay before the next reconnection attempt.
+    /// Gets reconnect delay.
     /// </summary>
     /// <param name="attemptNumber">The current attempt number (starting from 1).</param>
     /// <returns>The delay before reconnecting, or null to stop reconnecting.</returns>

@@ -41,34 +41,34 @@ public interface IConvexHealth
     void RecordError(Exception error);
 
     /// <summary>
-    /// Gets the average latency from recent samples.
+    /// Gets average latency.
     /// Returns null if no samples are available.
     /// </summary>
     double? GetAverageLatency();
 
     /// <summary>
-    /// Gets the number of messages received.
+    /// Gets messages received.
     /// </summary>
     long GetMessagesReceived();
 
     /// <summary>
-    /// Gets the number of messages sent.
+    /// Gets messages sent.
     /// </summary>
     long GetMessagesSent();
 
     /// <summary>
-    /// Gets the reconnection count.
+    /// Gets reconnection count.
     /// </summary>
     int GetReconnectionCount();
 
     /// <summary>
-    /// Gets the time since the last message was received.
+    /// Gets time since last message.
     /// Returns null if no messages have been received yet.
     /// </summary>
     TimeSpan? GetTimeSinceLastMessage();
 
     /// <summary>
-    /// Gets the time since the connection was established.
+    /// Gets connection uptime.
     /// Returns null if never connected.
     /// </summary>
     TimeSpan? GetConnectionUptime();
@@ -84,7 +84,7 @@ public interface IConvexHealth
     void Reset();
 
     /// <summary>
-    /// Creates a health check based on current metrics.
+    /// Creates health check.
     /// </summary>
     /// <param name="connectionState">The current connection state.</param>
     /// <param name="activeSubscriptions">The number of active subscriptions.</param>
@@ -93,7 +93,7 @@ public interface IConvexHealth
 }
 
 /// <summary>
-/// Represents the overall health status of a Convex client connection.
+/// Defines the convex health status values.
 /// </summary>
 public enum ConvexHealthStatus
 {
@@ -127,7 +127,7 @@ public enum ConvexHealthStatus
 /// Includes connection status, performance metrics, and diagnostic data.
 /// </summary>
 /// <remarks>
-/// Creates a new health check result.
+/// Executes the convex health check operation.
 /// </remarks>
 public sealed class ConvexHealthCheck(
     ConvexHealthStatus status,
@@ -143,65 +143,65 @@ public sealed class ConvexHealthCheck(
     IReadOnlyDictionary<string, object>? additionalData = null)
 {
     /// <summary>
-    /// Gets the overall health status of the connection.
+    /// Gets the status.
     /// </summary>
     public ConvexHealthStatus Status { get; } = status;
 
     /// <summary>
-    /// Gets a human-readable description of the current health status.
+    /// Gets the description.
     /// </summary>
     public string Description { get; } = description;
 
     /// <summary>
-    /// Gets the timestamp when this health check was performed.
+    /// Gets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// Gets the current connection state.
+    /// Gets the connection state.
     /// </summary>
     public ConnectionState ConnectionState { get; } = connectionState;
 
     /// <summary>
-    /// Gets the average latency in milliseconds over the recent measurement window.
+    /// Gets the average latency ms.
     /// Returns null if insufficient data is available.
     /// </summary>
     public double? AverageLatencyMs { get; } = averageLatencyMs;
 
     /// <summary>
-    /// Gets the number of active subscriptions.
+    /// Gets the active subscriptions.
     /// </summary>
     public int ActiveSubscriptions { get; } = activeSubscriptions;
 
     /// <summary>
-    /// Gets the number of times the connection has been re-established.
+    /// Gets the reconnection count.
     /// </summary>
     public int ReconnectionCount { get; } = reconnectionCount;
 
     /// <summary>
-    /// Gets the total number of messages received from the server.
+    /// Gets the messages received.
     /// </summary>
     public long MessagesReceived { get; } = messagesReceived;
 
     /// <summary>
-    /// Gets the total number of messages sent to the server.
+    /// Gets the messages sent.
     /// </summary>
     public long MessagesSent { get; } = messagesSent;
 
     /// <summary>
-    /// Gets the time elapsed since the last successful message was received.
+    /// Gets the time since last message.
     /// Returns null if no messages have been received yet.
     /// </summary>
     public TimeSpan? TimeSinceLastMessage { get; } = timeSinceLastMessage;
 
     /// <summary>
-    /// Gets any errors that have occurred recently.
+    /// Gets the recent errors.
     /// Returns an empty collection if no recent errors.
     /// </summary>
     public IReadOnlyList<Exception> RecentErrors { get; } = recentErrors ?? [];
 
     /// <summary>
-    /// Gets additional diagnostic data as key-value pairs.
+    /// Gets the dictionary.
     /// </summary>
     public IReadOnlyDictionary<string, object> AdditionalData { get; } = additionalData ?? new Dictionary<string, object>();
 

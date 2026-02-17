@@ -5,32 +5,80 @@ using System.Collections.Generic;
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents the kind of Convex validator.
+/// Defines the validator kind values.
 /// </summary>
 public enum ValidatorKind
 {
+    /// <summary>
+    /// Specifies the string option.
+    /// </summary>
     String,
+    /// <summary>
+    /// Specifies the number option.
+    /// </summary>
     Number,
+    /// <summary>
+    /// Specifies the float 64 option.
+    /// </summary>
     Float64,
+    /// <summary>
+    /// Specifies the int 64 option.
+    /// </summary>
     Int64,
+    /// <summary>
+    /// Specifies the boolean option.
+    /// </summary>
     Boolean,
+    /// <summary>
+    /// Specifies the bytes option.
+    /// </summary>
     Bytes,
+    /// <summary>
+    /// Specifies the null option.
+    /// </summary>
     Null,
+    /// <summary>
+    /// Specifies the any option.
+    /// </summary>
     Any,
+    /// <summary>
+    /// Specifies the ID option.
+    /// </summary>
     Id,
+    /// <summary>
+    /// Specifies the literal option.
+    /// </summary>
     Literal,
+    /// <summary>
+    /// Specifies the array option.
+    /// </summary>
     Array,
+    /// <summary>
+    /// Specifies the object option.
+    /// </summary>
     Object,
+    /// <summary>
+    /// Specifies the optional option.
+    /// </summary>
     Optional,
+    /// <summary>
+    /// Specifies the union option.
+    /// </summary>
     Union,
+    /// <summary>
+    /// Represents record.
+    /// </summary>
     Record
 }
 
 /// <summary>
-/// Represents a Convex validator type parsed from TypeScript files.
+/// Represents validator type.
 /// </summary>
 public class ValidatorType
 {
+    /// <summary>
+    /// Gets or sets the kind.
+    /// </summary>
     public ValidatorKind Kind { get; set; }
 
     /// <summary>
@@ -74,42 +122,42 @@ public class ValidatorType
     public ValidatorType? ValueType { get; set; }
 
     /// <summary>
-    /// Creates a simple validator type.
+    /// Gets the simple.
     /// </summary>
     public static ValidatorType Simple(ValidatorKind kind) => new() { Kind = kind };
 
     /// <summary>
-    /// Creates an Id validator type.
+    /// Gets the unique ID.
     /// </summary>
     public static ValidatorType Id(string tableName) => new() { Kind = ValidatorKind.Id, TableName = tableName };
 
     /// <summary>
-    /// Creates a Literal validator type.
+    /// Gets the literal.
     /// </summary>
     public static ValidatorType Literal(string value) => new() { Kind = ValidatorKind.Literal, LiteralValue = value };
 
     /// <summary>
-    /// Creates an Array validator type.
+    /// Gets the array.
     /// </summary>
     public static ValidatorType Array(ValidatorType elementType) => new() { Kind = ValidatorKind.Array, ElementType = elementType };
 
     /// <summary>
-    /// Creates an Object validator type.
+    /// Gets the object.
     /// </summary>
     public static ValidatorType Object(List<FieldDefinition> fields) => new() { Kind = ValidatorKind.Object, Fields = fields };
 
     /// <summary>
-    /// Creates an Optional validator type.
+    /// Gets the optional.
     /// </summary>
     public static ValidatorType Optional(ValidatorType innerType) => new() { Kind = ValidatorKind.Optional, InnerType = innerType };
 
     /// <summary>
-    /// Creates a Union validator type.
+    /// Gets the union.
     /// </summary>
     public static ValidatorType Union(List<ValidatorType> members) => new() { Kind = ValidatorKind.Union, UnionMembers = members };
 
     /// <summary>
-    /// Creates a Record validator type.
+    /// Gets the record.
     /// </summary>
     public static ValidatorType Record(ValidatorType keyType, ValidatorType valueType) =>
         new() { Kind = ValidatorKind.Record, KeyType = keyType, ValueType = valueType };

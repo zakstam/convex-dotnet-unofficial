@@ -12,33 +12,33 @@ public sealed class ReconnectionPolicy
     private int _attemptCount;
 
     /// <summary>
-    /// Gets or sets the maximum number of reconnection attempts.
+    /// Gets or sets the max attempts.
     /// Set to -1 for unlimited attempts.
     /// </summary>
     public int MaxAttempts { get; set; } = 5;
 
     /// <summary>
-    /// Gets or sets the base delay for reconnection attempts.
+    /// Gets or sets the from seconds.
     /// </summary>
     public TimeSpan BaseDelay { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <summary>
-    /// Gets or sets the maximum delay between reconnection attempts.
+    /// Gets or sets the from seconds.
     /// </summary>
     public TimeSpan MaxDelay { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Gets or sets whether to use exponential backoff.
+    /// Gets or sets a value indicating whether use exponential backoff.
     /// </summary>
     public bool UseExponentialBackoff { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to add jitter to retry delays.
+    /// Gets or sets a value indicating whether use jitter.
     /// </summary>
     public bool UseJitter { get; set; } = true;
 
     /// <summary>
-    /// Gets the current attempt count.
+    /// Gets the attempt count.
     /// </summary>
     public int AttemptCount => _attemptCount;
 
@@ -57,7 +57,7 @@ public sealed class ReconnectionPolicy
     }
 
     /// <summary>
-    /// Gets the delay to wait before the next reconnection attempt.
+    /// Gets next delay.
     /// </summary>
     /// <returns>The delay duration.</returns>
     public TimeSpan GetNextDelay()
@@ -98,7 +98,7 @@ public sealed class ReconnectionPolicy
     public void Reset() => _attemptCount = 0;
 
     /// <summary>
-    /// Creates a default reconnection policy.
+    /// Gets the default.
     /// </summary>
     public static ReconnectionPolicy Default() => new()
     {
@@ -110,7 +110,7 @@ public sealed class ReconnectionPolicy
     };
 
     /// <summary>
-    /// Creates a reconnection policy with unlimited attempts.
+    /// Gets the unlimited.
     /// </summary>
     public static ReconnectionPolicy Unlimited() => new()
     {
@@ -122,7 +122,7 @@ public sealed class ReconnectionPolicy
     };
 
     /// <summary>
-    /// Creates a reconnection policy with no reconnection.
+    /// Gets the none.
     /// </summary>
     public static ReconnectionPolicy None() => new()
     {

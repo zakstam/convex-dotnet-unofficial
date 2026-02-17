@@ -19,5 +19,8 @@ public class PaginationSlice(
     private readonly ILogger? _logger = logger;
     private readonly bool _enableDebugLogging = enableDebugLogging;
 
+    /// <summary>
+    /// Gets the query.
+    /// </summary>
     public IPaginationBuilder<T> Query<T>(string functionName) => new PaginationBuilder<T>(_httpProvider, _serializer, functionName, _logger, _enableDebugLogging);
 }

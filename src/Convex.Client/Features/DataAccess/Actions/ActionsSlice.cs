@@ -28,7 +28,7 @@ public class ActionsSlice(
     private readonly bool _enableDebugLogging = enableDebugLogging;
 
     /// <summary>
-    /// Creates an action builder for the specified Convex function.
+    /// Executes the action operation.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the action.</typeparam>
     /// <param name="functionName">The name of the Convex action to execute.</param>

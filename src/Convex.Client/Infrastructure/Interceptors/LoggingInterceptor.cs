@@ -7,7 +7,7 @@ namespace Convex.Client.Infrastructure.Interceptors;
 /// Useful for debugging and monitoring Convex operations.
 /// </summary>
 /// <remarks>
-/// Creates a new logging interceptor with the specified logger.
+/// Executes the logging interceptor operation.
 /// </remarks>
 /// <param name="logger">The logger to use for logging.</param>
 /// <param name="requestLogLevel">Log level for requests (default: Information).</param>

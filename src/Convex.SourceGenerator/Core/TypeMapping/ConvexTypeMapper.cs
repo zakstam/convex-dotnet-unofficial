@@ -39,7 +39,7 @@ public class TypeMappingContext
     public string? FieldName { get; set; }
 
     /// <summary>
-    /// Creates a new context with updated parent/field names.
+    /// Configures field.
     /// </summary>
     public TypeMappingContext WithField(string? parentName, string? fieldName)
     {

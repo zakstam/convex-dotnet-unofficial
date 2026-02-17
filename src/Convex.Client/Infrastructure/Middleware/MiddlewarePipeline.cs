@@ -114,7 +114,7 @@ internal sealed class MiddlewarePipeline(ILogger? logger = null, bool enableDebu
     }
 
     /// <summary>
-    /// Gets the number of middleware in the pipeline.
+    /// Gets the count.
     /// </summary>
     public int Count => _middleware.Count;
 

@@ -8,17 +8,17 @@ namespace Convex.BetterAuth;
 public interface IBetterAuthService
 {
     /// <summary>
-    /// Gets the currently authenticated user, or null if not authenticated.
+    /// Gets the current user.
     /// </summary>
     AuthUser? CurrentUser { get; }
 
     /// <summary>
-    /// Gets the current session, or null if not authenticated.
+    /// Gets the current session.
     /// </summary>
     AuthSession? CurrentSession { get; }
 
     /// <summary>
-    /// Gets whether a user is currently authenticated.
+    /// Gets or sets a value indicating whether authenticated.
     /// </summary>
     bool IsAuthenticated { get; }
 
@@ -75,20 +75,20 @@ public interface IBetterAuthService
     Task SignOutAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Attempts to restore a session from storage.
+    /// Attempts to restore session.
     /// Call this on application startup to restore existing sessions.
     /// </summary>
     Task TryRestoreSessionAsync();
 
     /// <summary>
-    /// Attempts to restore a session from storage.
+    /// Attempts to restore session.
     /// Call this on application startup to restore existing sessions.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task TryRestoreSessionAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets the current session token for use with authenticated requests.
+    /// Gets session token.
     /// </summary>
     /// <returns>The session token, or null if not authenticated.</returns>
     string? GetSessionToken();

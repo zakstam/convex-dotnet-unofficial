@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents an index definition on a Convex table.
+/// Represents index definition.
 /// </summary>
 public class IndexDefinition
 {

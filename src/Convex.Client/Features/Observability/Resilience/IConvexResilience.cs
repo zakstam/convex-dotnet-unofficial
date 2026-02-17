@@ -9,12 +9,12 @@ namespace Convex.Client.Features.Observability.Resilience;
 public interface IConvexResilience
 {
     /// <summary>
-    /// Gets or sets the retry policy for failed operations.
+    /// Gets or sets the retry policy.
     /// </summary>
     RetryPolicy? RetryPolicy { get; set; }
 
     /// <summary>
-    /// Gets or sets the circuit breaker policy for preventing cascade failures.
+    /// Gets or sets the circuit breaker policy.
     /// </summary>
     ICircuitBreakerPolicy? CircuitBreakerPolicy { get; set; }
 

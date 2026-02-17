@@ -209,7 +209,7 @@ public class ArgumentBuilder
     public bool Contains(string name) => _arguments.ContainsKey(name);
 
     /// <summary>
-    /// Gets the number of arguments in the builder.
+    /// Gets the count.
     /// </summary>
     public int Count => _arguments.Count;
 
@@ -237,13 +237,13 @@ public class ArgumentBuilder
     }
 
     /// <summary>
-    /// Creates a new ArgumentBuilder instance.
+    /// Gets the create.
     /// </summary>
     /// <returns>A new ArgumentBuilder instance.</returns>
     public static ArgumentBuilder Create() => new();
 
     /// <summary>
-    /// Creates a new ArgumentBuilder with a single argument.
+    /// Gets the with.
     /// </summary>
     /// <param name="name">The argument name.</param>
     /// <param name="value">The argument value.</param>

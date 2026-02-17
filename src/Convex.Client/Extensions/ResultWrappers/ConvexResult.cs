@@ -3,7 +3,7 @@ using Convex.Client.Infrastructure.ErrorHandling;
 namespace Convex.Client.Extensions.ResultWrappers;
 
 /// <summary>
-/// Represents the result of a Convex operation that may succeed or fail.
+/// Represents convex result t.
 /// Provides a type-safe alternative to exception handling for expected error conditions.
 /// </summary>
 /// <typeparam name="T">The type of the result value on success.</typeparam>
@@ -20,12 +20,12 @@ public record ConvexResult<T>
     }
 
     /// <summary>
-    /// Gets a value indicating whether the operation was successful.
+    /// Gets or sets a value indicating whether success.
     /// </summary>
     public bool IsSuccess { get; }
 
     /// <summary>
-    /// Gets a value indicating whether the operation failed.
+    /// Gets or sets a value indicating whether failure.
     /// </summary>
     public bool IsFailure => !IsSuccess;
 
@@ -45,13 +45,13 @@ public record ConvexResult<T>
     }
 
     /// <summary>
-    /// Gets the error exception if the operation failed.
+    /// Gets the invalid operation exception.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when accessing Error on a successful result.</exception>
     public Exception Error => IsSuccess ? throw new InvalidOperationException("Cannot access Error on a successful result.") : _error!;
 
     /// <summary>
-    /// Gets the error message if the operation failed, or null if successful.
+    /// Gets the error message.
     /// </summary>
     public string? ErrorMessage => _error?.Message;
 
@@ -93,14 +93,14 @@ public record ConvexResult<T>
     }
 
     /// <summary>
-    /// Gets the value if successful, or the specified default value if failed.
+    /// Gets the get value or default.
     /// </summary>
     /// <param name="defaultValue">The default value to return on failure.</param>
     /// <returns>The result value or default value.</returns>
     public T GetValueOrDefault(T defaultValue) => IsSuccess ? _value! : defaultValue;
 
     /// <summary>
-    /// Gets the value if successful, or computes a default value if failed.
+    /// Gets the get value or default.
     /// </summary>
     /// <param name="defaultValueFactory">Function to compute the default value on failure.</param>
     /// <returns>The result value or computed default value.</returns>
@@ -194,7 +194,7 @@ public record ConvexResult<T>
     public static ConvexResult<T> Success(T value) => new(value, null, true);
 
     /// <summary>
-    /// Creates a failed result with the specified error.
+    /// Gets the failure.
     /// </summary>
     /// <param name="error">The error exception.</param>
     /// <returns>A failed result.</returns>
@@ -205,7 +205,7 @@ public record ConvexResult<T>
 
 
     /// <summary>
-    /// Creates a failed result with the specified error message.
+    /// Gets the failure.
     /// </summary>
     /// <param name="errorMessage">The error message.</param>
     /// <returns>A failed result.</returns>
@@ -224,7 +224,7 @@ public record ConvexResult<T>
 }
 
 /// <summary>
-/// Represents a result without a value (for operations that don't return data).
+/// Represents convex result.
 /// </summary>
 public record ConvexResult
 {
@@ -237,23 +237,23 @@ public record ConvexResult
     }
 
     /// <summary>
-    /// Gets a value indicating whether the operation was successful.
+    /// Gets or sets a value indicating whether success.
     /// </summary>
     public bool IsSuccess { get; }
 
     /// <summary>
-    /// Gets a value indicating whether the operation failed.
+    /// Gets or sets a value indicating whether failure.
     /// </summary>
     public bool IsFailure => !IsSuccess;
 
     /// <summary>
-    /// Gets the error exception if the operation failed.
+    /// Gets the invalid operation exception.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when accessing Error on a successful result.</exception>
     public Exception Error => IsSuccess ? throw new InvalidOperationException("Cannot access Error on a successful result.") : _error!;
 
     /// <summary>
-    /// Gets the error message if the operation failed, or null if successful.
+    /// Gets the error message.
     /// </summary>
     public string? ErrorMessage => _error?.Message;
 
@@ -319,12 +319,12 @@ public record ConvexResult
     }
 
     /// <summary>
-    /// Creates a successful result.
+    /// Gets the success.
     /// </summary>
     public static ConvexResult Success() => new(null, true);
 
     /// <summary>
-    /// Creates a failed result with the specified error.
+    /// Gets the failure.
     /// </summary>
     /// <param name="error">The error exception.</param>
     /// <returns>A failed result.</returns>
@@ -335,7 +335,7 @@ public record ConvexResult
 
 
     /// <summary>
-    /// Creates a failed result with the specified error message.
+    /// Gets the failure.
     /// </summary>
     /// <param name="errorMessage">The error message.</param>
     /// <returns>A failed result.</returns>

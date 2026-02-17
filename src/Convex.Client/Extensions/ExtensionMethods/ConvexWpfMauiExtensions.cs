@@ -132,7 +132,7 @@ public static class ConvexWpfMauiExtensions
     #region Collection Binding
 
     /// <summary>
-    /// Creates an ObservableCollection that automatically synchronizes with the observable stream.
+    /// Converts to observable collection.
     /// </summary>
     /// <typeparam name="T">The type of elements in the collection.</typeparam>
     /// <param name="source">The observable providing collection data.</param>

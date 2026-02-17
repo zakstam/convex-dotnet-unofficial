@@ -45,12 +45,12 @@ namespace Convex.Client.Features.Security.Authentication;
 public interface IConvexAuthentication
 {
     /// <summary>
-    /// Gets the current authentication state.
+    /// Gets the authentication state.
     /// </summary>
     AuthenticationState AuthenticationState { get; }
 
     /// <summary>
-    /// Gets the current authentication token if set.
+    /// Gets the current auth token.
     /// </summary>
     string? CurrentAuthToken { get; }
 
@@ -60,7 +60,7 @@ public interface IConvexAuthentication
     event EventHandler<AuthenticationStateChangedEventArgs>? AuthenticationStateChanged;
 
     /// <summary>
-    /// Sets the authentication token for this client.
+    /// Sets auth token.
     /// Use this for simple authentication scenarios where you have a static JWT token.
     /// For automatic token refresh, use <see cref="SetAuthTokenProviderAsync(IAuthTokenProvider, CancellationToken)"/> instead.
     /// </summary>
@@ -89,7 +89,7 @@ public interface IConvexAuthentication
     Task SetAuthTokenAsync(string token, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets the admin authentication key for this client.
+    /// Sets admin auth.
     /// Admin keys provide privileged access and should only be used in server-side applications.
     /// Never expose admin keys in client applications or browser code.
     /// </summary>
@@ -124,7 +124,7 @@ public interface IConvexAuthentication
     Task SetAdminAuthAsync(string adminKey, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets an authentication token provider for automatic token management.
+    /// Sets auth token provider.
     /// The provider will be called whenever a token is needed, allowing for automatic token refresh.
     /// This is the recommended approach for applications that need to handle token expiration.
     /// </summary>
@@ -176,14 +176,14 @@ public interface IConvexAuthentication
     Task ClearAuthAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the current authentication token, fetching from provider if necessary.
+    /// Gets auth token.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The authentication token or null if not authenticated.</returns>
     Task<string?> GetAuthTokenAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets authentication headers to include in HTTP requests.
+    /// Gets auth headers.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Dictionary of authentication headers.</returns>
@@ -222,12 +222,12 @@ public enum AuthenticationState
 public class AuthenticationStateChangedEventArgs(AuthenticationState state, string? errorMessage = null) : EventArgs
 {
     /// <summary>
-    /// Gets the new authentication state.
+    /// Gets the state.
     /// </summary>
     public AuthenticationState State { get; } = state;
 
     /// <summary>
-    /// Gets the optional error message if authentication failed.
+    /// Gets the error message.
     /// </summary>
     public string? ErrorMessage { get; } = errorMessage;
 }

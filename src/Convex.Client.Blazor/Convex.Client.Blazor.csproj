@@ -6,9 +6,10 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;RS0037;RS0016;RS0017</NoWarn>
+    <NoWarn>$(NoWarn);RS0037;RS0016;RS0017</NoWarn>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <BasePackageId>Convex.Client.Blazor</BasePackageId>
     <Product>Convex .NET Client - Blazor Extensions</Product>
     <Description>Blazor WebAssembly and Server extensions for Convex .NET Client. Includes StateHasChanged integration, Clerk authentication with automatic JavaScript injection, and Blazor-specific helpers.</Description>

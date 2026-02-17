@@ -8,7 +8,7 @@ namespace Convex.Client.Extensions.Testing;
 public static class ConvexTestHelpers
 {
     /// <summary>
-    /// Creates a mock Convex timestamp for a specific date/time (useful for testing).
+    /// Gets the create timestamp.
     /// </summary>
     /// <param name="year">Year</param>
     /// <param name="month">Month</param>
@@ -20,13 +20,13 @@ public static class ConvexTestHelpers
     public static double CreateTimestamp(int year, int month, int day, int hour = 0, int minute = 0, int second = 0) => TimestampConverter.FromDateComponents(year, month, day, hour, minute, second);
 
     /// <summary>
-    /// Creates a mock Convex timestamp for "now" (useful for consistent testing).
+    /// Gets the create now.
     /// </summary>
     /// <returns>Current timestamp.</returns>
     public static double CreateNow() => TimestampConverter.Now();
 
     /// <summary>
-    /// Creates a mock Convex timestamp for a date relative to now.
+    /// Creates relative timestamp.
     /// </summary>
     /// <param name="daysFromNow">Number of days from now (can be negative for past dates).</param>
     /// <returns>Convex timestamp.</returns>
@@ -56,7 +56,7 @@ public static class ConvexTestHelpers
     public static string[] GenerateMockIds(int count, string tableName = "test") => [.. Enumerable.Range(0, count).Select(_ => GenerateMockId(tableName))];
 
     /// <summary>
-    /// Creates a test pagination result.
+    /// Creates pagination result.
     /// </summary>
     /// <typeparam name="T">The type of items in the page.</typeparam>
     /// <param name="items">Items for this page.</param>
@@ -74,7 +74,7 @@ public static class ConvexTestHelpers
     }
 
     /// <summary>
-    /// Creates test data with specified count using a factory function.
+    /// Gets the create test data.
     /// </summary>
     /// <typeparam name="T">Type of items to create.</typeparam>
     /// <param name="count">Number of items to create.</param>
@@ -90,7 +90,7 @@ public static class ConvexTestHelpers
     public static Task SimulateDelayAsync(int milliseconds, CancellationToken cancellationToken = default) => Task.Delay(milliseconds, cancellationToken);
 
     /// <summary>
-    /// Creates a cancellation token that will cancel after a specified delay (useful for timeout testing).
+    /// Creates timeout token.
     /// </summary>
     /// <param name="milliseconds">Delay before cancellation.</param>
     /// <returns>Cancellation token source.</returns>
@@ -123,7 +123,7 @@ public static class ConvexTestHelpers
     }
 
     /// <summary>
-    /// Creates a mock error response (useful for testing error handling).
+    /// Creates error response.
     /// </summary>
     /// <param name="message">Error message.</param>
     /// <param name="code">Error code (optional).</param>

@@ -88,7 +88,7 @@ public static class JsonElementExtensions
     }
 
     /// <summary>
-    /// Gets a property value as a string, returning null if the property doesn't exist or is null.
+    /// Gets string property.
     /// </summary>
     /// <param name="element">The JsonElement to get the property from.</param>
     /// <param name="propertyName">The name of the property to get.</param>
@@ -107,7 +107,7 @@ public static class JsonElementExtensions
     }
 
     /// <summary>
-    /// Gets a property value as an integer, returning null if the property doesn't exist or is null.
+    /// Gets int 32 property.
     /// </summary>
     /// <param name="element">The JsonElement to get the property from.</param>
     /// <param name="propertyName">The name of the property to get.</param>
@@ -143,7 +143,7 @@ public static class JsonElementExtensions
     }
 
     /// <summary>
-    /// Gets a property value as a boolean, returning null if the property doesn't exist or is null.
+    /// Gets boolean property.
     /// </summary>
     /// <param name="element">The JsonElement to get the property from.</param>
     /// <param name="propertyName">The name of the property to get.</param>

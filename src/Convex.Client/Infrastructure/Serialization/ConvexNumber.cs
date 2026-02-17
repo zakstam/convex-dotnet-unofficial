@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Convex.Client.Infrastructure.Serialization;
 
 /// <summary>
-/// Represents a Convex number type that can safely handle JavaScript/TypeScript number values.
+/// Executes the convex number operation.
 /// Convex stores all numbers as IEEE 754 doubles internally (same as JavaScript),
 /// so this type provides a safe wrapper with implicit conversions to/from C# numeric types.
 /// </summary>
@@ -45,33 +45,69 @@ public readonly struct ConvexNumber(double value) : IEquatable<ConvexNumber>, IC
     private readonly double _value = value;
 
     /// <summary>
-    /// Gets the value as a double (the native Convex number type).
+    /// Gets the value.
     /// </summary>
     public double Value => _value;
 
     #region Implicit Conversions FROM C# types TO ConvexNumber
 
+    /// <summary>
+    /// Gets the operator convex number.
+    /// </summary>
     public static implicit operator ConvexNumber(int value) => new(value);
+    /// <summary>
+    /// Gets the operator convex number.
+    /// </summary>
     public static implicit operator ConvexNumber(long value) => new(value);
+    /// <summary>
+    /// Gets the operator convex number.
+    /// </summary>
     public static implicit operator ConvexNumber(double value) => new(value);
+    /// <summary>
+    /// Gets the operator convex number.
+    /// </summary>
     public static implicit operator ConvexNumber(float value) => new(value);
+    /// <summary>
+    /// Gets the operator convex number.
+    /// </summary>
     public static implicit operator ConvexNumber(decimal value) => new((double)value);
 
     #endregion
 
     #region Implicit Conversions FROM ConvexNumber TO C# types
 
+    /// <summary>
+    /// Gets the operator double.
+    /// </summary>
     public static implicit operator double(ConvexNumber number) => number._value;
+    /// <summary>
+    /// Gets the operator float.
+    /// </summary>
     public static implicit operator float(ConvexNumber number) => (float)number._value;
+    /// <summary>
+    /// Gets the operator decimal.
+    /// </summary>
     public static implicit operator decimal(ConvexNumber number) => (decimal)number._value;
 
     #endregion
 
     #region Explicit Conversions (for integer types to prevent accidental truncation)
 
+    /// <summary>
+    /// Gets the operator int.
+    /// </summary>
     public static explicit operator int(ConvexNumber number) => (int)number._value;
+    /// <summary>
+    /// Gets the operator long.
+    /// </summary>
     public static explicit operator long(ConvexNumber number) => (long)number._value;
+    /// <summary>
+    /// Gets the operator short.
+    /// </summary>
     public static explicit operator short(ConvexNumber number) => (short)number._value;
+    /// <summary>
+    /// Gets the operator byte.
+    /// </summary>
     public static explicit operator byte(ConvexNumber number) => (byte)number._value;
 
     #endregion
@@ -91,19 +127,19 @@ public readonly struct ConvexNumber(double value) : IEquatable<ConvexNumber>, IC
     public long AsInt64() => (long)_value;
 
     /// <summary>
-    /// Gets the number as a double (the native representation).
+    /// Gets the as double.
     /// </summary>
     /// <returns>The value as a double.</returns>
     public double AsDouble() => _value;
 
     /// <summary>
-    /// Gets the number as a float.
+    /// Gets the as single.
     /// </summary>
     /// <returns>The value as a float.</returns>
     public float AsSingle() => (float)_value;
 
     /// <summary>
-    /// Gets the number as a decimal.
+    /// Gets the as decimal.
     /// </summary>
     /// <returns>The value as a decimal.</returns>
     public decimal AsDecimal() => (decimal)_value;
@@ -112,56 +148,122 @@ public readonly struct ConvexNumber(double value) : IEquatable<ConvexNumber>, IC
 
     #region Equality and Comparison
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public bool Equals(ConvexNumber other) => _value.Equals(other._value);
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public override bool Equals(object? obj) => obj is ConvexNumber other && Equals(other);
 
+    /// <summary>
+    /// Serves as the default hash function.
+    /// </summary>
     public override int GetHashCode() => _value.GetHashCode();
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator ==(ConvexNumber left, ConvexNumber right) => left.Equals(right);
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator !=(ConvexNumber left, ConvexNumber right) => !left.Equals(right);
 
+    /// <summary>
+    /// Gets the compare to.
+    /// </summary>
     public int CompareTo(ConvexNumber other) => _value.CompareTo(other._value);
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator <(ConvexNumber left, ConvexNumber right) => left._value < right._value;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator <=(ConvexNumber left, ConvexNumber right) => left._value <= right._value;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator >(ConvexNumber left, ConvexNumber right) => left._value > right._value;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator >=(ConvexNumber left, ConvexNumber right) => left._value >= right._value;
 
     #endregion
 
     #region Arithmetic Operators
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator +(ConvexNumber left, ConvexNumber right) => new(left._value + right._value);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator -(ConvexNumber left, ConvexNumber right) => new(left._value - right._value);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator *(ConvexNumber left, ConvexNumber right) => new(left._value * right._value);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator /(ConvexNumber left, ConvexNumber right) => new(left._value / right._value);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator %(ConvexNumber left, ConvexNumber right) => new(left._value % right._value);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator -(ConvexNumber value) => new(-value._value);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator ++(ConvexNumber value) => new(value._value + 1);
 
+    /// <summary>
+    /// Gets the operator.
+    /// </summary>
     public static ConvexNumber operator --(ConvexNumber value) => new(value._value - 1);
 
     #endregion
 
     #region String Representation
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => _value.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public string ToString(string? format) => _value.ToString(format, CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public string ToString(IFormatProvider? formatProvider) => _value.ToString(formatProvider);
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public string ToString(string? format, IFormatProvider? formatProvider) => _value.ToString(format, formatProvider);
 
     #endregion

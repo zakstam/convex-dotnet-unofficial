@@ -1,17 +1,17 @@
 namespace Convex.Client.Infrastructure.Serialization;
 
 /// <summary>
-/// Represents a Convex value that can be serialized to/from Convex's JSON format.
+/// Defines operations for i convex value.
 /// </summary>
 public interface IConvexValue
 {
     /// <summary>
-    /// Gets the type of this Convex value.
+    /// Gets or sets the type.
     /// </summary>
     ConvexValueType Type { get; }
 
     /// <summary>
-    /// Gets the underlying .NET value with the specified type.
+    /// Gets value.
     /// </summary>
     /// <typeparam name="T">The type to convert the value to.</typeparam>
     /// <returns>The value as the specified type.</returns>

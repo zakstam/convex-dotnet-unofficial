@@ -8,40 +8,40 @@ namespace Convex.Client.Extensions.Batching.TimeBasedBatching;
 public interface IBatchableEvent<TEvent>
 {
     /// <summary>
-    /// Gets the time since the batch started, in milliseconds.
+    /// Gets the time since batch start.
     /// This is calculated relative to the batch start time for accurate replay.
     /// </summary>
     double TimeSinceBatchStart { get; }
 
     /// <summary>
-    /// Gets the actual event data.
+    /// Gets the event data.
     /// </summary>
     TEvent EventData { get; }
 }
 
 /// <summary>
-/// Represents a batch of events with time-relative timestamps.
+/// Represents batch t event.
 /// </summary>
 /// <typeparam name="TEvent">The type of the events in the batch.</typeparam>
 public class Batch<TEvent>
 {
     /// <summary>
-    /// Gets or sets the unique identifier for the batch.
+    /// Gets or sets the batch ID.
     /// </summary>
     public string? BatchId { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of events with their relative timestamps.
+    /// Gets or sets the events.
     /// </summary>
     public List<IBatchableEvent<TEvent>> Events { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets the absolute timestamp when the batch started (Unix milliseconds).
+    /// Gets or sets the batch start time.
     /// </summary>
     public double BatchStartTime { get; set; }
 
     /// <summary>
-    /// Gets or sets optional metadata for the batch (e.g., userId, sessionId, roomId).
+    /// Gets or sets the string.
     /// This is used to identify and update existing batches.
     /// </summary>
     public Dictionary<string, object>? Metadata { get; set; }
@@ -55,27 +55,27 @@ public class Batch<TEvent>
 public class BatchingOptions
 {
     /// <summary>
-    /// Gets or sets how often to sample events, in milliseconds.
+    /// Gets or sets the sampling interval ms.
     /// Events that arrive more frequently than this interval will be skipped.
     /// Default: 10ms
     /// </summary>
     public int SamplingIntervalMs { get; set; } = 10;
 
     /// <summary>
-    /// Gets or sets how often to send batches to the server, in milliseconds.
+    /// Gets or sets the batch interval ms.
     /// Default: 500ms
     /// </summary>
     public int BatchIntervalMs { get; set; } = 500;
 
     /// <summary>
-    /// Gets or sets the maximum number of events per batch.
+    /// Gets or sets the max batch size.
     /// When this limit is reached, the batch is flushed immediately.
     /// Default: 200
     /// </summary>
     public int MaxBatchSize { get; set; } = 200;
 
     /// <summary>
-    /// Gets or sets the minimum distance between events for spatial filtering.
+    /// Gets or sets the min event distance.
     /// Only applies to events that implement spatial distance calculation (X/Y properties).
     /// Set to null to disable spatial filtering.
     /// Default: null (disabled)
@@ -83,14 +83,14 @@ public class BatchingOptions
     public double? MinEventDistance { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to enable sampling.
+    /// Gets or sets a value indicating whether enable sampling.
     /// When enabled, events are sampled at the SamplingIntervalMs rate.
     /// Default: true
     /// </summary>
     public bool EnableSampling { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to reset the batch start time after each flush.
+    /// Gets or sets a value indicating whether reset batch start time on flush.
     /// When true, each flush starts a new batch with timeSinceBatchStart reset to 0 (standard batching).
     /// When false, maintains the same batch start time across flushes (cumulative timestamps).
     /// Use false when backend appends events to the same batch record.
@@ -99,7 +99,7 @@ public class BatchingOptions
     public bool ResetBatchStartTimeOnFlush { get; set; } = true;
 
     /// <summary>
-    /// Creates a new fluent builder for BatchingOptions.
+    /// Gets the create.
     /// </summary>
     /// <returns>A new builder instance.</returns>
     /// <example>
@@ -116,7 +116,7 @@ public class BatchingOptions
     public static BatchingOptionsBuilder Create() => new();
 
     /// <summary>
-    /// Creates preset options optimized for drawing applications.
+    /// Gets the for drawing.
     /// - Sampling: 10ms (captures smooth strokes)
     /// - Batch interval: 500ms (good balance of latency/bandwidth)
     /// - Max batch size: 200 events
@@ -134,7 +134,7 @@ public class BatchingOptions
     };
 
     /// <summary>
-    /// Creates preset options optimized for cursor/mouse tracking.
+    /// Gets the for cursor tracking.
     /// - Sampling: 16ms (~60fps)
     /// - Batch interval: 200ms (low latency for real-time feel)
     /// - Max batch size: 100 events
@@ -152,7 +152,7 @@ public class BatchingOptions
     };
 
     /// <summary>
-    /// Creates preset options optimized for telemetry/analytics events.
+    /// Gets the for telemetry.
     /// - Sampling: disabled (capture all events)
     /// - Batch interval: 1000ms (low priority, minimize server load)
     /// - Max batch size: 500 events
@@ -178,7 +178,7 @@ public class BatchingOptionsBuilder
     private readonly BatchingOptions _options = new();
 
     /// <summary>
-    /// Sets the sampling interval in milliseconds.
+    /// Configures sampling.
     /// </summary>
     /// <param name="intervalMs">Interval in milliseconds (default: 10ms).</param>
     public BatchingOptionsBuilder WithSampling(int intervalMs = 10)
@@ -198,7 +198,7 @@ public class BatchingOptionsBuilder
     }
 
     /// <summary>
-    /// Sets the batch flush interval in milliseconds.
+    /// Configures batch interval.
     /// </summary>
     /// <param name="intervalMs">Interval in milliseconds (default: 500ms).</param>
     public BatchingOptionsBuilder WithBatchInterval(int intervalMs)
@@ -208,7 +208,7 @@ public class BatchingOptionsBuilder
     }
 
     /// <summary>
-    /// Sets the maximum batch size before auto-flushing.
+    /// Configures max batch size.
     /// </summary>
     /// <param name="maxSize">Maximum events per batch (default: 200).</param>
     public BatchingOptionsBuilder WithMaxBatchSize(int maxSize)
@@ -218,7 +218,7 @@ public class BatchingOptionsBuilder
     }
 
     /// <summary>
-    /// Sets the minimum distance between spatial events (requires X/Y properties).
+    /// Configures min distance.
     /// </summary>
     /// <param name="minDistance">Minimum distance in pixels/units.</param>
     public BatchingOptionsBuilder WithMinDistance(double minDistance)
@@ -279,22 +279,22 @@ public sealed class BatchValidationException(
     : Exception(FormatMessage(typeName, propertyName, expectedType, actualType, details))
 {
     /// <summary>
-    /// Gets the name of the type that failed validation.
+    /// Gets the type name.
     /// </summary>
     public string TypeName { get; } = typeName;
 
     /// <summary>
-    /// Gets the name of the property that caused the validation failure.
+    /// Gets the property name.
     /// </summary>
     public string PropertyName { get; } = propertyName;
 
     /// <summary>
-    /// Gets the expected type for the property.
+    /// Gets the expected type.
     /// </summary>
     public Type ExpectedType { get; } = expectedType;
 
     /// <summary>
-    /// Gets the actual type that was provided, or null if the value was null.
+    /// Gets the actual type.
     /// </summary>
     public Type? ActualType { get; } = actualType;
 

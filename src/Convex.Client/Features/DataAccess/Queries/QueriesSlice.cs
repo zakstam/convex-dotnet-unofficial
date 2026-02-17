@@ -28,7 +28,7 @@ public class QueriesSlice(
     private readonly bool _enableDebugLogging = enableDebugLogging;
 
     /// <summary>
-    /// Creates a query builder for the specified Convex function.
+    /// Executes the query operation.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the query.</typeparam>
     /// <param name="functionName">The name of the Convex function to query.</param>
@@ -42,7 +42,7 @@ public class QueriesSlice(
     }
 
     /// <summary>
-    /// Creates a batch query builder for executing multiple queries in a single request.
+    /// Gets the batch.
     /// </summary>
     /// <returns>A batch query builder.</returns>
     public IBatchQueryBuilder Batch() => new BatchQueryBuilder(_httpProvider, _serializer, _logger, _enableDebugLogging);

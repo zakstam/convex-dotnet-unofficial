@@ -567,7 +567,7 @@ internal sealed class MutationBuilder<TResult>(
     }
 
     /// <summary>
-    /// Represents a cache update operation to apply optimistically.
+    /// Executes the cache update operation.
     /// </summary>
     private sealed class CacheUpdate(string queryName, Type valueType, Func<object?, object?> updateFunction)
     {

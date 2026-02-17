@@ -14,32 +14,32 @@ internal sealed class ReactiveEntry : IDisposable
     private bool _isDisposed;
 
     /// <summary>
-    /// Gets the current cached value.
+    /// Gets or sets the value.
     /// </summary>
     public object? Value { get; private set; }
 
     /// <summary>
-    /// Gets the type of the cached value.
+    /// Gets or sets the value type.
     /// </summary>
     public Type? ValueType { get; private set; }
 
     /// <summary>
-    /// Gets the source of this cache entry.
+    /// Gets or sets the source.
     /// </summary>
     public CacheEntrySource Source { get; private set; }
 
     /// <summary>
-    /// Gets the timestamp when this entry was last updated.
+    /// Gets or sets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; private set; }
 
     /// <summary>
-    /// Gets an observable that emits when the cached value changes.
+    /// Gets the as observable.
     /// </summary>
     public IObservable<object?> Observable => _subject.AsObservable();
 
     /// <summary>
-    /// Sets the cached value and notifies all subscribers.
+    /// Sets value.
     /// </summary>
     /// <param name="value">The new value to cache.</param>
     /// <param name="source">The source of this value.</param>

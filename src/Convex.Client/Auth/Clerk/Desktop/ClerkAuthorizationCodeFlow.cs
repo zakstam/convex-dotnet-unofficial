@@ -26,8 +26,17 @@ public class ClerkAuthorizationCodeFlow
     /// </summary>
     public class PkceParameters
     {
+        /// <summary>
+        /// Gets or sets the code verifier.
+        /// </summary>
         public string CodeVerifier { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the code challenge.
+        /// </summary>
         public string CodeChallenge { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
         public string State { get; set; } = string.Empty;
     }
 
@@ -37,24 +46,45 @@ public class ClerkAuthorizationCodeFlow
     /// </summary>
     public class TokenResponse
     {
+        /// <summary>
+        /// Gets or sets the access token.
+        /// </summary>
         [JsonPropertyName("access_token")]
         public string? AccessToken { get; set; }
 
+        /// <summary>
+        /// Gets or sets the token type.
+        /// </summary>
         [JsonPropertyName("token_type")]
         public string? TokenType { get; set; }
 
+        /// <summary>
+        /// Gets or sets the token lifetime in seconds.
+        /// </summary>
         [JsonPropertyName("expires_in")]
         public int ExpiresIn { get; set; }
 
+        /// <summary>
+        /// Gets or sets the unique ID.
+        /// </summary>
         [JsonPropertyName("session_id")]
         public string? SessionId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the ID token.
+        /// </summary>
         [JsonPropertyName("id_token")]
         public string? IdToken { get; set; }
 
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
         [JsonPropertyName("error")]
         public string? Error { get; set; }
 
+        /// <summary>
+        /// Gets or sets the error description.
+        /// </summary>
         [JsonPropertyName("error_description")]
         public string? ErrorDescription { get; set; }
     }
@@ -64,7 +94,13 @@ public class ClerkAuthorizationCodeFlow
     /// </summary>
     public class JwtTokenResponse
     {
+        /// <summary>
+        /// Gets or sets the JWT.
+        /// </summary>
         public string? Jwt { get; set; }
+        /// <summary>
+        /// Gets or sets the token.
+        /// </summary>
         public string? Token { get; set; }  // Alternative property name
     }
 
@@ -73,6 +109,9 @@ public class ClerkAuthorizationCodeFlow
     /// </summary>
     public class ClerkClientResponse
     {
+        /// <summary>
+        /// Gets or sets the sessions.
+        /// </summary>
         [JsonPropertyName("sessions")]
         public List<ClerkSession>? Sessions { get; set; }
     }
@@ -82,12 +121,21 @@ public class ClerkAuthorizationCodeFlow
     /// </summary>
     public class ClerkSession
     {
+        /// <summary>
+        /// Gets or sets the unique ID.
+        /// </summary>
         [JsonPropertyName("id")]
         public string? Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets the status.
+        /// </summary>
         [JsonPropertyName("status")]
         public string? Status { get; set; }
 
+        /// <summary>
+        /// Gets or sets the last active at.
+        /// </summary>
         [JsonPropertyName("last_active_at")]
         public long LastActiveAt { get; set; }
     }
@@ -289,7 +337,7 @@ public class ClerkAuthorizationCodeFlow
     }
 
     /// <summary>
-    /// Gets a JWT token from Clerk using the session and template.
+    /// Gets JWT token.
     /// </summary>
     /// <param name="sessionId">The session ID from token response.</param>
     /// <param name="accessToken">The access token from token response.</param>
@@ -413,7 +461,7 @@ public class ClerkAuthorizationCodeFlow
     }
 
     /// <summary>
-    /// Gets the active session ID using the access token.
+    /// Gets active session ID.
     /// This is a fallback method if session ID is not in the id_token.
     /// </summary>
     /// <param name="accessToken">The access token from OAuth response.</param>

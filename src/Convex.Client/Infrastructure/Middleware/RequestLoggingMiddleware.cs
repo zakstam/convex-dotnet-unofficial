@@ -5,7 +5,7 @@ namespace Convex.Client.Infrastructure.Middleware;
 /// Tracks request count, response times, and provides detailed statistics.
 /// </summary>
 /// <remarks>
-/// Creates a new RequestLoggingMiddleware instance.
+/// Executes the request logging middleware operation.
 /// </remarks>
 /// <param name="enabled">Whether request logging is enabled (default: true).</param>
 public sealed class RequestLoggingMiddleware(bool enabled = true) : IConvexMiddleware
@@ -63,7 +63,7 @@ public sealed class RequestLoggingMiddleware(bool enabled = true) : IConvexMiddl
     }
 
     /// <summary>
-    /// Gets statistics about requests processed by this middleware.
+    /// Executes the public operation.
     /// </summary>
     /// <returns>A tuple containing (requestCount, avgResponseTime, minResponseTime, maxResponseTime).</returns>
     public (int requestCount, double avgResponseTimeMs, double minResponseTimeMs, double maxResponseTimeMs) GetStats()

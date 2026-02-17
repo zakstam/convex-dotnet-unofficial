@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents a Convex function (query, mutation, or action).
+/// Represents function definition.
 /// </summary>
 public class FunctionDefinition
 {
@@ -44,7 +44,13 @@ public class FunctionDefinition
     /// </summary>
     public bool IsDefaultExport { get; set; }
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public override bool Equals(object? obj) => obj is FunctionDefinition other && Path == other.Path;
 
+    /// <summary>
+    /// Serves as the default hash function.
+    /// </summary>
     public override int GetHashCode() => Path.GetHashCode();
 }

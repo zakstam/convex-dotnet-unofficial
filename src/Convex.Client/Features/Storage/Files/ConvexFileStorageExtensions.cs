@@ -135,7 +135,7 @@ public static class ConvexFileStorageExtensions
     }
 
     /// <summary>
-    /// Gets the content type for a file extension.
+    /// Gets content type from extension.
     /// </summary>
     /// <param name="extension">The file extension (with or without the dot).</param>
     /// <returns>The MIME content type, or "application/octet-stream" if unknown.</returns>

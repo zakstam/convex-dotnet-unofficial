@@ -26,7 +26,7 @@ namespace Convex.Client.Features.RealTime.Pagination;
 public interface IHasId
 {
     /// <summary>
-    /// Gets the unique identifier for this entity.
+    /// Gets the unique ID.
     /// </summary>
     string Id { get; }
 }
@@ -58,7 +58,7 @@ public interface IHasId
 public interface IHasSortKey
 {
     /// <summary>
-    /// Gets the sort key for ordering this entity.
+    /// Gets the sort key.
     /// </summary>
     IComparable SortKey { get; }
 }
@@ -108,7 +108,7 @@ public interface IHasSortKey
 public interface IConvexPagination
 {
     /// <summary>
-    /// Creates a pagination builder for the specified query function.
+    /// Creates a pagination builder for a query function.
     /// </summary>
     IPaginationBuilder<T> Query<T>(string functionName);
 }
@@ -119,17 +119,17 @@ public interface IConvexPagination
 public interface IPaginationBuilder<T>
 {
     /// <summary>
-    /// Sets the page size (number of items per page).
+    /// Sets the page size used for each request.
     /// </summary>
     IPaginationBuilder<T> WithPageSize(int pageSize);
 
     /// <summary>
-    /// Sets the arguments to pass to the Convex function.
+    /// Sets strongly typed query arguments.
     /// </summary>
     IPaginationBuilder<T> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
 
     /// <summary>
-    /// Sets the arguments using a builder function for type-safe construction.
+    /// Configures strongly typed query arguments.
     /// </summary>
     IPaginationBuilder<T> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
 
@@ -140,27 +140,27 @@ public interface IPaginationBuilder<T>
 }
 
 /// <summary>
-/// Represents a paginated query that can load pages on demand.
+/// Defines operations for loading and managing paginated results.
 /// </summary>
 public interface IPaginator<T>
 {
     /// <summary>
-    /// Gets whether there are more pages to load.
+    /// Gets a value indicating whether additional pages can be loaded.
     /// </summary>
     bool HasMore { get; }
 
     /// <summary>
-    /// Gets the total number of pages loaded so far.
+    /// Gets the number of pages loaded so far.
     /// </summary>
     int LoadedPageCount { get; }
 
     /// <summary>
-    /// Gets all items loaded so far across all pages.
+    /// Gets all items loaded so far.
     /// </summary>
     IReadOnlyList<T> LoadedItems { get; }
 
     /// <summary>
-    /// Gets the list of page boundaries (indices where each new page begins in LoadedItems).
+    /// Gets the start index for each loaded page.
     /// The first page always starts at index 0, so boundaries represent where subsequent pages start.
     /// Example: If pages are 25 items each, boundaries would be [0, 25, 50, 75] after loading 4 pages.
     /// </summary>
@@ -173,7 +173,7 @@ public interface IPaginator<T>
     event Action<int>? PageBoundaryAdded;
 
     /// <summary>
-    /// Gets the page index (0-based) that contains the item at the specified index in LoadedItems.
+    /// Gets the page index that contains the specified item index.
     /// </summary>
     /// <param name="itemIndex">The index of the item in LoadedItems.</param>
     /// <returns>The page index (0-based) that contains this item, or -1 if index is out of range.</returns>
@@ -212,33 +212,60 @@ public interface IPaginator<T>
 /// </summary>
 public class PaginationOptions
 {
+    /// <summary>
+    /// Gets or sets the number of items requested per page.
+    /// </summary>
     [JsonPropertyName("numItems")]
     public int NumItems { get; set; }
 
+    /// <summary>
+    /// Gets or sets the cursor used to request the next page.
+    /// </summary>
     [JsonPropertyName("cursor")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Cursor { get; set; }
 
+    /// <summary>
+    /// Gets or sets the optional end cursor that limits pagination.
+    /// </summary>
     [JsonPropertyName("endCursor")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? EndCursor { get; set; }
 
+    /// <summary>
+    /// Gets or sets the maximum number of rows the backend may read.
+    /// </summary>
     [JsonPropertyName("maximumRowsRead")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? MaximumRowsRead { get; set; }
 
+    /// <summary>
+    /// Gets or sets the maximum number of bytes the backend may read.
+    /// </summary>
     [JsonPropertyName("maximumBytesRead")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? MaximumBytesRead { get; set; }
 
+    /// <summary>
+    /// Gets or sets an optional pagination request identifier.
+    /// </summary>
     [JsonPropertyName("id")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Id { get; set; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PaginationOptions"/> class.
+    /// </summary>
     public PaginationOptions() => NumItems = 10;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PaginationOptions"/> class.
+    /// </summary>
     public PaginationOptions(int numItems) => NumItems = numItems;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PaginationOptions"/> class.
+    /// </summary>
     public PaginationOptions(int numItems, string? cursor)
     {
         NumItems = numItems;
@@ -251,6 +278,9 @@ public class PaginationOptions
 /// </summary>
 public class PaginationResultConverter<T> : JsonConverter<PaginationResult<T>>
 {
+    /// <summary>
+    /// Reads a <see cref="PaginationResult{T}"/> from JSON.
+    /// </summary>
     public override PaginationResult<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var result = new PaginationResult<T>();
@@ -313,6 +343,9 @@ public class PaginationResultConverter<T> : JsonConverter<PaginationResult<T>>
         return result;
     }
 
+    /// <summary>
+    /// Writes a <see cref="PaginationResult{T}"/> to JSON.
+    /// </summary>
     public override void Write(Utf8JsonWriter writer, PaginationResult<T> value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
@@ -341,20 +374,35 @@ public class PaginationResultConverter<T> : JsonConverter<PaginationResult<T>>
 [JsonConverter(typeof(PaginationResultConverter<>))]
 public class PaginationResult<T>
 {
+    /// <summary>
+    /// Gets or sets the page items.
+    /// </summary>
     [JsonPropertyName("page")]
     public List<T> Page { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets a value indicating whether pagination is complete.
+    /// </summary>
     [JsonPropertyName("isDone")]
     public bool IsDone { get; set; }
 
+    /// <summary>
+    /// Gets or sets the cursor for loading the next page.
+    /// </summary>
     [JsonPropertyName("continueCursor")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ContinueCursor { get; set; }
 
+    /// <summary>
+    /// Gets or sets the cursor used when the backend recommends splitting a page.
+    /// </summary>
     [JsonPropertyName("splitCursor")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SplitCursor { get; set; }
 
+    /// <summary>
+    /// Gets or sets the backend status for this page.
+    /// </summary>
     [JsonPropertyName("pageStatus")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -366,8 +414,17 @@ public class PaginationResult<T>
 /// </summary>
 public enum PageStatus
 {
+    /// <summary>
+    /// The page was returned normally.
+    /// </summary>
     Normal,
+    /// <summary>
+    /// The backend recommends splitting the request into smaller pages.
+    /// </summary>
     SplitRecommended,
+    /// <summary>
+    /// The backend requires splitting the request into smaller pages.
+    /// </summary>
     SplitRequired
 }
 
@@ -393,5 +450,8 @@ public class MergedPaginationResult<T>
 /// </summary>
 public class ConvexPaginationException(string message, string? functionName = null, Exception? innerException = null) : Exception(message, innerException)
 {
+    /// <summary>
+    /// Gets the query function name associated with the pagination error.
+    /// </summary>
     public string? FunctionName { get; } = functionName;
 }

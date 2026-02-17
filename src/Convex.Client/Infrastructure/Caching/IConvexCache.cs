@@ -1,7 +1,7 @@
 namespace Convex.Client.Infrastructure.Caching;
 
 /// <summary>
-/// Represents a cache for storing query results with optimistic update support.
+/// Defines operations for i convex cache.
 /// Thread-safe for concurrent reads and writes.
 /// </summary>
 public interface IConvexCache
@@ -12,12 +12,12 @@ public interface IConvexCache
     bool TryGet<T>(string queryName, out T? value);
 
     /// <summary>
-    /// Sets a query result in the cache.
+    /// Sets the operation.
     /// </summary>
     void Set<T>(string queryName, T value);
 
     /// <summary>
-    /// Updates a cached query result using an update function.
+    /// Attempts to update the operation.
     /// If the value doesn't exist in cache, the update function is not called.
     /// </summary>
     bool TryUpdate<T>(string queryName, Func<T, T> updateFn);
@@ -38,12 +38,12 @@ public interface IConvexCache
     void Clear();
 
     /// <summary>
-    /// Gets the number of cached query results.
+    /// Gets the count.
     /// </summary>
     int Count { get; }
 
     /// <summary>
-    /// Gets all cached query names.
+    /// Gets the keys.
     /// </summary>
     IEnumerable<string> Keys { get; }
 }
@@ -53,5 +53,8 @@ public interface IConvexCache
 /// </summary>
 public class ConvexCacheException(string message, string? queryName = null, Exception? innerException = null) : Exception(message, innerException)
 {
+    /// <summary>
+    /// Gets the query name.
+    /// </summary>
     public string? QueryName { get; } = queryName;
 }

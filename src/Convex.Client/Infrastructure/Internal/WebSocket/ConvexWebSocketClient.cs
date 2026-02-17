@@ -18,7 +18,7 @@ namespace Convex.Client.Infrastructure.Internal.WebSocket;
 /// Manages connection, subscriptions, and message routing.
 /// </summary>
 /// <remarks>
-/// Creates a new WebSocket client.
+/// Executes the convex web socket client operation.
 /// </remarks>
 /// <param name="deploymentUrl">The Convex deployment URL.</param>
 /// <param name="syncContext">Optional SynchronizationContext for UI thread marshalling.</param>
@@ -66,7 +66,7 @@ internal sealed class ConvexWebSocketClient(
     private Func<CancellationToken, Task<string?>>? _authTokenProvider;
 
     /// <summary>
-    /// Gets the current connection state.
+    /// Gets or sets the connection state.
     /// </summary>
     public ConnectionState ConnectionState { get; private set; } = ConnectionState.Disconnected;
 
@@ -77,7 +77,7 @@ internal sealed class ConvexWebSocketClient(
     public event EventHandler<ConnectionState>? ConnectionStateChanged;
 
     /// <summary>
-    /// Sets the authentication token provider function.
+    /// Gets the set auth token provider.
     /// This is called by ConvexClient to wire up the Authentication slice.
     /// </summary>
     /// <param name="authTokenProvider">Function that retrieves the authentication token.</param>
@@ -201,7 +201,7 @@ internal sealed class ConvexWebSocketClient(
     }
 
     /// <summary>
-    /// Creates a live query subscription.
+    /// Executes the live query operation.
     /// </summary>
     /// <typeparam name="T">The type of data returned by the query.</typeparam>
     /// <param name="functionName">The name of the Convex function.</param>
@@ -313,7 +313,7 @@ internal sealed class ConvexWebSocketClient(
     }
 
     /// <summary>
-    /// Creates a live query subscription with arguments.
+    /// Executes the live query operation.
     /// </summary>
     /// <typeparam name="T">The type of data returned by the query.</typeparam>
     /// <typeparam name="TArgs">The type of arguments.</typeparam>
@@ -423,7 +423,7 @@ internal sealed class ConvexWebSocketClient(
     }
 
     /// <summary>
-    /// Gets a cached value from an active subscription, if available.
+    /// Gets the local query result.
     /// </summary>
     public T? LocalQueryResult<T>(string functionName) where T : class =>
         // TODO: Implement cached value retrieval
@@ -806,7 +806,7 @@ internal sealed class ConvexWebSocketClient(
     }
 
     /// <summary>
-    /// Attempts to reconnect with exponential backoff according to the reconnection policy.
+    /// Attempts to reconnect.
     /// </summary>
     private async Task TryReconnectAsync(CancellationToken cancellationToken)
     {
@@ -1080,7 +1080,7 @@ internal sealed class ConvexWebSocketClient(
     }
 
     /// <summary>
-    /// Updates the connection state and raises the event.
+    /// Updates connection state.
     /// Events are automatically marshalled to the UI thread.
     /// </summary>
     private void UpdateConnectionState(ConnectionState newState)

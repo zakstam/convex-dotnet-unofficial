@@ -122,7 +122,7 @@ public interface IConvexFileStorage
     Task<Stream> DownloadFileAsync(string storageId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a temporary download URL for a file in Convex storage.
+    /// Gets download url.
     /// The URL can be used directly in browsers or HTML img/src tags for displaying files.
     /// URLs are temporary and may expire after a period of time.
     /// </summary>
@@ -159,7 +159,7 @@ public interface IConvexFileStorage
     Task<string> GetDownloadUrlAsync(string storageId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets metadata information about a stored file.
+    /// Gets file metadata.
     /// </summary>
     /// <param name="storageId">The storage ID of the file.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>

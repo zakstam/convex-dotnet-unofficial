@@ -129,7 +129,7 @@ internal sealed class InterceptorPipeline(IReadOnlyList<IConvexInterceptor> inte
     }
 
     /// <summary>
-    /// Gets whether there are any interceptors registered.
+    /// Gets or sets a value indicating whether interceptors.
     /// </summary>
     public bool HasInterceptors => _interceptors.Count > 0;
 }

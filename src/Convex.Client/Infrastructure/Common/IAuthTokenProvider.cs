@@ -7,7 +7,7 @@ namespace Convex.Client.Infrastructure.Common;
 public interface IAuthTokenProvider
 {
     /// <summary>
-    /// Gets the current authentication token.
+    /// Gets token.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The current authentication token, or null if not available.</returns>

@@ -6,7 +6,7 @@ namespace Convex.Client.Infrastructure.Http;
 public static class TimeoutHelper
 {
     /// <summary>
-    /// Creates a cancellation token that combines a user-provided cancellation token with a timeout.
+    /// Creates timeout token.
     /// </summary>
     /// <param name="timeout">Optional timeout duration. If null, only the user token is used.</param>
     /// <param name="userToken">The user-provided cancellation token.</param>
@@ -35,12 +35,12 @@ public static class TimeoutHelper
         private readonly CancellationTokenSource? _linkedCts;
 
         /// <summary>
-        /// Gets the effective cancellation token that combines timeout and user token.
+        /// Gets the token.
         /// </summary>
         public CancellationToken Token { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the timeout was triggered.
+        /// Gets or sets a value indicating whether was timeout.
         /// </summary>
         public bool WasTimeout => _timeoutCts?.IsCancellationRequested == true;
 

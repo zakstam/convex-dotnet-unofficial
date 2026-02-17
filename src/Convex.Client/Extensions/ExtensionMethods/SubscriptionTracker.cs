@@ -81,7 +81,7 @@ public sealed class SubscriptionTracker : IDisposable
     public bool Remove(IDisposable? subscription) => !_disposed && subscription != null && _subscriptions.Remove(subscription);
 
     /// <summary>
-    /// Gets the number of tracked subscriptions.
+    /// Gets the count.
     /// </summary>
     public int Count => _subscriptions.Count;
 

@@ -18,16 +18,40 @@ public sealed class MetricsInterceptor : IConvexInterceptor
     /// </summary>
     public sealed class RequestMetrics
     {
+        /// <summary>
+        /// Gets or sets the function name.
+        /// </summary>
         public string FunctionName { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the request count.
+        /// </summary>
         public long RequestCount { get; set; }
+        /// <summary>
+        /// Gets or sets the error count.
+        /// </summary>
         public long ErrorCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total duration ms.
+        /// </summary>
         public double TotalDurationMs { get; set; }
+        /// <summary>
+        /// Gets or sets the min duration ms.
+        /// </summary>
         public double MinDurationMs { get; set; } = double.MaxValue;
+        /// <summary>
+        /// Gets or sets the max duration ms.
+        /// </summary>
         public double MaxDurationMs { get; set; }
 
+        /// <summary>
+        /// Gets the average duration ms.
+        /// </summary>
         public double AverageDurationMs =>
             RequestCount > 0 ? TotalDurationMs / RequestCount : 0;
 
+        /// <summary>
+        /// Gets the error rate.
+        /// </summary>
         public double ErrorRate =>
             RequestCount > 0 ? (double)ErrorCount / RequestCount : 0;
     }
@@ -86,30 +110,30 @@ public sealed class MetricsInterceptor : IConvexInterceptor
     }
 
     /// <summary>
-    /// Gets the total number of requests processed.
+    /// Gets the total requests.
     /// </summary>
     public long TotalRequests => _totalRequests;
 
     /// <summary>
-    /// Gets the total number of errors encountered.
+    /// Gets the total errors.
     /// </summary>
     public long TotalErrors => _totalErrors;
 
     /// <summary>
-    /// Gets the overall error rate across all functions.
+    /// Gets the total error rate.
     /// </summary>
     public double TotalErrorRate =>
         _totalRequests > 0 ? (double)_totalErrors / _totalRequests : 0;
 
     /// <summary>
-    /// Gets metrics for a specific function.
+    /// Gets the get metrics.
     /// </summary>
     /// <param name="functionName">The function name to get metrics for.</param>
     /// <returns>The metrics for the function, or null if no requests have been made.</returns>
     public RequestMetrics? GetMetrics(string functionName) => _metricsByFunction.TryGetValue(functionName, out var metrics) ? metrics : null;
 
     /// <summary>
-    /// Gets metrics for all functions.
+    /// Gets the get all metrics.
     /// </summary>
     /// <returns>A snapshot of metrics for all functions.</returns>
     public IReadOnlyDictionary<string, RequestMetrics> GetAllMetrics() => new Dictionary<string, RequestMetrics>(_metricsByFunction);

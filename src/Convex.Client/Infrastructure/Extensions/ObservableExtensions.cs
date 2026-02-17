@@ -154,7 +154,7 @@ public static class ObservableExtensions
     }
 
     /// <summary>
-    /// Creates an observable that only emits the latest value when subscribed.
+    /// Executes the observe latest operation.
     /// Useful for getting the current state without creating a long-lived subscription.
     /// </summary>
     /// <typeparam name="T">The type of values emitted by the observable.</typeparam>
@@ -182,7 +182,7 @@ public static class ObservableExtensions
     }
 
     /// <summary>
-    /// Creates an observable that only emits distinct consecutive values.
+    /// Executes the distinct until changed operation.
     /// Uses the default equality comparer for the type.
     /// </summary>
     /// <typeparam name="T">The type of values emitted by the observable.</typeparam>
@@ -207,7 +207,7 @@ public static class ObservableExtensions
     }
 
     /// <summary>
-    /// Creates an observable that only emits distinct consecutive values based on a key selector.
+    /// Executes the distinct until changed operation.
     /// </summary>
     /// <typeparam name="T">The type of values emitted by the observable.</typeparam>
     /// <typeparam name="TKey">The type of the key to compare.</typeparam>

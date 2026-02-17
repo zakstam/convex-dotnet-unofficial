@@ -1,7 +1,7 @@
 namespace Convex.Client.Infrastructure.Quality;
 
 /// <summary>
-/// Represents the quality level of the connection to the Convex backend.
+/// Defines the connection quality values.
 /// </summary>
 public enum ConnectionQuality
 {
@@ -45,7 +45,7 @@ public enum ConnectionQuality
 /// Provides detailed information about the current connection quality.
 /// </summary>
 /// <remarks>
-/// Creates a new instance of ConnectionQualityInfo.
+/// Executes the connection quality info operation.
 /// </remarks>
 public sealed class ConnectionQualityInfo(
     ConnectionQuality quality,
@@ -61,70 +61,70 @@ public sealed class ConnectionQualityInfo(
     IReadOnlyDictionary<string, object>? additionalData = null)
 {
     /// <summary>
-    /// Gets the current connection quality level.
+    /// Gets the quality.
     /// </summary>
     public ConnectionQuality Quality { get; } = quality;
 
     /// <summary>
-    /// Gets a human-readable description of the quality.
+    /// Gets the description.
     /// </summary>
     public string Description { get; } = description;
 
     /// <summary>
-    /// Gets the timestamp when this quality assessment was made.
+    /// Gets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// Gets the average latency in milliseconds over recent samples.
+    /// Gets the average latency ms.
     /// Null if insufficient data.
     /// </summary>
     public double? AverageLatencyMs { get; } = averageLatencyMs;
 
     /// <summary>
-    /// Gets the latency variance (standard deviation) in milliseconds.
+    /// Gets the latency variance ms.
     /// Higher values indicate unstable connection.
     /// Null if insufficient data.
     /// </summary>
     public double? LatencyVarianceMs { get; } = latencyVarianceMs;
 
     /// <summary>
-    /// Gets the packet loss rate as a percentage (0-100).
+    /// Gets the packet loss rate.
     /// Estimated from failed messages and reconnections.
     /// Null if insufficient data.
     /// </summary>
     public double? PacketLossRate { get; } = packetLossRate;
 
     /// <summary>
-    /// Gets the number of reconnections in the monitoring window.
+    /// Gets the reconnection count.
     /// </summary>
     public int ReconnectionCount { get; } = reconnectionCount;
 
     /// <summary>
-    /// Gets the total number of errors in the monitoring window.
+    /// Gets the error count.
     /// </summary>
     public int ErrorCount { get; } = errorCount;
 
     /// <summary>
-    /// Gets the time since the last successful message.
+    /// Gets the time since last message.
     /// Null if no messages have been received.
     /// </summary>
     public TimeSpan? TimeSinceLastMessage { get; } = timeSinceLastMessage;
 
     /// <summary>
-    /// Gets the connection uptime percentage (0-100) over the monitoring window.
+    /// Gets the uptime percentage.
     /// 100% means always connected, 0% means always disconnected.
     /// </summary>
     public double UptimePercentage { get; } = uptimePercentage;
 
     /// <summary>
-    /// Gets the quality score (0-100) where higher is better.
+    /// Gets the quality score.
     /// Combines latency, packet loss, reconnections, and errors into a single metric.
     /// </summary>
     public int QualityScore { get; } = qualityScore;
 
     /// <summary>
-    /// Gets additional diagnostic data for advanced scenarios.
+    /// Gets the dictionary.
     /// </summary>
     public IReadOnlyDictionary<string, object> AdditionalData { get; } = additionalData ?? new Dictionary<string, object>();
 

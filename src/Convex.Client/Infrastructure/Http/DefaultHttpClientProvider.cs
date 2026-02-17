@@ -38,7 +38,7 @@ public class DefaultHttpClientProvider : IHttpClientProvider
     }
 
     /// <summary>
-    /// Sets the authentication headers provider function.
+    /// Gets the set auth headers provider.
     /// This is called by ConvexClient to wire up the Authentication slice.
     /// </summary>
     /// <param name="authHeadersProvider">Function that retrieves authentication headers.</param>

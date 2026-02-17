@@ -1,23 +1,23 @@
 namespace Convex.Client.Infrastructure.ErrorHandling;
 
 /// <summary>
-/// Represents an error that occurred during a Convex operation.
+/// Executes the convex error operation.
 /// Provides pattern matching capabilities for different error types.
 /// </summary>
 public abstract class ConvexError(Exception exception)
 {
     /// <summary>
-    /// Gets the exception that caused this error.
+    /// Gets the argument null exception.
     /// </summary>
     public Exception Exception { get; } = exception ?? throw new ArgumentNullException(nameof(exception));
 
     /// <summary>
-    /// Gets a human-readable error message.
+    /// Gets the message.
     /// </summary>
     public string Message => Exception.Message;
 
     /// <summary>
-    /// Creates a ConvexError from an exception.
+    /// Creates from exception.
     /// </summary>
     public static ConvexError FromException(Exception exception)
     {
@@ -85,12 +85,12 @@ public abstract class ConvexError(Exception exception)
 public sealed class ConvexFunctionError : ConvexError
 {
     /// <summary>
-    /// Gets the Convex exception.
+    /// Gets the exception.
     /// </summary>
     public new ConvexException Exception => (ConvexException)base.Exception;
 
     /// <summary>
-    /// Gets the error data returned from the Convex function.
+    /// Gets the error data.
     /// </summary>
     public object? ErrorData => Exception.ErrorData;
 
@@ -105,7 +105,7 @@ public sealed class ConvexFunctionError : ConvexError
 public sealed class NetworkError : ConvexError
 {
     /// <summary>
-    /// Gets the HTTP request exception.
+    /// Gets the exception.
     /// </summary>
     public new HttpRequestException Exception => (HttpRequestException)base.Exception;
 
@@ -120,7 +120,7 @@ public sealed class NetworkError : ConvexError
 public sealed class TimeoutError : ConvexError
 {
     /// <summary>
-    /// Gets the timeout exception.
+    /// Gets the exception.
     /// </summary>
     public new TimeoutException Exception => (TimeoutException)base.Exception;
 
@@ -135,7 +135,7 @@ public sealed class TimeoutError : ConvexError
 public sealed class CancellationError : ConvexError
 {
     /// <summary>
-    /// Gets the operation cancelled exception.
+    /// Gets the exception.
     /// </summary>
     public new OperationCanceledException Exception => (OperationCanceledException)base.Exception;
 

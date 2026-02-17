@@ -64,17 +64,17 @@ public sealed record ConvexResult<T>
     }
 
     /// <summary>
-    /// Gets whether the operation succeeded.
+    /// Gets or sets a value indicating whether success.
     /// </summary>
     public bool IsSuccess { get; }
 
     /// <summary>
-    /// Gets whether the operation failed.
+    /// Gets or sets a value indicating whether failure.
     /// </summary>
     public bool IsFailure => !IsSuccess;
 
     /// <summary>
-    /// Gets the success value.
+    /// Gets the value.
     /// Throws InvalidOperationException if the result is a failure.
     /// Always check <see cref="IsSuccess"/> before accessing, or use <see cref="Match{TResult}(Func{T, TResult}, Func{ConvexError, TResult})"/> or <see cref="GetValueOrDefault(T)"/> for safe access.
     /// </summary>
@@ -109,17 +109,17 @@ public sealed record ConvexResult<T>
         : throw new InvalidOperationException("Cannot access Error on a successful result. Check IsFailure first or use Match() instead.");
 
     /// <summary>
-    /// Creates a successful result with the specified value.
+    /// Gets the success.
     /// </summary>
     public static ConvexResult<T> Success(T value) => new(value);
 
     /// <summary>
-    /// Creates a failed result with the specified error.
+    /// Gets the failure.
     /// </summary>
     public static ConvexResult<T> Failure(ConvexError error) => new(error);
 
     /// <summary>
-    /// Creates a failed result from an exception.
+    /// Gets the failure.
     /// </summary>
     public static ConvexResult<T> Failure(Exception exception) => new(ConvexError.FromException(exception));
 
@@ -251,13 +251,13 @@ public sealed record ConvexResult<T>
     }
 
     /// <summary>
-    /// Gets the value if successful, otherwise returns the specified default value.
+    /// Gets the get value or default.
     /// </summary>
     public T GetValueOrDefault(T defaultValue = default!) =>
         IsSuccess ? _value! : defaultValue;
 
     /// <summary>
-    /// Gets the value if successful, otherwise returns the result of the specified function.
+    /// Gets value or default.
     /// </summary>
     public T GetValueOrDefault(Func<ConvexError, T> defaultValueFactory)
     {

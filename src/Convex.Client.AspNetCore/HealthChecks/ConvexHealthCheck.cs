@@ -16,6 +16,9 @@ public class ConvexHealthCheck(
     private readonly ILogger<ConvexHealthCheck> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConvexHealthCheckOptions _options = options ?? new ConvexHealthCheckOptions();
 
+    /// <summary>
+    /// Checks health.
+    /// </summary>
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
@@ -161,13 +164,13 @@ public class ConvexRealtimeHealthCheck : IHealthCheck
 public class ConvexHealthCheckOptions
 {
     /// <summary>
-    /// Gets or sets the name of a health check query function to call (optional).
+    /// Gets or sets the health check function name.
     /// If not set, only checks that the client is configured.
     /// </summary>
     public string? HealthCheckFunctionName { get; set; }
 
     /// <summary>
-    /// Gets or sets arguments to pass to the health check function (optional).
+    /// Gets or sets the health check args.
     /// </summary>
     public object? HealthCheckArgs { get; set; }
 }
@@ -179,17 +182,17 @@ public class ConvexHealthCheckOptions
 public class ConvexRealtimeHealthCheckOptions
 {
     /// <summary>
-    /// Gets or sets whether to include detailed metrics in health check data (default: true).
+    /// Gets or sets a value indicating whether include detailed metrics.
     /// </summary>
     public bool IncludeDetailedMetrics { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the minimum acceptable success rate percentage (default: 95%).
+    /// Gets or sets the min success rate.
     /// </summary>
     public double MinSuccessRate { get; set; } = 95.0;
 
     /// <summary>
-    /// Gets or sets the maximum acceptable P95 latency (default: 5 seconds).
+    /// Gets or sets the from seconds.
     /// </summary>
     public TimeSpan MaxP95Latency { get; set; } = TimeSpan.FromSeconds(5);
 }

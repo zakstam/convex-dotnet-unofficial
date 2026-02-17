@@ -9,22 +9,22 @@ namespace Convex.Client.Infrastructure.ErrorHandling;
 public class ConvexException : Exception
 {
     /// <summary>
-    /// Gets the Convex-specific error code, if available.
+    /// Gets or sets the error code.
     /// </summary>
     public string? ErrorCode { get; set; }
 
     /// <summary>
-    /// Gets additional error data from the server, if available.
+    /// Gets or sets the error data.
     /// </summary>
     public JsonElement? ErrorData { get; set; }
 
     /// <summary>
-    /// Gets the request context for this error, if available.
+    /// Gets or sets the request context.
     /// </summary>
     public RequestContext? RequestContext { get; set; }
 
     /// <summary>
-    /// Gets detailed error information including context and suggestions.
+    /// Gets or sets the error details.
     /// </summary>
     public ConvexErrorDetails? ErrorDetails { get; set; }
 
@@ -42,7 +42,7 @@ public class ConvexException : Exception
     public ConvexException(string message, Exception? innerException) : base(message, innerException) { }
 
     /// <summary>
-    /// Gets a detailed error message including context and suggestions.
+    /// Gets detailed message.
     /// </summary>
     /// <returns>A formatted error message.</returns>
     public string GetDetailedMessage()
@@ -84,7 +84,7 @@ public class ConvexException : Exception
 public class ConvexFunctionException : ConvexException
 {
     /// <summary>
-    /// Gets the name of the function that failed.
+    /// Gets the function name.
     /// </summary>
     public string FunctionName { get; }
 
@@ -115,7 +115,7 @@ public class ConvexFunctionException : ConvexException
 public class ConvexArgumentException(string message, string argumentName) : ConvexException(message)
 {
     /// <summary>
-    /// Gets the name of the invalid argument.
+    /// Gets the argument name.
     /// </summary>
     public string ArgumentName { get; } = argumentName;
 }
@@ -126,12 +126,12 @@ public class ConvexArgumentException(string message, string argumentName) : Conv
 public class ConvexNetworkException : ConvexException
 {
     /// <summary>
-    /// Gets the type of network error.
+    /// Gets the error type.
     /// </summary>
     public NetworkErrorType ErrorType { get; }
 
     /// <summary>
-    /// Gets the HTTP status code, if applicable.
+    /// Gets or sets the status code.
     /// </summary>
     public HttpStatusCode? StatusCode { get; set; }
 
@@ -182,12 +182,12 @@ public class ConvexAuthenticationException : ConvexException
 public class ConvexRateLimitException(string message, TimeSpan retryAfter, int currentLimit) : ConvexException(message)
 {
     /// <summary>
-    /// Gets the time to wait before retrying.
+    /// Gets the retry after.
     /// </summary>
     public TimeSpan RetryAfter { get; } = retryAfter;
 
     /// <summary>
-    /// Gets the current rate limit.
+    /// Gets the current limit.
     /// </summary>
     public int CurrentLimit { get; } = currentLimit;
 }
@@ -203,7 +203,7 @@ public class ConvexRateLimitException(string message, TimeSpan retryAfter, int c
 public class ConvexCircuitBreakerException(string message, CircuitBreakerState circuitState) : ConvexException(message)
 {
     /// <summary>
-    /// Gets the current circuit breaker state.
+    /// Gets the circuit state.
     /// </summary>
     public CircuitBreakerState CircuitState { get; } = circuitState;
 }
@@ -266,22 +266,22 @@ public enum CircuitBreakerState
 public class RequestContext
 {
     /// <summary>
-    /// Gets or sets the function name for this request.
+    /// Gets or sets the function name.
     /// </summary>
     public string FunctionName { get; set; } = "";
 
     /// <summary>
-    /// Gets or sets the request type (query, mutation, action).
+    /// Gets or sets the request type.
     /// </summary>
     public string RequestType { get; set; } = "";
 
     /// <summary>
-    /// Gets or sets the unique request identifier.
+    /// Gets or sets the unique ID.
     /// </summary>
     public string RequestId { get; set; } = "";
 
     /// <summary>
-    /// Gets or sets the timestamp when the request was initiated.
+    /// Gets or sets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 }

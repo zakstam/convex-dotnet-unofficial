@@ -6,38 +6,38 @@ namespace Convex.Client.Infrastructure.Validation;
 public sealed class SchemaValidationOptions
 {
     /// <summary>
-    /// Gets or sets whether to validate query responses.
+    /// Gets or sets a value indicating whether validate on query.
     /// Default: false.
     /// </summary>
     public bool ValidateOnQuery { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to validate mutation responses.
+    /// Gets or sets a value indicating whether validate on mutation.
     /// Default: false.
     /// </summary>
     public bool ValidateOnMutation { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to validate action responses.
+    /// Gets or sets a value indicating whether validate on action.
     /// Default: false.
     /// </summary>
     public bool ValidateOnAction { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to validate subscription updates.
+    /// Gets or sets a value indicating whether validate on subscription.
     /// Default: false.
     /// </summary>
     public bool ValidateOnSubscription { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to throw an exception on validation errors.
+    /// Gets or sets a value indicating whether throw on validation error.
     /// If false, validation errors are logged and reported via events.
     /// Default: false (log only).
     /// </summary>
     public bool ThrowOnValidationError { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to perform strict type checking.
+    /// Gets or sets a value indicating whether strict type checking.
     /// When true, validates exact type matches including nullability.
     /// When false, allows compatible types (e.g., int -> long, null -> nullable).
     /// Default: false.
@@ -45,7 +45,7 @@ public sealed class SchemaValidationOptions
     public bool StrictTypeChecking { get; set; }
 
     /// <summary>
-    /// Creates default validation options with all validation disabled.
+    /// Initializes a new instance of the <see cref="SchemaValidationOptions"/> class.
     /// </summary>
     public SchemaValidationOptions()
     {
@@ -58,7 +58,7 @@ public sealed class SchemaValidationOptions
     }
 
     /// <summary>
-    /// Creates validation options that enable all validation and throw on errors.
+    /// Executes the strict operation.
     /// Useful for development/testing environments.
     /// </summary>
     public static SchemaValidationOptions Strict()
@@ -75,7 +75,7 @@ public sealed class SchemaValidationOptions
     }
 
     /// <summary>
-    /// Creates validation options that enable all validation but log instead of throwing.
+    /// Executes the log only operation.
     /// Useful for production environments.
     /// </summary>
     public static SchemaValidationOptions LogOnly()

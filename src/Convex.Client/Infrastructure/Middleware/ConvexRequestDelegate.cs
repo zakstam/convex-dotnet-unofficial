@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Convex.Client.Infrastructure.Middleware;
 
 /// <summary>
-/// Represents the next middleware in the pipeline or the final request handler.
+/// Executes the convex request delegate operation.
 /// </summary>
 /// <param name="request">The request to process.</param>
 /// <returns>A task that completes with the response.</returns>

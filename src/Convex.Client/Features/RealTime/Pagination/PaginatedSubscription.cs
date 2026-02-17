@@ -101,7 +101,7 @@ public class PaginatedSubscription<T> : IDisposable
     }
 
     /// <summary>
-    /// Creates a new paginated subscription builder.
+    /// Gets the create.
     /// </summary>
     public static PaginatedSubscriptionBuilder<T> Create(IConvexClient client, string functionName) => new PaginatedSubscriptionBuilder<T>(client, functionName);
 
@@ -243,6 +243,9 @@ public class PaginatedSubscription<T> : IDisposable
         });
     }
 
+    /// <summary>
+    /// Releases the resources used by this instance.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
@@ -315,7 +318,7 @@ public class PaginatedSubscriptionBuilder<T>
     }
 
     /// <summary>
-    /// Sets the page size (number of items per page).
+    /// Configures page size.
     /// </summary>
     public PaginatedSubscriptionBuilder<T> WithPageSize(int pageSize)
     {
@@ -324,7 +327,7 @@ public class PaginatedSubscriptionBuilder<T>
     }
 
     /// <summary>
-    /// Sets the arguments to pass to the subscription function.
+    /// Configures subscription args.
     /// </summary>
     public PaginatedSubscriptionBuilder<T> WithSubscriptionArgs<TArgs>(TArgs args) where TArgs : notnull
     {
@@ -333,7 +336,7 @@ public class PaginatedSubscriptionBuilder<T>
     }
 
     /// <summary>
-    /// Sets the function to extract a unique identifier from items for deduplication.
+    /// Configures ID extractor.
     /// </summary>
     public PaginatedSubscriptionBuilder<T> WithIdExtractor(Func<T, string> getId)
     {
@@ -342,7 +345,7 @@ public class PaginatedSubscriptionBuilder<T>
     }
 
     /// <summary>
-    /// Sets the function to extract a sort key for ordering merged items.
+    /// Configures sort key.
     /// </summary>
     public PaginatedSubscriptionBuilder<T> WithSortKey(Func<T, IComparable> getSortKey)
     {

@@ -6,22 +6,22 @@ namespace Convex.Client.Infrastructure.Validation;
 public sealed class SchemaValidationResult
 {
     /// <summary>
-    /// Gets whether validation succeeded.
+    /// Gets or sets a value indicating whether valid.
     /// </summary>
     public bool IsValid { get; }
 
     /// <summary>
-    /// Gets the validation errors, if any.
+    /// Gets the errors.
     /// </summary>
     public IReadOnlyList<string> Errors { get; }
 
     /// <summary>
-    /// Gets the expected type name.
+    /// Gets the expected type.
     /// </summary>
     public string ExpectedType { get; }
 
     /// <summary>
-    /// Gets the actual type name.
+    /// Gets the actual type.
     /// </summary>
     public string ActualType { get; }
 
@@ -38,12 +38,12 @@ public sealed class SchemaValidationResult
     }
 
     /// <summary>
-    /// Creates a successful validation result.
+    /// Gets the success.
     /// </summary>
     public static SchemaValidationResult Success(string expectedType, string actualType) => new SchemaValidationResult(true, expectedType, actualType, []);
 
     /// <summary>
-    /// Creates a failed validation result.
+    /// Executes the failure operation.
     /// </summary>
     public static SchemaValidationResult Failure(
         string expectedType,
@@ -51,7 +51,7 @@ public sealed class SchemaValidationResult
         params string[] errors) => new SchemaValidationResult(false, expectedType, actualType, errors);
 
     /// <summary>
-    /// Creates a failed validation result.
+    /// Executes the failure operation.
     /// </summary>
     public static SchemaValidationResult Failure(
         string expectedType,

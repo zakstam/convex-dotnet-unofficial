@@ -48,7 +48,7 @@ public class InterpolatedState<T> where T : class, IInterpolatable<T>
     private double _previousStateTime;
 
     /// <summary>
-    /// Gets or sets the interpolation delay in milliseconds.
+    /// Gets or sets the interpolation delay ms.
     /// Higher values provide smoother interpolation but increase visual latency.
     /// Default: 100ms (good balance for most games).
     /// </summary>
@@ -61,7 +61,7 @@ public class InterpolatedState<T> where T : class, IInterpolatable<T>
     public double InterpolationDelayMs { get; set; } = 100;
 
     /// <summary>
-    /// Gets or sets the maximum extrapolation time in milliseconds.
+    /// Gets or sets the max extrapolation ms.
     /// If no new state arrives within this time, extrapolation stops to avoid visual artifacts.
     /// Default: 250ms.
     /// </summary>
@@ -150,7 +150,7 @@ public class InterpolatedState<T> where T : class, IInterpolatable<T>
     }
 
     /// <summary>
-    /// Gets the interpolated state for rendering.
+    /// Gets the get render state.
     /// Call this every frame in your render loop.
     /// </summary>
     /// <returns>
@@ -160,7 +160,7 @@ public class InterpolatedState<T> where T : class, IInterpolatable<T>
     public T? GetRenderState() => GetRenderState(_stopwatch.Elapsed.TotalMilliseconds);
 
     /// <summary>
-    /// Gets the interpolated state for a specific render time.
+    /// Gets render state.
     /// Useful for replay systems or custom timing.
     /// </summary>
     /// <param name="renderTimeMs">The render time in milliseconds (from the same time source as PushState).</param>

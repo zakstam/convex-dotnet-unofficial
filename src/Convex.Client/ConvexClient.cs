@@ -140,7 +140,7 @@ public sealed class ConvexClient : IConvexClient
     public IObservable<Features.Security.Authentication.AuthenticationState> AuthenticationStateChanges => _authenticationStateSubject.AsObservable();
 
     /// <summary>
-    /// Gets the error that occurred during PreConnect, if any.
+    /// Gets or sets the pre connect error.
     /// Returns null if PreConnect was not enabled or if it succeeded.
     /// </summary>
     /// <value>
@@ -239,7 +239,7 @@ public sealed class ConvexClient : IConvexClient
     }
 
     /// <summary>
-    /// Creates a new ConvexClient with the specified deployment URL.
+    /// Initializes a new instance of the <see cref="ConvexClient"/> class.
     /// Uses default configuration options (30 second timeout, automatic reconnection, etc.).
     /// </summary>
     /// <param name="deploymentUrl">The Convex deployment URL (e.g., "https://happy-animal-123.convex.cloud").</param>
@@ -264,7 +264,7 @@ public sealed class ConvexClient : IConvexClient
     }
 
     /// <summary>
-    /// Creates a new ConvexClient with the specified deployment URL and options.
+    /// Initializes a new instance of the <see cref="ConvexClient"/> class.
     /// Allows fine-grained control over client behavior including timeouts, reconnection policies, and logging.
     /// </summary>
     /// <param name="deploymentUrl">The Convex deployment URL (e.g., "https://happy-animal-123.convex.cloud").</param>
@@ -651,7 +651,7 @@ public sealed class ConvexClient : IConvexClient
     #region Health Checks
 
     /// <summary>
-    /// Gets the current health status of the Convex client connection.
+    /// Gets health.
     /// Provides information about connection state, active subscriptions, and overall health metrics.
     /// </summary>
     /// <returns>A task that completes with a health check result containing connection metrics and status.</returns>
@@ -701,7 +701,7 @@ public sealed class ConvexClient : IConvexClient
     #region Connection Quality
 
     /// <summary>
-    /// Gets the current connection quality assessment.
+    /// Gets connection quality.
     /// Quality is determined by latency, packet loss, reconnections, and stability.
     /// </summary>
     /// <returns>A task that completes with detailed connection quality information including quality level, latency metrics, and stability indicators.</returns>
@@ -784,7 +784,7 @@ public sealed class ConvexClient : IConvexClient
     }
 
     /// <summary>
-    /// Gets the internal connection quality monitor for advanced scenarios.
+    /// Gets the quality monitor.
     /// </summary>
     internal ConnectionQualityMonitor QualityMonitor { get; }
 

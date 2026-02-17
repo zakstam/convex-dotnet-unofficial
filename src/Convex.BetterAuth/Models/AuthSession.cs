@@ -4,7 +4,7 @@ using Convex.BetterAuth.Converters;
 namespace Convex.BetterAuth.Models;
 
 /// <summary>
-/// Represents an authentication session from Better Auth.
+/// Represents auth session.
 /// </summary>
 public class AuthSession
 {

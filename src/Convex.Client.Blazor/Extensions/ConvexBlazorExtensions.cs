@@ -219,8 +219,8 @@ public static class ConvexBlazorExtensions
     #region Form Binding
 
     /// <summary>
-    /// Creates a two-way binding between an observable and form state.
-    /// Updates the form when the observable emits, and can save changes back.
+    /// Executes the bind to form operation.
+    /// Executes the bind to form operation.
     /// </summary>
     /// <typeparam name="T">The type of the form data.</typeparam>
     /// <param name="source">The observable providing form data.</param>
@@ -274,7 +274,7 @@ public static class ConvexBlazorExtensions
     }
 
     /// <summary>
-    /// Creates a simple one-way binding from observable to form with StateHasChanged.
+    /// Executes the bind to form operation.
     /// </summary>
     /// <typeparam name="T">The type of the form data.</typeparam>
     /// <param name="source">The observable providing form data.</param>

@@ -35,7 +35,7 @@ public enum FunctionType
 public class ConvexFunctionAttribute(string functionName, FunctionType functionType = FunctionType.Query) : Attribute
 {
     /// <summary>
-    /// Gets the Convex function name.
+    /// Gets the argument null exception.
     /// </summary>
     public string FunctionName { get; } = functionName ?? throw new ArgumentNullException(nameof(functionName));
 
@@ -88,7 +88,7 @@ public class ConvexActionAttribute(string functionName) : ConvexFunctionAttribut
 public class ConvexTableAttribute : Attribute
 {
     /// <summary>
-    /// Gets or sets the table name override. If not specified, the class name will be used.
+    /// Gets or sets the table name.
     /// </summary>
     public string? TableName { get; set; }
 }
@@ -100,12 +100,12 @@ public class ConvexTableAttribute : Attribute
 public class ConvexIndexAttribute : Attribute
 {
     /// <summary>
-    /// Gets or sets the index name. If not specified, the property name will be used.
+    /// Gets or sets the index name.
     /// </summary>
     public string? IndexName { get; set; }
 
     /// <summary>
-    /// Gets or sets whether this is a unique index.
+    /// Gets or sets a value indicating whether unique.
     /// </summary>
     public bool IsUnique { get; set; }
 }
@@ -117,7 +117,7 @@ public class ConvexIndexAttribute : Attribute
 public class ConvexSearchIndexAttribute : Attribute
 {
     /// <summary>
-    /// Gets or sets the search index name. If not specified, the property name will be used.
+    /// Gets or sets the index name.
     /// </summary>
     public string? IndexName { get; set; }
 }
@@ -133,7 +133,7 @@ public class ConvexSearchIndexAttribute : Attribute
 public class ConvexForeignKeyAttribute(string tableName) : Attribute
 {
     /// <summary>
-    /// Gets the name of the referenced table.
+    /// Gets the argument null exception.
     /// </summary>
     public string TableName { get; } = tableName ?? throw new ArgumentNullException(nameof(tableName));
 }
@@ -145,22 +145,22 @@ public class ConvexForeignKeyAttribute(string tableName) : Attribute
 public class ConvexValidationAttribute : Attribute
 {
     /// <summary>
-    /// Gets or sets the minimum value (for numbers). Default is double.MinValue.
+    /// Gets or sets the min.
     /// </summary>
     public double Min { get; set; } = double.MinValue;
 
     /// <summary>
-    /// Gets or sets the maximum value (for numbers). Default is double.MaxValue.
+    /// Gets or sets the max.
     /// </summary>
     public double Max { get; set; } = double.MaxValue;
 
     /// <summary>
-    /// Gets or sets the minimum length (for strings and arrays). Default is 0.
+    /// Gets or sets the min length.
     /// </summary>
     public int MinLength { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets the maximum length (for strings and arrays). Default is int.MaxValue.
+    /// Gets or sets the max length.
     /// </summary>
     public int MaxLength { get; set; } = int.MaxValue;
 }

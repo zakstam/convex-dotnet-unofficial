@@ -13,7 +13,7 @@ internal static class ReflectionCache
     private static readonly ConcurrentDictionary<(Type, string, int), MethodInfo> MethodCache = new();
 
     /// <summary>
-    /// Gets a cached generic method with the specified characteristics.
+    /// Gets generic method.
     /// </summary>
     /// <param name="type">The type containing the method.</param>
     /// <param name="methodName">The name of the method to find.</param>
@@ -45,7 +45,7 @@ internal static class ReflectionCache
     }
 
     /// <summary>
-    /// Gets a cached, instantiated generic method.
+    /// Gets instantiated generic method.
     /// </summary>
     /// <param name="type">The type containing the method.</param>
     /// <param name="methodName">The name of the method.</param>
@@ -81,7 +81,7 @@ internal static class ReflectionCache
     public static void Clear() => MethodCache.Clear();
 
     /// <summary>
-    /// Gets the current number of cached method lookups.
+    /// Gets the cached method count.
     /// </summary>
     public static int CachedMethodCount => MethodCache.Count;
 }

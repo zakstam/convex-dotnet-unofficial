@@ -6,46 +6,46 @@ namespace Convex.Client.Extensions.Clerk;
 public class ClerkOptions
 {
     /// <summary>
-    /// Gets or sets the Clerk publishable key (for client-side applications).
+    /// Gets or sets the publishable key.
     /// This is optional and only needed for client-side token retrieval.
     /// </summary>
     public string? PublishableKey { get; set; }
 
     /// <summary>
-    /// Gets or sets the Clerk secret key (for server-side applications).
+    /// Gets or sets the secret key.
     /// This is required for server-side token operations.
     /// </summary>
     public string? SecretKey { get; set; }
 
     /// <summary>
-    /// Gets or sets the JWT template name to use when requesting tokens from Clerk.
+    /// Gets or sets the token template.
     /// Default is "convex" to match Convex backend expectations.
     /// </summary>
     public string TokenTemplate { get; set; } = "convex";
 
     /// <summary>
-    /// Gets or sets whether to enable token caching.
+    /// Gets or sets a value indicating whether enable token caching.
     /// When enabled, tokens are cached to avoid excessive Clerk API calls.
     /// Default is true.
     /// </summary>
     public bool EnableTokenCaching { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the token cache expiration time.
+    /// Gets or sets the from minutes.
     /// Tokens are considered expired after this duration and will be refreshed.
     /// Default is 5 minutes.
     /// </summary>
     public TimeSpan TokenCacheExpiration { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// Gets or sets a custom function to retrieve the current user's session token.
+    /// Gets or sets the cancellation token.
     /// If provided, this will be used instead of the default Clerk SDK token retrieval.
     /// This allows for custom integration with different Clerk SDK implementations.
     /// </summary>
     public Func<CancellationToken, Task<string?>>? CustomTokenRetriever { get; set; }
 
     /// <summary>
-    /// Gets or sets the Clerk domain (Frontend API URL).
+    /// Gets or sets the clerk domain.
     /// For development: {instance-name}.clerk.accounts.dev
     /// For production: clerk.{yourdomain}.com
     /// If not set, will attempt to use default.
@@ -53,19 +53,19 @@ public class ClerkOptions
     public string? ClerkDomain { get; set; }
 
     /// <summary>
-    /// Gets or sets the port for the OAuth callback server (desktop apps).
+    /// Gets or sets the callback port.
     /// Default is 8080.
     /// </summary>
     public int CallbackPort { get; set; } = 8080;
 
     /// <summary>
-    /// Gets or sets the path for the OAuth callback (desktop apps).
+    /// Gets or sets the callback path.
     /// Default is "/callback".
     /// </summary>
     public string CallbackPath { get; set; } = "/callback";
 
     /// <summary>
-    /// Gets or sets the OAuth Client ID for Authorization Code Flow (desktop apps).
+    /// Gets or sets the o auth client ID.
     /// This is the Client ID from your OAuth Application in Clerk Dashboard.
     /// Different from PublishableKey - this is specifically for OAuth flows.
     /// </summary>

@@ -28,7 +28,7 @@ public interface IConvexClientBuilder
     IConvexClientBuilder WithHttpClient(HttpClient httpClient);
 
     /// <summary>
-    /// Sets the default timeout for HTTP operations.
+    /// Configures timeout.
     /// </summary>
     IConvexClientBuilder WithTimeout(TimeSpan timeout);
 

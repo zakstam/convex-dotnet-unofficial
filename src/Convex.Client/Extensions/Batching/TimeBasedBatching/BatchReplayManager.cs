@@ -34,7 +34,7 @@ public class BatchReplayManager<TEvent> : IDisposable
     }
 
     /// <summary>
-    /// Gets an observable stream of replayed events.
+    /// Gets the as observable.
     /// Events are emitted at the correct timing based on their timeSinceBatchStart values.
     /// </summary>
     public IObservable<TEvent> ReplayedEvents => _replayedEvents.AsObservable();

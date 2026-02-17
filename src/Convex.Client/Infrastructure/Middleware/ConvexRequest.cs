@@ -1,11 +1,11 @@
 namespace Convex.Client.Infrastructure.Middleware;
 
 /// <summary>
-/// Represents a request to a Convex function.
+/// Executes the convex request operation.
 /// Used by middleware to inspect and transform requests.
 /// </summary>
 /// <remarks>
-/// Creates a new ConvexRequest.
+/// Executes the convex request operation.
 /// </remarks>
 /// <param name="functionName">The function name.</param>
 /// <param name="method">The request method (query, mutation, or action).</param>
@@ -18,39 +18,39 @@ public sealed class ConvexRequest(
     CancellationToken cancellationToken = default)
 {
     /// <summary>
-    /// Gets or sets the function name (e.g., "todos:list").
+    /// Gets or sets the argument null exception.
     /// </summary>
     public string FunctionName { get; set; } = functionName ?? throw new ArgumentNullException(nameof(functionName));
 
     /// <summary>
-    /// Gets or sets the request method type (query, mutation, or action).
+    /// Gets or sets the argument null exception.
     /// </summary>
     public string Method { get; set; } = method ?? throw new ArgumentNullException(nameof(method));
 
     /// <summary>
-    /// Gets or sets the arguments to pass to the function.
+    /// Gets or sets the args.
     /// Null if no arguments are provided.
     /// </summary>
     public object? Args { get; set; } = args;
 
     /// <summary>
-    /// Gets the request metadata that can be used by middleware.
+    /// Gets the string.
     /// Middleware can store custom data here for passing information between middleware layers.
     /// </summary>
     public Dictionary<string, object?> Metadata { get; } = [];
 
     /// <summary>
-    /// Gets or sets the timeout for this request.
+    /// Gets or sets the timeout.
     /// </summary>
     public TimeSpan? Timeout { get; set; }
 
     /// <summary>
-    /// Gets or sets the cancellation token for this request.
+    /// Gets or sets the cancellation token.
     /// </summary>
     public CancellationToken CancellationToken { get; set; } = cancellationToken;
 
     /// <summary>
-    /// Creates a shallow copy of this request.
+    /// Executes the clone operation.
     /// Useful for middleware that needs to modify the request without affecting the original.
     /// </summary>
     public ConvexRequest Clone()

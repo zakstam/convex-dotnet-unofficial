@@ -202,7 +202,7 @@ public static class ConvexTelemetry
     }
 
     /// <summary>
-    /// Updates the active connection count.
+    /// Gets the update active connections.
     /// </summary>
     /// <param name="count">The current number of active connections.</param>
     public static void UpdateActiveConnections(int count) => _activeConnectionsCount = count;
@@ -216,22 +216,61 @@ public static class ConvexTelemetry
     /// </summary>
     public static class EventIds
     {
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId RequestStarted = new(1000, "RequestStarted");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId RequestCompleted = new(1001, "RequestCompleted");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId RequestFailed = new(1002, "RequestFailed");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId RequestRetrying = new(1003, "RequestRetrying");
 
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId ConnectionEstablished = new(2000, "ConnectionEstablished");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId ConnectionLost = new(2001, "ConnectionLost");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId ConnectionRetrying = new(2002, "ConnectionRetrying");
 
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId AuthTokenRefreshed = new(3000, "AuthTokenRefreshed");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId AuthTokenExpired = new(3001, "AuthTokenExpired");
 
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId CircuitBreakerOpened = new(4000, "CircuitBreakerOpened");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId CircuitBreakerClosed = new(4001, "CircuitBreakerClosed");
 
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId OptimisticUpdateApplied = new(5000, "OptimisticUpdateApplied");
+        /// <summary>
+        /// Executes the new operation.
+        /// </summary>
         public static readonly EventId OptimisticUpdateRolledBack = new(5001, "OptimisticUpdateRolledBack");
     }
 
@@ -343,7 +382,7 @@ public static class ConvexTelemetry
     }
 
     /// <summary>
-    /// Creates a scope for request telemetry that automatically tracks duration and outcome.
+    /// Creates request scope.
     /// </summary>
     /// <param name="functionType">The type of function being called.</param>
     /// <param name="functionName">The name of the function being called.</param>
@@ -402,6 +441,9 @@ public sealed class ConvexTelemetryScope : IDisposable
     /// <param name="exception">The exception that caused the failure.</param>
     public void RecordFailure(Exception exception) => _exception = exception;
 
+    /// <summary>
+    /// Releases the resources used by this instance.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;

@@ -8,7 +8,7 @@ namespace Convex.Client.Infrastructure.Caching;
 public interface IReactiveCache : IConvexCache, IDisposable
 {
     /// <summary>
-    /// Gets an observable that emits when the cached value for the specified key changes.
+    /// Gets observable.
     /// New subscribers receive notifications for all future value changes.
     /// </summary>
     /// <typeparam name="T">The type of the cached value.</typeparam>
@@ -17,7 +17,7 @@ public interface IReactiveCache : IConvexCache, IDisposable
     IObservable<T?> GetObservable<T>(string key);
 
     /// <summary>
-    /// Sets a value in the cache and notifies all subscribers.
+    /// Sets and notify.
     /// This is the primary method for triggering reactive updates.
     /// </summary>
     /// <typeparam name="T">The type of the value.</typeparam>
@@ -27,7 +27,7 @@ public interface IReactiveCache : IConvexCache, IDisposable
     void SetAndNotify<T>(string key, T? value, CacheEntrySource source);
 
     /// <summary>
-    /// Gets the current cached value for a key, or default if not cached.
+    /// Gets current value.
     /// Unlike TryGet, this returns the value directly without an out parameter.
     /// </summary>
     /// <typeparam name="T">The type of the cached value.</typeparam>
@@ -36,7 +36,7 @@ public interface IReactiveCache : IConvexCache, IDisposable
     T? GetCurrentValue<T>(string key);
 
     /// <summary>
-    /// Gets the source of a cached entry, if it exists.
+    /// Attempts to get source.
     /// </summary>
     /// <param name="key">The cache key.</param>
     /// <param name="source">The source of the cached entry.</param>

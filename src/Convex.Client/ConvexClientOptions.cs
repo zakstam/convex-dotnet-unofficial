@@ -39,49 +39,49 @@ namespace Convex.Client;
 public sealed class ConvexClientOptions
 {
     /// <summary>
-    /// Gets or sets the Convex deployment URL.
+    /// Gets or sets the deployment url.
     /// This property is used by dependency injection configuration.
     /// When constructing ConvexClient directly, pass the URL to the constructor instead.
     /// </summary>
     public string? DeploymentUrl { get; set; }
 
     /// <summary>
-    /// Gets or sets the admin authentication key for privileged operations.
+    /// Gets or sets the admin key.
     /// Use this for server-side operations only - never expose admin keys in client applications.
     /// </summary>
     public string? AdminKey { get; set; }
 
     /// <summary>
-    /// Gets or sets the HttpClient to use for HTTP operations.
+    /// Gets or sets the HTTP client.
     /// If not set, a new HttpClient will be created.
     /// </summary>
     public HttpClient? HttpClient { get; set; }
 
     /// <summary>
-    /// Gets or sets the default timeout for HTTP operations.
+    /// Gets or sets the from seconds.
     /// Default is 30 seconds.
     /// </summary>
     public TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Gets or sets the reconnection policy for WebSocket connections.
+    /// Gets or sets the reconnection policy.
     /// If not set, ReconnectionPolicy.Default() will be used.
     /// </summary>
     public ReconnectionPolicy? ReconnectionPolicy { get; set; }
 
     /// <summary>
-    /// Gets or sets the SynchronizationContext to use for event marshalling.
+    /// Gets or sets the synchronization context.
     /// If not set, SynchronizationContext.Current will be captured at client creation.
     /// </summary>
     public SynchronizationContext? SynchronizationContext { get; set; }
 
     /// <summary>
-    /// Gets or sets the logger for structured logging.
+    /// Gets or sets the logger.
     /// </summary>
     public ILogger? Logger { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to enable debug-level logging.
+    /// Gets or sets a value indicating whether enable debug logging.
     /// When enabled, debug-level logs will be emitted if a logger is configured.
     /// Debug logs include detailed information about requests, responses, and internal operations.
     /// Default is false.
@@ -89,20 +89,20 @@ public sealed class ConvexClientOptions
     public bool EnableDebugLogging { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets whether to automatically connect the WebSocket on first subscription.
+    /// Gets or sets a value indicating whether auto connect.
     /// Default is true.
     /// Note: This property is currently reserved for future use. WebSocket connections are always automatic.
     /// </summary>
     public bool AutoConnect { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to pre-connect the WebSocket when the client is created.
+    /// Gets or sets a value indicating whether pre connect.
     /// Default is false (lazy connection).
     /// </summary>
     public bool PreConnect { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets whether to enable connection quality monitoring.
+    /// Gets or sets a value indicating whether enable quality monitoring.
     /// When enabled, the client will periodically assess connection quality
     /// and raise ConnectionQualityChanged events when quality changes.
     /// Default is true.
@@ -110,26 +110,26 @@ public sealed class ConvexClientOptions
     public bool EnableQualityMonitoring { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the interval for checking connection quality.
+    /// Gets or sets the from seconds.
     /// Quality is assessed at this interval when quality monitoring is enabled.
     /// Default is 10 seconds.
     /// </summary>
     public TimeSpan QualityCheckInterval { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// Gets or sets the list of interceptors to apply to requests and responses.
+    /// Gets or sets the interceptors.
     /// Interceptors are executed in the order they are added.
     /// </summary>
     public List<IConvexInterceptor> Interceptors { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets the schema validation options.
+    /// Gets or sets the schema validation.
     /// When configured, responses will be validated against expected types.
     /// </summary>
     public SchemaValidationOptions? SchemaValidation { get; set; }
 
     /// <summary>
-    /// Gets or sets the schema validator to use for validation.
+    /// Gets or sets the schema validator.
     /// If not set and SchemaValidation is configured, RuntimeSchemaValidator will be used.
     /// </summary>
     public ISchemaValidator? SchemaValidator { get; set; }

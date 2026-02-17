@@ -8,8 +8,10 @@
     <!-- Not packable - bundled into Convex.Client package -->
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;NU5128;NU5017;RS2008;RS1032</NoWarn>
+    <NoWarn>$(NoWarn);NU5128;NU5017;RS2008;RS1032</NoWarn>
     <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <BasePackageId>Convex.SourceGenerator</BasePackageId>
     <Product>Convex .NET Source Generator</Product>
     <Description>Unified Roslyn source generator for Convex .NET SDK. Generates type-safe function constants, model classes, argument types, and service wrappers from your Convex backend.</Description>

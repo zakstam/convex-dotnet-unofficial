@@ -49,43 +49,43 @@ namespace Convex.Client.Infrastructure.Resilience;
 public sealed class RetryPolicy
 {
     /// <summary>
-    /// Gets the maximum number of retry attempts.
+    /// Gets or sets the max retries.
     /// </summary>
     public int MaxRetries { get; internal set; }
 
     /// <summary>
-    /// Gets the backoff strategy to use between retries.
+    /// Gets or sets the backoff strategy.
     /// </summary>
     public BackoffStrategy BackoffStrategy { get; internal set; }
 
     /// <summary>
-    /// Gets the initial delay for the backoff strategy.
+    /// Gets or sets the initial delay.
     /// </summary>
     public TimeSpan InitialDelay { get; internal set; }
 
     /// <summary>
-    /// Gets the backoff multiplier (for exponential backoff).
+    /// Gets or sets the backoff multiplier.
     /// </summary>
     public double BackoffMultiplier { get; internal set; }
 
     /// <summary>
-    /// Gets the maximum delay between retries.
+    /// Gets or sets the max delay.
     /// </summary>
     public TimeSpan? MaxDelay { get; internal set; }
 
     /// <summary>
-    /// Gets whether to use jitter (random variance) in delay calculations to prevent thundering herd.
+    /// Gets or sets a value indicating whether use jitter.
     /// </summary>
     public bool UseJitter { get; internal set; }
 
     /// <summary>
-    /// Gets the set of exception types that should trigger a retry.
+    /// Gets the retryable exception types.
     /// If empty, uses default transient exception detection logic.
     /// </summary>
     public HashSet<Type> RetryableExceptionTypes { get; }
 
     /// <summary>
-    /// Gets the callback to invoke before each retry attempt.
+    /// Gets or sets the int.
     /// Parameters: (attemptNumber, exception, delayBeforeRetry)
     /// </summary>
     public Action<int, Exception, TimeSpan>? OnRetryCallback { get; internal set; }
@@ -102,7 +102,7 @@ public sealed class RetryPolicy
     }
 
     /// <summary>
-    /// Gets a default retry policy with 3 retries and exponential backoff with jitter.
+    /// Executes the default operation.
     /// This is a good starting point for most applications.
     /// </summary>
     /// <returns>A retry policy with 3 retries, exponential backoff starting at 100ms, and jitter enabled.</returns>
@@ -134,7 +134,7 @@ public sealed class RetryPolicy
     }
 
     /// <summary>
-    /// Gets an aggressive retry policy with 5 retries and faster backoff.
+    /// Executes the aggressive operation.
     /// </summary>
     public static RetryPolicy Aggressive()
     {
@@ -146,7 +146,7 @@ public sealed class RetryPolicy
     }
 
     /// <summary>
-    /// Gets a conservative retry policy with 2 retries and longer delays.
+    /// Executes the conservative operation.
     /// </summary>
     public static RetryPolicy Conservative()
     {
@@ -158,7 +158,7 @@ public sealed class RetryPolicy
     }
 
     /// <summary>
-    /// Gets a retry policy with no retries (fail immediately).
+    /// Executes the none operation.
     /// </summary>
     public static RetryPolicy None()
     {
@@ -294,12 +294,12 @@ public sealed class RetryPolicyBuilder
     private readonly RetryPolicy _policy;
 
     /// <summary>
-    /// Creates a new retry policy builder.
+    /// Gets the retry policy builder.
     /// </summary>
     public RetryPolicyBuilder() => _policy = new RetryPolicy();
 
     /// <summary>
-    /// Sets the maximum number of retry attempts.
+    /// Executes the max retries operation.
     /// </summary>
     /// <param name="maxRetries">The maximum number of retries (0 to disable retries).</param>
     /// <returns>This builder for fluent chaining.</returns>
@@ -375,7 +375,7 @@ public sealed class RetryPolicyBuilder
     }
 
     /// <summary>
-    /// Sets the maximum delay between retries (caps the backoff).
+    /// Configures max delay.
     /// </summary>
     /// <param name="maxDelay">The maximum delay to wait between retries.</param>
     /// <returns>This builder for fluent chaining.</returns>

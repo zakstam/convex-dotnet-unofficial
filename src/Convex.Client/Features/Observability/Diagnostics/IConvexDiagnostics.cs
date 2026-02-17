@@ -9,12 +9,12 @@ namespace Convex.Client.Features.Observability.Diagnostics;
 public interface IConvexDiagnostics
 {
     /// <summary>
-    /// Gets the performance tracker for detailed timing measurements.
+    /// Gets the performance.
     /// </summary>
     IPerformanceTracker Performance { get; }
 
     /// <summary>
-    /// Gets the disconnect tracker for monitoring connection disruptions.
+    /// Gets the disconnects.
     /// </summary>
     IDisconnectTracker Disconnects { get; }
 }
@@ -25,17 +25,17 @@ public interface IConvexDiagnostics
 public interface IPerformanceTracker
 {
     /// <summary>
-    /// Gets all performance entries.
+    /// Gets the entries.
     /// </summary>
     IReadOnlyList<PerformanceEntry> Entries { get; }
 
     /// <summary>
-    /// Creates a named performance mark at the current time.
+    /// Executes the mark operation.
     /// </summary>
     PerformanceMark Mark(string markName, JsonElement? detail = null);
 
     /// <summary>
-    /// Creates a performance measure between two marks.
+    /// Executes the measure operation.
     /// </summary>
     PerformanceMeasure Measure(string measureName, string? startMark = null, string? endMark = null);
 
@@ -45,7 +45,7 @@ public interface IPerformanceTracker
     IReadOnlyList<PerformanceEntry> GetEntriesByName(string name);
 
     /// <summary>
-    /// Gets entries by type ("mark" or "measure").
+    /// Gets entries by type.
     /// </summary>
     IReadOnlyList<PerformanceEntry> GetEntriesByType(string type);
 
@@ -65,7 +65,7 @@ public interface IPerformanceTracker
     void Clear();
 
     /// <summary>
-    /// Gets a summary of all measures grouped by name.
+    /// Gets summary.
     /// </summary>
     PerformanceSummary GetSummary();
 }
@@ -76,17 +76,17 @@ public interface IPerformanceTracker
 public interface IDisconnectTracker
 {
     /// <summary>
-    /// Gets whether currently disconnected.
+    /// Gets or sets a value indicating whether disconnected.
     /// </summary>
     bool IsDisconnected { get; }
 
     /// <summary>
-    /// Gets the current disconnect duration, if disconnected.
+    /// Gets the current disconnect duration.
     /// </summary>
     TimeSpan? CurrentDisconnectDuration { get; }
 
     /// <summary>
-    /// Gets whether the current disconnection is considered long.
+    /// Gets or sets a value indicating whether long disconnect.
     /// </summary>
     bool IsLongDisconnect { get; }
 
@@ -106,7 +106,7 @@ public interface IDisconnectTracker
     void RecordReconnect();
 
     /// <summary>
-    /// Gets statistics about disconnect events.
+    /// Gets stats.
     /// </summary>
     DisconnectStats GetStats();
 
@@ -121,19 +121,37 @@ public interface IDisconnectTracker
 /// </summary>
 public abstract record PerformanceEntry
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
     public string Name { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the entry type.
+    /// </summary>
     public string EntryType { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
     public TimeSpan Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
     public TimeSpan Duration { get; init; }
 }
 
 /// <summary>
-/// Represents a point in time for performance measurement.
+/// Represents performance mark.
 /// </summary>
 public record PerformanceMark : PerformanceEntry
 {
+    /// <summary>
+    /// Gets or sets the detail.
+    /// </summary>
     public JsonElement? Detail { get; init; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PerformanceMark"/> class.
+    /// </summary>
     public PerformanceMark(string name, TimeSpan timestamp, JsonElement? detail = null)
     {
         Name = name;
@@ -143,14 +161,20 @@ public record PerformanceMark : PerformanceEntry
         Detail = detail;
     }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => $"Mark '{Name}' at {Timestamp.TotalMilliseconds:F2}ms";
 }
 
 /// <summary>
-/// Represents a duration between two marks.
+/// Represents performance measure.
 /// </summary>
 public record PerformanceMeasure : PerformanceEntry
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PerformanceMeasure"/> class.
+    /// </summary>
     public PerformanceMeasure(string name, TimeSpan startTime, TimeSpan duration)
     {
         Name = name;
@@ -159,6 +183,9 @@ public record PerformanceMeasure : PerformanceEntry
         Duration = duration;
     }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => $"Measure '{Name}': {Duration.TotalMilliseconds:F2}ms (at {Timestamp.TotalMilliseconds:F2}ms)";
 }
 
@@ -167,13 +194,34 @@ public record PerformanceMeasure : PerformanceEntry
 /// </summary>
 public record PerformanceMeasureStats
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
     public string Name { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the count.
+    /// </summary>
     public int Count { get; init; }
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
     public TimeSpan TotalDuration { get; init; }
+    /// <summary>
+    /// Gets or sets the average duration.
+    /// </summary>
     public TimeSpan AverageDuration { get; init; }
+    /// <summary>
+    /// Gets or sets the min duration.
+    /// </summary>
     public TimeSpan MinDuration { get; init; }
+    /// <summary>
+    /// Gets or sets the max duration.
+    /// </summary>
     public TimeSpan MaxDuration { get; init; }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() =>
         $"{Name}: {Count} measurements, avg {AverageDuration.TotalMilliseconds:F2}ms, " +
         $"min {MinDuration.TotalMilliseconds:F2}ms, max {MaxDuration.TotalMilliseconds:F2}ms";
@@ -184,24 +232,51 @@ public record PerformanceMeasureStats
 /// </summary>
 public record PerformanceSummary
 {
+    /// <summary>
+    /// Gets or sets the total marks.
+    /// </summary>
     public int TotalMarks { get; init; }
+    /// <summary>
+    /// Gets or sets the total measures.
+    /// </summary>
     public int TotalMeasures { get; init; }
+    /// <summary>
+    /// Gets or sets the measure stats.
+    /// </summary>
     public List<PerformanceMeasureStats> MeasureStats { get; init; } = [];
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() =>
         $"Performance Summary: {TotalMarks} marks, {TotalMeasures} measures, {MeasureStats.Count} unique operations";
 }
 
 /// <summary>
-/// Represents a disconnection event.
+/// Represents disconnect event.
 /// </summary>
 public record DisconnectEvent
 {
+    /// <summary>
+    /// Gets or sets the disconnected at.
+    /// </summary>
     public DateTimeOffset DisconnectedAt { get; init; }
+    /// <summary>
+    /// Gets or sets the reconnected at.
+    /// </summary>
     public DateTimeOffset ReconnectedAt { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
     public TimeSpan Duration { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether was long disconnect.
+    /// </summary>
     public bool WasLongDisconnect { get; init; }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() =>
         $"Disconnected for {Duration.TotalSeconds:F1}s {(WasLongDisconnect ? "(LONG)" : "")} " +
         $"from {DisconnectedAt:HH:mm:ss} to {ReconnectedAt:HH:mm:ss}";
@@ -212,14 +287,35 @@ public record DisconnectEvent
 /// </summary>
 public record DisconnectStats
 {
+    /// <summary>
+    /// Gets or sets the total disconnects.
+    /// </summary>
     public int TotalDisconnects { get; init; }
+    /// <summary>
+    /// Gets or sets the long disconnects.
+    /// </summary>
     public int LongDisconnects { get; init; }
+    /// <summary>
+    /// Gets or sets the average disconnect duration.
+    /// </summary>
     public TimeSpan AverageDisconnectDuration { get; init; }
+    /// <summary>
+    /// Gets or sets the longest disconnect.
+    /// </summary>
     public TimeSpan LongestDisconnect { get; init; }
+    /// <summary>
+    /// Gets or sets the shortest disconnect.
+    /// </summary>
     public TimeSpan ShortestDisconnect { get; init; }
 
+    /// <summary>
+    /// Gets the long disconnect rate.
+    /// </summary>
     public double LongDisconnectRate => TotalDisconnects == 0 ? 0 : (LongDisconnects / (double)TotalDisconnects) * 100;
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() =>
         $"Disconnects: {TotalDisconnects} total, {LongDisconnects} long ({LongDisconnectRate:F1}%), " +
         $"avg {AverageDisconnectDuration.TotalSeconds:F1}s, longest {LongestDisconnect.TotalSeconds:F1}s";

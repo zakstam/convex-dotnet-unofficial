@@ -47,7 +47,7 @@ namespace Convex.Client.Infrastructure.Builders;
 public interface IMutationBuilder<TResult>
 {
     /// <summary>
-    /// Sets the arguments to pass to the Convex function.
+    /// Configures args.
     /// Arguments are serialized to JSON and sent to the Convex backend.
     /// </summary>
     /// <typeparam name="TArgs">The type of the arguments object. Can be an anonymous type, class, record, or struct.</typeparam>
@@ -71,7 +71,7 @@ public interface IMutationBuilder<TResult>
     IMutationBuilder<TResult> WithArgs<TArgs>(TArgs args) where TArgs : notnull;
 
     /// <summary>
-    /// Sets the arguments using a builder function for type-safe construction.
+    /// Configures args.
     /// </summary>
     /// <typeparam name="TArgs">The type of the arguments object.</typeparam>
     /// <param name="configure">A function that configures the arguments.</param>
@@ -79,7 +79,7 @@ public interface IMutationBuilder<TResult>
     IMutationBuilder<TResult> WithArgs<TArgs>(Action<TArgs> configure) where TArgs : class, new();
 
     /// <summary>
-    /// Sets a timeout for the mutation execution.
+    /// Configures timeout.
     /// Overrides the default timeout set on the client. The mutation will fail if it doesn't complete within this time.
     /// </summary>
     /// <param name="timeout">The timeout duration. Must be greater than zero.</param>

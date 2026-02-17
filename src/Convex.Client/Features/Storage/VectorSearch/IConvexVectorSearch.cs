@@ -54,17 +54,17 @@ namespace Convex.Client.Features.Storage.VectorSearch;
 public interface IConvexVectorSearch
 {
     /// <summary>
-    /// Performs a similarity search using a vector query without a filter.
+    /// Searches an index using a query vector.
     /// </summary>
     Task<IEnumerable<VectorSearchResult<T>>> SearchAsync<T>(string indexName, float[] vector, int limit = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Performs a similarity search using a vector query with a strongly-typed filter.
+    /// Searches an index using a query vector and a typed filter.
     /// </summary>
     Task<IEnumerable<VectorSearchResult<TResult>>> SearchAsync<TResult, TFilter>(string indexName, float[] vector, int limit, TFilter filter, CancellationToken cancellationToken = default) where TFilter : notnull;
 
     /// <summary>
-    /// Performs a similarity search using text that will be converted to a vector without a filter.
+    /// Searches an index using text that is embedded before querying.
     /// This is the easiest way to perform semantic search - just provide text and the system will
     /// automatically create an embedding and search for similar items.
     /// </summary>
@@ -116,40 +116,55 @@ public interface IConvexVectorSearch
     Task<IEnumerable<VectorSearchResult<T>>> SearchByTextAsync<T>(string indexName, string text, string embeddingModel = "text-embedding-ada-002", int limit = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Performs a similarity search using text that will be converted to a vector with a strongly-typed filter.
+    /// Searches an index using embedded text and a typed filter.
     /// </summary>
     Task<IEnumerable<VectorSearchResult<TResult>>> SearchByTextAsync<TResult, TFilter>(string indexName, string text, string embeddingModel, int limit, TFilter filter, CancellationToken cancellationToken = default) where TFilter : notnull;
 
     /// <summary>
-    /// Creates a text embedding using the specified model.
+    /// Creates an embedding vector for the provided text.
     /// </summary>
     Task<float[]> CreateEmbeddingAsync(string text, string model = "text-embedding-ada-002", CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates embeddings for multiple texts in a single batch operation.
+    /// Creates embedding vectors for multiple text values.
     /// </summary>
     Task<float[][]> CreateEmbeddingsAsync(string[] texts, string model = "text-embedding-ada-002", CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets information about a vector index.
+    /// Gets metadata for a vector index.
     /// </summary>
     Task<VectorIndexInfo> GetIndexInfoAsync(string indexName, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Lists all available vector indices.
+    /// Lists available vector indices.
     /// </summary>
     Task<IEnumerable<VectorIndexInfo>> ListIndicesAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Represents a result from a vector similarity search.
+/// Represents a vector search result.
 /// </summary>
 public class VectorSearchResult<T>
 {
+    /// <summary>
+    /// Gets or sets the matched document ID.
+    /// </summary>
     public required string Id { get; init; }
+    /// <summary>
+    /// Gets or sets the similarity score.
+    /// </summary>
     public required float Score { get; init; }
+    /// <summary>
+    /// Gets or sets the matched document data.
+    /// </summary>
     public required T Data { get; init; }
+    /// <summary>
+    /// Gets or sets the matched vector, when included in the response.
+    /// </summary>
     public float[]? Vector { get; init; }
+    /// <summary>
+    /// Gets or sets metadata associated with the matched vector.
+    /// </summary>
     public Dictionary<string, JsonElement>? Metadata { get; init; }
 }
 
@@ -158,14 +173,41 @@ public class VectorSearchResult<T>
 /// </summary>
 public class VectorIndexInfo
 {
+    /// <summary>
+    /// Gets or sets the index name.
+    /// </summary>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the vector dimension count.
+    /// </summary>
     public required int Dimension { get; init; }
+    /// <summary>
+    /// Gets or sets the distance metric used by the index.
+    /// </summary>
     public required VectorDistanceMetric Metric { get; init; }
+    /// <summary>
+    /// Gets or sets the vector count.
+    /// </summary>
     public long VectorCount { get; init; }
+    /// <summary>
+    /// Gets or sets the source table name.
+    /// </summary>
     public required string Table { get; init; }
+    /// <summary>
+    /// Gets or sets the vector field name.
+    /// </summary>
     public required string VectorField { get; init; }
+    /// <summary>
+    /// Gets or sets the optional filter field name.
+    /// </summary>
     public string? FilterField { get; init; }
+    /// <summary>
+    /// Gets or sets when the index was created.
+    /// </summary>
     public DateTimeOffset CreatedAt { get; init; }
+    /// <summary>
+    /// Gets or sets when the index was last updated.
+    /// </summary>
     public DateTimeOffset UpdatedAt { get; init; }
 }
 
@@ -174,8 +216,17 @@ public class VectorIndexInfo
 /// </summary>
 public enum VectorDistanceMetric
 {
+    /// <summary>
+    /// Uses cosine similarity.
+    /// </summary>
     Cosine,
+    /// <summary>
+    /// Uses Euclidean distance.
+    /// </summary>
     Euclidean,
+    /// <summary>
+    /// Uses dot-product similarity.
+    /// </summary>
     DotProduct
 }
 
@@ -184,7 +235,13 @@ public enum VectorDistanceMetric
 /// </summary>
 public class ConvexVectorSearchException(VectorSearchErrorType errorType, string message, string? indexName = null, Exception? innerException = null) : Exception(message, innerException)
 {
+    /// <summary>
+    /// Gets the error type.
+    /// </summary>
     public VectorSearchErrorType ErrorType { get; } = errorType;
+    /// <summary>
+    /// Gets the index name.
+    /// </summary>
     public string? IndexName { get; } = indexName;
 }
 
@@ -193,12 +250,36 @@ public class ConvexVectorSearchException(VectorSearchErrorType errorType, string
 /// </summary>
 public enum VectorSearchErrorType
 {
+    /// <summary>
+    /// The specified vector index was not found.
+    /// </summary>
     IndexNotFound,
+    /// <summary>
+    /// The query vector dimensions do not match the index dimensions.
+    /// </summary>
     InvalidDimensions,
+    /// <summary>
+    /// The provided filter is invalid.
+    /// </summary>
     InvalidFilter,
+    /// <summary>
+    /// Embedding generation failed.
+    /// </summary>
     EmbeddingFailed,
+    /// <summary>
+    /// Vector search execution failed.
+    /// </summary>
     SearchFailed,
+    /// <summary>
+    /// The requested embedding model is invalid or unavailable.
+    /// </summary>
     InvalidModel,
+    /// <summary>
+    /// A rate limit was exceeded.
+    /// </summary>
     RateLimitExceeded,
+    /// <summary>
+    /// A usage quota was exceeded.
+    /// </summary>
     QuotaExceeded
 }

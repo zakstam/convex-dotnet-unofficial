@@ -15,7 +15,7 @@ public static class TestHelpers
     private static MetadataReference? _convexClientExtensionsReference;
 
     /// <summary>
-    /// Gets the metadata reference for the Convex.Client assembly.
+    /// Gets convex client reference.
     /// </summary>
     public static MetadataReference GetConvexClientReference()
     {
@@ -29,7 +29,7 @@ public static class TestHelpers
     }
 
     /// <summary>
-    /// Gets the metadata reference for the Convex.Client.Extensions assembly.
+    /// Gets convex client extensions reference.
     /// </summary>
     public static MetadataReference? GetConvexClientExtensionsReference()
     {

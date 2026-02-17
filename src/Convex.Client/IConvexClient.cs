@@ -29,12 +29,12 @@ public interface IConvexClient : IDisposable
     string DeploymentUrl { get; }
 
     /// <summary>
-    /// Gets or sets the default timeout for HTTP operations.
+    /// Gets or sets the request timeout for HTTP operations.
     /// </summary>
     TimeSpan Timeout { get; set; }
 
     /// <summary>
-    /// Gets the current WebSocket connection state.
+    /// Gets the current connection state.
     /// Connection happens automatically when subscriptions are created.
     /// </summary>
     ConnectionState ConnectionState { get; }
@@ -74,7 +74,7 @@ public interface IConvexClient : IDisposable
     #region Queries (HTTP)
 
     /// <summary>
-    /// Creates a fluent query builder for advanced query configuration.
+    /// Creates a query builder for a read-only Convex function.
     /// Queries are read-only operations that fetch data from your Convex backend.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the query. This should match the return type of your Convex function.</typeparam>
@@ -105,7 +105,7 @@ public interface IConvexClient : IDisposable
     IQueryBuilder<TResult> Query<TResult>(string functionName);
 
     /// <summary>
-    /// Creates a batch query builder for executing multiple queries in a single request.
+    /// Creates a batch query builder for executing multiple queries in one request.
     /// Batch queries are more efficient than executing queries individually as they reduce network round-trips.
     /// All queries in the batch execute concurrently and return results in the same order they were added.
     /// </summary>
@@ -133,7 +133,7 @@ public interface IConvexClient : IDisposable
     #region Mutations (HTTP)
 
     /// <summary>
-    /// Creates a fluent mutation builder for advanced mutation configuration.
+    /// Creates a mutation builder for a write operation.
     /// Mutations are write operations that modify data in your Convex backend.
     /// Mutations are queued and executed sequentially to ensure ordering guarantees.
     /// </summary>
@@ -177,7 +177,7 @@ public interface IConvexClient : IDisposable
     #region Actions (HTTP)
 
     /// <summary>
-    /// Creates a fluent action builder for advanced action configuration.
+    /// Creates an action builder for a server-side side-effecting operation.
     /// Actions are server-side operations that can perform side effects like calling external APIs,
     /// sending emails, or other operations that aren't pure database operations.
     /// Unlike queries and mutations, actions can access external resources and have longer execution times.
@@ -212,7 +212,7 @@ public interface IConvexClient : IDisposable
     #region Subscriptions (WebSocket)
 
     /// <summary>
-    /// Creates a real-time observable stream of a Convex query.
+    /// Creates a subscription observable for a function without arguments.
     /// The subscription starts automatically when you call Subscribe() on the observable.
     /// Auto-connects to the WebSocket server if needed and emits new values as the data changes.
     /// </summary>
@@ -228,7 +228,7 @@ public interface IConvexClient : IDisposable
     IObservable<T> Observe<T>(string functionName);
 
     /// <summary>
-    /// Creates a real-time observable stream of a Convex query with arguments.
+    /// Creates a subscription observable for a function with arguments.
     /// The subscription starts automatically when you call Subscribe() on the observable.
     /// Auto-connects to the WebSocket server if needed and emits new values as the data changes.
     /// </summary>
@@ -267,7 +267,7 @@ public interface IConvexClient : IDisposable
     #region Cached Values
 
     /// <summary>
-    /// Gets a cached value from an active subscription, if available.
+    /// Gets the latest cached value for a subscribed function.
     /// Returns default(T?) if no subscription exists for this function or if the subscription hasn't received any data yet.
     /// Cached values are automatically updated when the subscription receives new data.
     /// </summary>
@@ -330,7 +330,7 @@ public interface IConvexClient : IDisposable
     #region Pagination
 
     /// <summary>
-    /// Gets the pagination slice for cursor-based pagination of Convex queries.
+    /// Gets the pagination feature surface.
     /// Provides cursor-based pagination for loading large datasets in manageable pages.
     /// Use this when you need to load data incrementally rather than all at once.
     /// </summary>

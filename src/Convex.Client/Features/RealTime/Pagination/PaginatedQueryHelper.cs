@@ -232,7 +232,7 @@ public class PaginatedQueryHelper<T> : IDisposable
     }
 
     /// <summary>
-    /// Creates a new paginated query helper builder.
+    /// Gets the create.
     /// </summary>
     public static PaginatedQueryHelperBuilder<T> Create(IConvexClient client, string functionName) => new PaginatedQueryHelperBuilder<T>(client, functionName);
 
@@ -583,7 +583,7 @@ public class PaginatedQueryHelper<T> : IDisposable
     }
 
     /// <summary>
-    /// Gets the cached Observe method, or caches it if not already cached.
+    /// Gets or cache observe method.
     /// This avoids repeated reflection lookups for the same method signatures.
     /// </summary>
     private static MethodInfo? GetOrCacheObserveMethod(bool needsArgs)
@@ -716,6 +716,9 @@ public class PaginatedQueryHelper<T> : IDisposable
         ItemsUpdated?.Invoke(_currentItems, _currentBoundaries);
     }
 
+    /// <summary>
+    /// Releases the resources used by this instance.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
@@ -774,7 +777,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets the page size (number of items per page).
+    /// Configures page size.
     /// </summary>
     public PaginatedQueryHelperBuilder<T> WithPageSize(int pageSize)
     {
@@ -783,7 +786,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets the arguments to pass to the query function.
+    /// Configures args.
     /// </summary>
     public PaginatedQueryHelperBuilder<T> WithArgs<TArgs>(TArgs args) where TArgs : notnull
     {
@@ -792,7 +795,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets the function to extract a unique identifier from items for deduplication.
+    /// Configures ID extractor.
     /// </summary>
     public PaginatedQueryHelperBuilder<T> WithIdExtractor(Func<T, string> getId)
     {
@@ -801,7 +804,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets the function to extract a sort key for ordering merged items.
+    /// Configures sort key.
     /// </summary>
     public PaginatedQueryHelperBuilder<T> WithSortKey(Func<T, IComparable> getSortKey)
     {
@@ -810,7 +813,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets a function to extract items from the subscription response.
+    /// Configures subscription extractor.
     /// Use this when the subscription returns a wrapper type (e.g., GetMessagesResponse)
     /// instead of the items directly.
     /// </summary>
@@ -847,7 +850,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets the logger for debug logging.
+    /// Configures logger.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <returns>The builder for method chaining.</returns>
@@ -889,7 +892,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets a callback to be invoked when items are updated (from pagination or subscription).
+    /// Registers a callback for items updated.
     /// If WithUIThreadMarshalling() was called, this callback will be invoked on the UI thread.
     /// </summary>
     /// <param name="onItemsUpdated">Callback that receives the updated items and page boundaries.</param>
@@ -912,7 +915,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets a callback to be invoked when an error occurs.
+    /// Registers a callback for error.
     /// If WithUIThreadMarshalling() was called, this callback will be invoked on the UI thread.
     /// </summary>
     /// <param name="onError">Callback that receives the error message.</param>
@@ -932,7 +935,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets a callback to be invoked when a page boundary is added.
+    /// Registers a callback for page boundary added.
     /// If WithUIThreadMarshalling() was called, this callback will be invoked on the UI thread.
     /// </summary>
     /// <param name="onPageBoundaryAdded">Callback that receives the boundary index.</param>
@@ -944,7 +947,7 @@ public class PaginatedQueryHelperBuilder<T>
     }
 
     /// <summary>
-    /// Sets a callback to be invoked when subscription status changes (for debugging).
+    /// Registers a callback for subscription status changed.
     /// If WithUIThreadMarshalling() was called, this callback will be invoked on the UI thread.
     /// </summary>
     /// <param name="onSubscriptionStatusChanged">Callback that receives the status message.</param>

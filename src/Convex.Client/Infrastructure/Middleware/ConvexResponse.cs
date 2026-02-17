@@ -7,33 +7,33 @@ namespace Convex.Client.Infrastructure.Middleware;
 public sealed class ConvexResponse
 {
     /// <summary>
-    /// Gets or sets the response value.
+    /// Gets or sets the value.
     /// </summary>
     public object? Value { get; set; }
 
     /// <summary>
-    /// Gets or sets the response type.
+    /// Gets or sets the value type.
     /// </summary>
     public Type? ValueType { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the request was successful.
+    /// Gets or sets a value indicating whether success.
     /// </summary>
     public bool IsSuccess { get; set; }
 
     /// <summary>
-    /// Gets or sets the error that occurred, if any.
+    /// Gets or sets the error.
     /// </summary>
     public Exception? Error { get; set; }
 
     /// <summary>
-    /// Gets the response metadata that can be used by middleware.
+    /// Gets the string.
     /// Middleware can store custom data here for passing information between middleware layers.
     /// </summary>
     public Dictionary<string, object?> Metadata { get; } = [];
 
     /// <summary>
-    /// Creates a successful response.
+    /// Executes the success operation.
     /// </summary>
     public static ConvexResponse Success(object? value, Type? valueType = null)
     {
@@ -46,7 +46,7 @@ public sealed class ConvexResponse
     }
 
     /// <summary>
-    /// Creates a successful response with a specific type.
+    /// Executes the success operation.
     /// </summary>
     public static ConvexResponse Success<T>(T value)
     {
@@ -59,7 +59,7 @@ public sealed class ConvexResponse
     }
 
     /// <summary>
-    /// Creates a failed response with an error.
+    /// Executes the failure operation.
     /// </summary>
     public static ConvexResponse Failure(Exception error)
     {
@@ -71,7 +71,7 @@ public sealed class ConvexResponse
     }
 
     /// <summary>
-    /// Gets the value as the specified type.
+    /// Gets value.
     /// Throws an exception if the response is not successful or the value cannot be cast.
     /// </summary>
     public T GetValue<T>()

@@ -16,7 +16,7 @@ public static class SubscriptionsSlice
     // - SubscriptionExtensions - extension methods for IObservable<T>
 
     /// <summary>
-    /// Gets the version of the Subscriptions slice.
+    /// Gets the version.
     /// </summary>
     public static string Version => "1.0.0";
 }

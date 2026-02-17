@@ -52,7 +52,7 @@ public sealed class QueryDependencyRegistry
     }
 
     /// <summary>
-    /// Gets all queries that should be invalidated when a specific mutation executes.
+    /// Gets queries to invalidate.
     /// </summary>
     /// <param name="mutationName">The name of the mutation.</param>
     /// <returns>A collection of query names to invalidate, or empty if no dependencies defined.</returns>
@@ -92,7 +92,7 @@ public sealed class QueryDependencyRegistry
     public void Clear() => _mutationToQueries.Clear();
 
     /// <summary>
-    /// Gets the total number of mutations with defined dependencies.
+    /// Gets the count.
     /// </summary>
     public int Count => _mutationToQueries.Count;
 

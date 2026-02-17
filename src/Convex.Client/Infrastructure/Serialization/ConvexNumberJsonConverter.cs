@@ -9,6 +9,9 @@ namespace Convex.Client.Infrastructure.Serialization;
 /// </summary>
 public class ConvexNumberJsonConverter : JsonConverter<ConvexNumber>
 {
+    /// <summary>
+    /// Reads the operation.
+    /// </summary>
     public override ConvexNumber Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         return reader.TokenType switch
@@ -19,5 +22,8 @@ public class ConvexNumberJsonConverter : JsonConverter<ConvexNumber>
         };
     }
 
+    /// <summary>
+    /// Gets the write.
+    /// </summary>
     public override void Write(Utf8JsonWriter writer, ConvexNumber value, JsonSerializerOptions options) => writer.WriteNumberValue(value.Value);
 }

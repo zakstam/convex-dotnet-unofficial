@@ -110,7 +110,7 @@ public class BatchOperationBuilder(IConvexClient client)
     }
 
     /// <summary>
-    /// Gets the number of operations in the batch.
+    /// Gets the count.
     /// </summary>
     public int Count => _operations.Count;
 
@@ -336,22 +336,22 @@ public class BatchResults
     private readonly Dictionary<string, ConvexResult<object?>> _results = [];
 
     /// <summary>
-    /// Gets all result keys.
+    /// Gets the keys.
     /// </summary>
     public IEnumerable<string> Keys => _results.Keys;
 
     /// <summary>
-    /// Gets the number of successful operations.
+    /// Gets the count.
     /// </summary>
     public int SuccessCount => _results.Values.Count(r => r.IsSuccess);
 
     /// <summary>
-    /// Gets the number of failed operations.
+    /// Gets the count.
     /// </summary>
     public int FailureCount => _results.Values.Count(r => r.IsFailure);
 
     /// <summary>
-    /// Gets the total number of operations.
+    /// Gets the total count.
     /// </summary>
     public int TotalCount => _results.Count;
 
@@ -366,7 +366,7 @@ public class BatchResults
     public bool AnyFailed => _results.Any(r => r.Value.IsFailure);
 
     /// <summary>
-    /// Gets the result for a specific operation key.
+    /// Gets result.
     /// </summary>
     /// <typeparam name="T">The expected result type.</typeparam>
     /// <param name="key">The operation key.</param>
@@ -396,7 +396,7 @@ public class BatchResults
     }
 
     /// <summary>
-    /// Gets the value for a specific operation key, or default if failed.
+    /// Gets value or default.
     /// </summary>
     /// <typeparam name="T">The expected result type.</typeparam>
     /// <param name="key">The operation key.</param>
@@ -408,7 +408,7 @@ public class BatchResults
     }
 
     /// <summary>
-    /// Gets all errors from failed operations.
+    /// Gets the get errors.
     /// </summary>
     /// <returns>Dictionary of keys to exceptions.</returns>
     public Dictionary<string, Exception> GetErrors() =>

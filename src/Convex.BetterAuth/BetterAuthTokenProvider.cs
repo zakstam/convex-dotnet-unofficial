@@ -28,7 +28,7 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
     private static readonly TimeSpan DefaultJwtExpiration = TimeSpan.FromMinutes(15);
 
     /// <summary>
-    /// Creates a new instance of <see cref="BetterAuthTokenProvider"/>.
+    /// Executes the better auth token provider operation.
     /// </summary>
     /// <param name="authService">The Better Auth service to get session tokens from.</param>
     /// <param name="httpClient">HTTP client for making requests to Better Auth.</param>

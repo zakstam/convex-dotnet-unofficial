@@ -87,19 +87,19 @@ public static class TimestampConverter
     public static DateTimeOffset? FromConvexTimestampOffset(double? timestamp) => timestamp.HasValue ? FromConvexTimestampOffset(timestamp.Value) : null;
 
     /// <summary>
-    /// Gets the current UTC time as a Convex timestamp (Unix milliseconds as double).
+    /// Gets the now.
     /// </summary>
     /// <returns>Current UTC time as Convex timestamp.</returns>
     public static double Now() => DateTimeOffset.UtcNow.ToConvexTimestamp();
 
     /// <summary>
-    /// Gets the current UTC date (midnight) as a Convex timestamp (Unix milliseconds as double).
+    /// Gets the today.
     /// </summary>
     /// <returns>Current UTC date (midnight) as Convex timestamp.</returns>
     public static double Today() => DateTimeOffset.UtcNow.Date.ToConvexTimestamp();
 
     /// <summary>
-    /// Creates a Convex timestamp from date components (UTC).
+    /// Creates from date components.
     /// </summary>
     /// <param name="year">Year (1-9999)</param>
     /// <param name="month">Month (1-12)</param>

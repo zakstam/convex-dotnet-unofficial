@@ -11,7 +11,7 @@ namespace Convex.Client.Infrastructure.ConsistentQueries;
 /// providing snapshot isolation.
 /// </summary>
 /// <remarks>
-/// Creates a new TimestampManager.
+/// Represents timestamp manager.
 /// </remarks>
 public class TimestampManager(HttpClient httpClient, string deploymentUrl)
 {
@@ -25,7 +25,7 @@ public class TimestampManager(HttpClient httpClient, string deploymentUrl)
     private Task<string>? _pendingTimestampRequest;
 
     /// <summary>
-    /// Gets the currently cached timestamp, if any.
+    /// Gets the cached timestamp.
     /// </summary>
     public string? CachedTimestamp => _cachedTimestamp;
 
@@ -44,7 +44,7 @@ public class TimestampManager(HttpClient httpClient, string deploymentUrl)
     }
 
     /// <summary>
-    /// Gets a timestamp for consistent query execution.
+    /// Gets timestamp.
     /// If a valid timestamp is already cached, returns it immediately.
     /// Otherwise, fetches a new timestamp from the server.
     /// </summary>

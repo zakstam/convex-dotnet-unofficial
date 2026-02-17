@@ -53,17 +53,17 @@ public class GodotClerkTokenService : IClerkTokenService
     }
 
     /// <summary>
-    /// Gets whether the user is currently authenticated.
+    /// Gets or sets a value indicating whether authenticated.
     /// </summary>
     public bool IsAuthenticated => _isAuthenticated;
 
     /// <summary>
-    /// Gets whether the authentication state is still loading.
+    /// Gets or sets a value indicating whether loading.
     /// </summary>
     public bool IsLoading => _isLoading;
 
     /// <summary>
-    /// Gets the current authentication token from Clerk.
+    /// Gets token.
     /// </summary>
     /// <param name="tokenTemplate">The JWT template name (default: "convex").</param>
     /// <param name="skipCache">Whether to skip cache and force a fresh token.</param>
@@ -255,7 +255,7 @@ public class GodotClerkTokenService : IClerkTokenService
     }
 
     /// <summary>
-    /// Sets a token manually (for manual token entry fallback).
+    /// Sets token manually.
     /// </summary>
     /// <param name="token">The JWT token to use.</param>
     public void SetTokenManually(string token)
@@ -337,8 +337,17 @@ public class GodotClerkTokenService : IClerkTokenService
     /// </summary>
     public class AuthFlowResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether success.
+        /// </summary>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the authorization url.
+        /// </summary>
         public string? AuthorizationUrl { get; set; }
     }
 }

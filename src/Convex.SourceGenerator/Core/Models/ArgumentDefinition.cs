@@ -3,7 +3,7 @@
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents an argument definition for a Convex function.
+/// Represents argument definition.
 /// </summary>
 public class ArgumentDefinition
 {

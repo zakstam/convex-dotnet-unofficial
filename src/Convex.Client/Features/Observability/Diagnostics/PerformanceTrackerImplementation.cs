@@ -150,6 +150,9 @@ public readonly struct ScopedPerformanceMeasure : IDisposable
     private readonly string _startMarkName;
     private readonly string _endMarkName;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScopedPerformanceMeasure"/> class.
+    /// </summary>
     public ScopedPerformanceMeasure(IPerformanceTracker tracker, string measureName)
     {
         _tracker = tracker;
@@ -160,6 +163,9 @@ public readonly struct ScopedPerformanceMeasure : IDisposable
         _ = _tracker.Mark(_startMarkName);
     }
 
+    /// <summary>
+    /// Releases the resources used by this instance.
+    /// </summary>
     public void Dispose()
     {
         _ = _tracker.Mark(_endMarkName);
@@ -173,7 +179,7 @@ public readonly struct ScopedPerformanceMeasure : IDisposable
 public static class PerformanceTrackerExtensions
 {
     /// <summary>
-    /// Creates a scoped performance measure that automatically completes on disposal.
+    /// Gets the measure scoped.
     /// </summary>
     /// <param name="tracker">The performance tracker.</param>
     /// <param name="measureName">The name of the measure.</param>

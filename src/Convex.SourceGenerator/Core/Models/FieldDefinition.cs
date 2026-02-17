@@ -3,7 +3,7 @@
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents a field definition in a Convex table or argument object.
+/// Represents field definition.
 /// </summary>
 public class FieldDefinition
 {
@@ -23,7 +23,7 @@ public class FieldDefinition
     public bool IsOptional { get; set; }
 
     /// <summary>
-    /// Creates a new field definition.
+    /// Gets or sets a value indicating whether create.
     /// </summary>
     public static FieldDefinition Create(string name, ValidatorType type, bool isOptional = false) =>
         new() { Name = name, Type = type, IsOptional = isOptional };

@@ -11,7 +11,7 @@ public static class GameObservableExtensions
 {
     #region Interpolation Extensions
     /// <summary>
-    /// Creates an <see cref="InterpolatedState{T}"/> that automatically receives updates from the observable.
+    /// Executes the static operation.
     /// The observable is sampled at the specified rate and interpolation is applied for smooth rendering.
     /// </summary>
     /// <typeparam name="T">The state type that implements <see cref="IInterpolatable{T}"/>.</typeparam>
@@ -56,7 +56,7 @@ public static class GameObservableExtensions
     }
 
     /// <summary>
-    /// Creates an <see cref="InterpolatedState{T}"/> using settings from <see cref="GameSyncOptions"/>.
+    /// Executes the static operation.
     /// </summary>
     /// <typeparam name="T">The state type that implements <see cref="IInterpolatable{T}"/>.</typeparam>
     /// <param name="source">The source observable.</param>
@@ -146,7 +146,7 @@ public static class GameObservableExtensions
     #region Prediction Extensions
 
     /// <summary>
-    /// Creates a <see cref="PredictedState{TState, TInput}"/> that receives server state updates from the observable.
+    /// Executes the static operation.
     /// </summary>
     /// <typeparam name="TState">The state type that implements <see cref="IPredictable{TState, TInput}"/>.</typeparam>
     /// <typeparam name="TInput">The input type.</typeparam>
@@ -181,7 +181,7 @@ public static class GameObservableExtensions
         => WithPrediction<TState, TInput>(source, initialState, lastProcessedInputIdSelector, options: null);
 
     /// <summary>
-    /// Creates a <see cref="PredictedState{TState, TInput}"/> that receives server state updates from the observable
+    /// Executes the static operation.
     /// with custom game sync options.
     /// </summary>
     /// <typeparam name="TState">The state type that implements <see cref="IPredictable{TState, TInput}"/>.</typeparam>
@@ -234,7 +234,7 @@ public static class GameObservableExtensions
     }
 
     /// <summary>
-    /// Creates a <see cref="PredictedState{TState, TInput}"/> with a custom state extractor for server updates.
+    /// Executes the static operation.
     /// Use this overload when the observable type differs from the state type (e.g., wrapper DTOs).
     /// </summary>
     /// <typeparam name="TServerMessage">The type of messages from the server observable.</typeparam>
@@ -256,7 +256,7 @@ public static class GameObservableExtensions
         => WithPrediction<TServerMessage, TState, TInput>(source, initialState, stateSelector, lastProcessedInputIdSelector, options: null);
 
     /// <summary>
-    /// Creates a <see cref="PredictedState{TState, TInput}"/> with a custom state extractor for server updates
+    /// Executes the static operation.
     /// and custom game sync options.
     /// Use this overload when the observable type differs from the state type (e.g., wrapper DTOs).
     /// </summary>

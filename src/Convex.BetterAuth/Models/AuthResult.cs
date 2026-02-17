@@ -1,7 +1,7 @@
 namespace Convex.BetterAuth.Models;
 
 /// <summary>
-/// Represents the result of an authentication operation.
+/// Represents auth result.
 /// </summary>
 public class AuthResult
 {
@@ -18,12 +18,12 @@ public class AuthResult
     private AuthResult() { }
 
     /// <summary>
-    /// Creates a successful result.
+    /// Gets the success.
     /// </summary>
     public static AuthResult Success() => new() { IsSuccess = true };
 
     /// <summary>
-    /// Creates a failed result with an error message.
+    /// Gets the failure.
     /// </summary>
     /// <param name="message">The error message.</param>
     public static AuthResult Failure(string message) => new() { IsSuccess = false, ErrorMessage = message };

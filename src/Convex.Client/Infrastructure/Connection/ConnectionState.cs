@@ -1,7 +1,7 @@
 namespace Convex.Client.Infrastructure.Connection;
 
 /// <summary>
-/// Represents the state of the WebSocket connection used for real-time subscriptions.
+/// Defines the connection state values.
 /// The connection state changes automatically as the client connects, disconnects, and reconnects.
 /// </summary>
 /// <remarks>

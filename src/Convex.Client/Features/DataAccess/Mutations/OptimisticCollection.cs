@@ -30,7 +30,7 @@ namespace Convex.Client.Features.DataAccess.Mutations;
 /// </code>
 /// </example>
 /// <remarks>
-/// Creates a new optimistic collection with initial items.
+/// Executes the optimistic collection operation.
 /// </remarks>
 /// <param name="items">Initial items for the collection.</param>
 public sealed class OptimisticCollection<T>(IEnumerable<T> items) : IReadOnlyList<T>, IDisposable
@@ -46,7 +46,7 @@ public sealed class OptimisticCollection<T>(IEnumerable<T> items) : IReadOnlyLis
     public event EventHandler? CollectionChanged;
 
     /// <summary>
-    /// Creates a new empty optimistic collection.
+    /// Initializes a new instance of the <see cref="OptimisticCollection{T}"/> class.
     /// </summary>
     public OptimisticCollection() : this([])
     {
@@ -112,7 +112,7 @@ public sealed class OptimisticCollection<T>(IEnumerable<T> items) : IReadOnlyLis
     }
 
     /// <summary>
-    /// Creates a snapshot of the current collection state.
+    /// Creates snapshot.
     /// This allows rolling back to this state later if needed.
     /// </summary>
     public void CreateSnapshot()
@@ -297,7 +297,7 @@ public sealed class OptimisticCollection<T>(IEnumerable<T> items) : IReadOnlyLis
     }
 
     /// <summary>
-    /// Searches for an element that matches the specified predicate.
+    /// Executes the find operation.
     /// </summary>
     /// <param name="predicate">The predicate to match.</param>
     /// <returns>The first matching element, or default if not found.</returns>

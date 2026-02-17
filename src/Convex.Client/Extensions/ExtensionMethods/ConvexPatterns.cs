@@ -86,7 +86,7 @@ public static class ConvexPatterns
     #region Infinite Scroll
 
     /// <summary>
-    /// Creates an infinite scroll pattern for paginated data.
+    /// Creates infinite scroll.
     /// Automatically loads more data as the user scrolls near the end.
     /// </summary>
     /// <typeparam name="T">The type of items in the list.</typeparam>
@@ -197,7 +197,7 @@ public static class ConvexPatterns
     #region Debounced Search
 
     /// <summary>
-    /// Creates a debounced search pattern that automatically queries as the user types.
+    /// Creates debounced search.
     /// </summary>
     /// <typeparam name="TResult">The type of search results.</typeparam>
     /// <param name="client">The Convex client.</param>
@@ -238,7 +238,7 @@ public static class ConvexPatterns
     }
 
     /// <summary>
-    /// Creates a debounced search with loading state management.
+    /// Creates debounced search with loading.
     /// </summary>
     /// <typeparam name="TResult">The type of search results.</typeparam>
     /// <param name="client">The Convex client.</param>
@@ -299,7 +299,7 @@ public static class ConvexPatterns
     #region Connection Indicators
 
     /// <summary>
-    /// Creates a connection status indicator that provides user-friendly status messages.
+    /// Creates connection indicator.
     /// </summary>
     /// <param name="client">The Convex client.</param>
     /// <returns>An observable that emits connection status messages.</returns>
@@ -333,7 +333,7 @@ public static class ConvexPatterns
     }
 
     /// <summary>
-    /// Creates a connection indicator with detailed status information.
+    /// Creates detailed connection indicator.
     /// </summary>
     /// <param name="client">The Convex client.</param>
     /// <returns>An observable that emits detailed connection status.</returns>
@@ -449,7 +449,7 @@ public static class ConvexPatterns
     #region Real-time Subscriptions
 
     /// <summary>
-    /// Creates a subscription that automatically handles connection state changes.
+    /// Creates resilient subscription.
     /// </summary>
     /// <typeparam name="T">The type of the subscription data.</typeparam>
     /// <param name="client">The Convex client.</param>
@@ -488,59 +488,59 @@ public static class ConvexPatterns
     #region Helper Classes and Types
 
     /// <summary>
-    /// Represents paginated query results.
+    /// Represents paginated result t.
     /// </summary>
     /// <typeparam name="T">The type of items in the page.</typeparam>
     public class PaginatedResult<T>
     {
         /// <summary>
-        /// Gets or sets the current page of items.
+        /// Gets or sets the page.
         /// </summary>
         public required IReadOnlyList<T> Page { get; set; }
 
         /// <summary>
-        /// Gets or sets whether there are more items available.
+        /// Gets or sets a value indicating whether more.
         /// </summary>
         public bool HasMore { get; set; }
 
         /// <summary>
-        /// Gets or sets the total count of items (if available).
+        /// Gets or sets the total count.
         /// </summary>
         public int? TotalCount { get; set; }
     }
 
     /// <summary>
-    /// Represents detailed connection status information.
+    /// Represents connection status.
     /// </summary>
     public class ConnectionStatus : IEquatable<ConnectionStatus>
     {
         /// <summary>
-        /// Gets or sets the connection state.
+        /// Gets or sets the state.
         /// </summary>
         public ConnectionState State { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection quality.
+        /// Gets or sets the quality.
         /// </summary>
         public ConnectionQuality Quality { get; set; }
 
         /// <summary>
-        /// Gets or sets the user-friendly status message.
+        /// Gets or sets the message.
         /// </summary>
         public required string Message { get; set; }
 
         /// <summary>
-        /// Gets or sets the icon name for UI display.
+        /// Gets or sets the icon.
         /// </summary>
         public required string Icon { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the user can manually retry the connection.
+        /// Gets or sets a value indicating whether retry.
         /// </summary>
         public bool CanRetry { get; set; }
 
         /// <summary>
-        /// Gets or sets the timestamp of this status.
+        /// Gets or sets the timestamp.
         /// </summary>
         public DateTimeOffset Timestamp { get; set; }
 

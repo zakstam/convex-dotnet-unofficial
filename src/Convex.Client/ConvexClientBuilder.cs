@@ -52,7 +52,7 @@ public sealed class ConvexClientBuilder
     private readonly List<IConvexMiddleware> _middleware = [];
 
     /// <summary>
-    /// Sets the Convex deployment URL.
+    /// Executes the use deployment operation.
     /// This is required and must be called before building the client.
     /// </summary>
     /// <param name="deploymentUrl">The Convex deployment URL (e.g., "https://happy-animal-123.convex.cloud"). You can find this in your Convex dashboard.</param>
@@ -72,7 +72,7 @@ public sealed class ConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets the HttpClient to use for HTTP operations.
+    /// Configures HTTP client.
     /// If not specified, a new HttpClient will be created and owned by the ConvexClient.
     /// </summary>
     /// <param name="httpClient">The HttpClient instance to use. The client will not dispose this HttpClient - you are responsible for its lifecycle.</param>
@@ -100,7 +100,7 @@ public sealed class ConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets the default timeout for HTTP operations (queries, mutations, actions).
+    /// Configures timeout.
     /// Individual operations can override this with their own timeout settings.
     /// </summary>
     /// <param name="timeout">The timeout duration. Must be greater than zero and less than or equal to 24 hours.</param>
@@ -212,7 +212,7 @@ public sealed class ConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets the SynchronizationContext for automatic UI thread marshalling.
+    /// Configures sync context.
     /// Subscription callbacks and connection state changes will be marshalled to this context.
     /// </summary>
     /// <param name="synchronizationContext">The SynchronizationContext to use for marshalling events to the UI thread. If null, SynchronizationContext.Current will be captured at client creation.</param>
@@ -250,7 +250,7 @@ public sealed class ConvexClientBuilder
     }
 
     /// <summary>
-    /// Sets the logger for structured logging.
+    /// Configures logging.
     /// When configured, the client will log important events, errors, and debug information.
     /// </summary>
     /// <param name="logger">The logger instance (typically from Microsoft.Extensions.Logging).</param>

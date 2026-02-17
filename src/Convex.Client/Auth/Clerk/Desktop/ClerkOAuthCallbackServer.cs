@@ -31,20 +31,35 @@ public class ClerkOAuthCallbackServer(int port = 8080, string callbackPath = "/c
     /// </summary>
     public class OAuthCallbackResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether success.
+        /// </summary>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the authorization code.
+        /// </summary>
         public string? AuthorizationCode { get; set; }
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
         public string? State { get; set; }
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
         public string? Error { get; set; }
+        /// <summary>
+        /// Gets or sets the error description.
+        /// </summary>
         public string? ErrorDescription { get; set; }
     }
 
     /// <summary>
-    /// Gets the callback URL that should be used in OAuth requests.
+    /// Gets the callback url.
     /// </summary>
     public string CallbackUrl => $"http://localhost:{_port}{_callbackPath}";
 
     /// <summary>
-    /// Gets whether the server is currently running.
+    /// Gets or sets a value indicating whether running.
     /// </summary>
     public bool IsRunning => _isRunning;
 
@@ -103,7 +118,7 @@ public class ClerkOAuthCallbackServer(int port = 8080, string callbackPath = "/c
     }
 
     /// <summary>
-    /// Attempts to start the listener on a specific port.
+    /// Attempts to start listener.
     /// </summary>
     private bool TryStartListener(int port)
     {

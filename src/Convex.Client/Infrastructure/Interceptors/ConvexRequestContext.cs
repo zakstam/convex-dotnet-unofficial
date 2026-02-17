@@ -6,38 +6,38 @@ namespace Convex.Client.Infrastructure.Interceptors;
 public sealed class ConvexRequestContext
 {
     /// <summary>
-    /// Gets or sets the type of request (query, mutation, action).
+    /// Gets or sets the request type.
     /// </summary>
     public string RequestType { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the name of the function being called.
+    /// Gets or sets the function name.
     /// </summary>
     public string FunctionName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the request arguments (if any).
+    /// Gets or sets the arguments.
     /// </summary>
     public object? Arguments { get; set; }
 
     /// <summary>
-    /// Gets or sets the unique request identifier.
+    /// Gets or sets the unique ID.
     /// </summary>
     public string RequestId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the timestamp when the request was created.
+    /// Gets or sets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; set; }
 
     /// <summary>
-    /// Gets or sets additional metadata that can be used by interceptors
+    /// Gets or sets the string.
     /// to pass data between BeforeRequest and AfterResponse hooks.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets the cancellation token for the request.
+    /// Gets or sets the cancellation token.
     /// </summary>
     public CancellationToken CancellationToken { get; set; }
 }

@@ -41,8 +41,14 @@ public static class ConvexPerformanceOptimizations
 /// </summary>
 public class HttpRequestMessagePoolPolicy : PooledObjectPolicy<HttpRequestMessage>
 {
+    /// <summary>
+    /// Gets the create.
+    /// </summary>
     public override HttpRequestMessage Create() => new HttpRequestMessage();
 
+    /// <summary>
+    /// Executes the return operation.
+    /// </summary>
     public override bool Return(HttpRequestMessage obj)
     {
         if (obj == null) return false;
@@ -78,8 +84,14 @@ public class StringBuilderPoolPolicy : PooledObjectPolicy<StringBuilder>
 {
     private const int MaxCapacity = 4096;
 
+    /// <summary>
+    /// Gets the create.
+    /// </summary>
     public override StringBuilder Create() => new StringBuilder();
 
+    /// <summary>
+    /// Executes the return operation.
+    /// </summary>
     public override bool Return(StringBuilder obj)
     {
         if (obj == null || obj.Capacity > MaxCapacity)
@@ -223,8 +235,14 @@ public readonly ref struct PooledResource<T>(ObjectPool<T> pool) where T : class
     private readonly ObjectPool<T> _pool = pool;
     private readonly T _resource = pool.Get();
 
+    /// <summary>
+    /// Gets the resource.
+    /// </summary>
     public T Resource => _resource;
 
+    /// <summary>
+    /// Releases the resources used by this instance.
+    /// </summary>
     public void Dispose() => _pool.Return(_resource);
 }
 
@@ -233,13 +251,31 @@ public readonly ref struct PooledResource<T>(ObjectPool<T> pool) where T : class
 /// </summary>
 public readonly struct ConvexRequestContext(string functionName, string requestType, string requestId)
 {
+    /// <summary>
+    /// Represents function name.
+    /// </summary>
     public readonly string FunctionName = functionName;
+    /// <summary>
+    /// Represents request type.
+    /// </summary>
     public readonly string RequestType = requestType;
+    /// <summary>
+    /// Represents request id.
+    /// </summary>
     public readonly string RequestId = requestId;
+    /// <summary>
+    /// Represents timestamp ticks.
+    /// </summary>
     public readonly long TimestampTicks = DateTime.UtcNow.Ticks;
 
+    /// <summary>
+    /// Gets the new.
+    /// </summary>
     public DateTimeOffset Timestamp => new(TimestampTicks, TimeSpan.Zero);
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => $"{RequestType}:{FunctionName}:{RequestId}";
 }
 
@@ -251,6 +287,9 @@ public ref struct ConvexJsonReader
     private readonly ReadOnlySpan<byte> _buffer;
     private int _position;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConvexJsonReader"/> class.
+    /// </summary>
     public ConvexJsonReader(ReadOnlySpan<byte> buffer)
     {
         _buffer = buffer;
@@ -326,7 +365,7 @@ public static class ConvexPerformanceMonitor
     public static void RecordRequest() => _ = Interlocked.Increment(ref _totalRequests);
 
     /// <summary>
-    /// Gets the current performance statistics.
+    /// Gets stats.
     /// </summary>
     /// <returns>Current performance metrics.</returns>
     public static ConvexPerformanceStats GetStats()
@@ -360,11 +399,26 @@ public static class ConvexPerformanceMonitor
 /// </summary>
 public readonly record struct ConvexPerformanceStats
 {
+    /// <summary>
+    /// Gets or sets the total allocated bytes.
+    /// </summary>
     public long TotalAllocatedBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the total requests.
+    /// </summary>
     public long TotalRequests { get; init; }
+    /// <summary>
+    /// Gets or sets the average bytes per request.
+    /// </summary>
     public double AverageBytesPerRequest { get; init; }
+    /// <summary>
+    /// Gets or sets the current managed memory.
+    /// </summary>
     public long CurrentManagedMemory { get; init; }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() =>
         $"Requests: {TotalRequests:N0}, " +
         $"Allocated: {TotalAllocatedBytes:N0} bytes, " +

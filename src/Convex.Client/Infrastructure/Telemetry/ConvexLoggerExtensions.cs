@@ -61,30 +61,57 @@ public static class ConvexLoggerExtensions
             ConvexTelemetry.EventIds.OptimisticUpdateApplied,
             "Applied optimistic update for {FunctionName} with queryId {QueryId}");
 
+    /// <summary>
+    /// Executes the convex request started operation.
+    /// </summary>
     public static void ConvexRequestStarted(this ILogger logger, string functionType, string functionName, string requestId)
         => LogRequestStarted(logger, functionType, functionName, requestId, null);
 
+    /// <summary>
+    /// Executes the convex request completed operation.
+    /// </summary>
     public static void ConvexRequestCompleted(this ILogger logger, string functionType, string functionName, string requestId, double durationMs)
         => LogRequestCompleted(logger, functionType, functionName, requestId, durationMs, null);
 
+    /// <summary>
+    /// Executes the convex request failed operation.
+    /// </summary>
     public static void ConvexRequestFailed(this ILogger logger, string functionType, string functionName, string requestId, double durationMs, string errorCode, Exception? exception = null)
         => LogRequestFailed(logger, functionType, functionName, requestId, durationMs, errorCode, exception);
 
+    /// <summary>
+    /// Executes the convex request retrying operation.
+    /// </summary>
     public static void ConvexRequestRetrying(this ILogger logger, string functionType, string functionName, int attempt, double delayMs, string reason, Exception? exception = null)
         => LogRequestRetrying(logger, functionType, functionName, attempt, delayMs, reason, exception);
 
+    /// <summary>
+    /// Executes the convex connection established operation.
+    /// </summary>
     public static void ConvexConnectionEstablished(this ILogger logger, string url, string sessionId)
         => LogConnectionEstablished(logger, url, sessionId, null);
 
+    /// <summary>
+    /// Executes the convex connection lost operation.
+    /// </summary>
     public static void ConvexConnectionLost(this ILogger logger, string url, string reason, Exception? exception = null)
         => LogConnectionLost(logger, url, reason, exception);
 
+    /// <summary>
+    /// Executes the convex auth token refreshed operation.
+    /// </summary>
     public static void ConvexAuthTokenRefreshed(this ILogger logger, double durationMs, bool success, Exception? exception = null)
         => LogAuthTokenRefreshed(logger, durationMs, success, exception);
 
+    /// <summary>
+    /// Executes the convex circuit breaker opened operation.
+    /// </summary>
     public static void ConvexCircuitBreakerOpened(this ILogger logger, string serviceName, int failureCount, Exception? exception = null)
         => LogCircuitBreakerOpened(logger, serviceName, failureCount, exception);
 
+    /// <summary>
+    /// Executes the convex optimistic update applied operation.
+    /// </summary>
     public static void ConvexOptimisticUpdateApplied(this ILogger logger, string functionName, string queryId)
         => LogOptimisticUpdateApplied(logger, functionName, queryId, null);
 

@@ -75,7 +75,7 @@ public static class ClerkGodotExtensions
     }
 
     /// <summary>
-    /// Creates a Clerk token provider from a Godot token service and options.
+    /// Creates token provider.
     /// </summary>
     /// <param name="tokenService">The Godot Clerk token service.</param>
     /// <param name="options">The Clerk options.</param>

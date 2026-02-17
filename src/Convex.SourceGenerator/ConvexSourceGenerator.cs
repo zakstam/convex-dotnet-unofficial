@@ -42,6 +42,9 @@ namespace Convex.Generated
         new DIModule()
     };
 
+    /// <summary>
+    /// Initializes the source generator pipeline.
+    /// </summary>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Register the attribute unconditionally

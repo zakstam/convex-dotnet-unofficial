@@ -14,10 +14,19 @@ namespace Convex.SourceGenerator.Modules;
 /// </summary>
 public class SchemaModule : IGenerationModule
 {
+    /// <summary>
+    /// Gets the name.
+    /// </summary>
     public string Name => "Schema";
 
+    /// <summary>
+    /// Determines whether the module is enabled for the specified generator options.
+    /// </summary>
     public bool IsEnabled(GeneratorOptions options) => options.GenerateModels;
 
+    /// <summary>
+    /// Generates source files for this module.
+    /// </summary>
     public IEnumerable<GeneratedFile> Generate(
         IReadOnlyList<TableDefinition> tables,
         IReadOnlyList<FunctionDefinition> functions,

@@ -7,7 +7,7 @@ namespace Convex.Client.Extensions.Clerk;
 public interface IClerkTokenService
 {
     /// <summary>
-    /// Gets the current authentication token from Clerk.
+    /// Gets token.
     /// </summary>
     /// <param name="tokenTemplate">The JWT template name (default: "convex").</param>
     /// <param name="skipCache">Whether to skip cache and force a fresh token.</param>
@@ -16,13 +16,13 @@ public interface IClerkTokenService
     Task<string?> GetTokenAsync(string tokenTemplate = "convex", bool skipCache = false, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets whether the user is currently authenticated.
+    /// Gets or sets a value indicating whether authenticated.
     /// </summary>
     /// <returns>True if authenticated, false otherwise.</returns>
     bool IsAuthenticated { get; }
 
     /// <summary>
-    /// Gets whether the authentication state is still loading.
+    /// Gets or sets a value indicating whether loading.
     /// </summary>
     /// <returns>True if loading, false otherwise.</returns>
     bool IsLoading { get; }

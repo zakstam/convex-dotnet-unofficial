@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents a table definition in a Convex schema.
+/// Represents table definition.
 /// </summary>
 public class TableDefinition
 {

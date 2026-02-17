@@ -13,10 +13,19 @@ namespace Convex.SourceGenerator.Modules;
 /// </summary>
 public class ServiceModule : IGenerationModule
 {
+    /// <summary>
+    /// Gets the name.
+    /// </summary>
     public string Name => "Service";
 
+    /// <summary>
+    /// Determines whether the module is enabled for the specified generator options.
+    /// </summary>
     public bool IsEnabled(GeneratorOptions options) => options.GenerateServices;
 
+    /// <summary>
+    /// Generates source files for this module.
+    /// </summary>
     public IEnumerable<GeneratedFile> Generate(
         IReadOnlyList<TableDefinition> tables,
         IReadOnlyList<FunctionDefinition> functions,

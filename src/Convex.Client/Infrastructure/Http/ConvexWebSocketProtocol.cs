@@ -238,7 +238,7 @@ public static class ConvexWebSocketProtocol
 public abstract record ClientMessage
 {
     /// <summary>
-    /// Gets the message type.
+    /// Gets or sets the type.
     /// </summary>
     public abstract string Type { get; }
 }
@@ -248,30 +248,33 @@ public abstract record ClientMessage
 /// </summary>
 public record ConnectMessage : ClientMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Connect";
 
     /// <summary>
-    /// Gets the session identifier.
+    /// Gets or sets the new guid.
     /// </summary>
     public string SessionId { get; init; } = Guid.NewGuid().ToString();
 
     /// <summary>
-    /// Gets the connection count (number of times this client has connected).
+    /// Gets or sets the connection count.
     /// </summary>
     public int ConnectionCount { get; init; } = 1;
 
     /// <summary>
-    /// Gets the reason for the last connection close, if any.
+    /// Gets or sets the last close reason.
     /// </summary>
     public string? LastCloseReason { get; init; } = null;
 
     /// <summary>
-    /// Gets the maximum observed timestamp for synchronization.
+    /// Gets or sets the max observed timestamp.
     /// </summary>
     public ConvexTimestamp? MaxObservedTimestamp { get; init; }
 
     /// <summary>
-    /// Gets the client timestamp when sending this message.
+    /// Gets or sets the to unix time milliseconds.
     /// </summary>
     public long ClientTs { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     // Note: Connect message does NOT have baseVersion - that's only for ModifyQuerySet and Authenticate
@@ -283,6 +286,9 @@ public record ConnectMessage : ClientMessage
 /// </summary>
 public record AuthenticateMessage : ClientMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Authenticate";
 
     /// <summary>
@@ -306,20 +312,23 @@ public record AuthenticateMessage : ClientMessage
 /// </summary>
 public record ModifyQuerySetMessage : ClientMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "ModifyQuerySet";
 
     /// <summary>
-    /// Gets the base version for the query set.
+    /// Gets or sets the base version.
     /// </summary>
     public int BaseVersion { get; init; } = 0;
 
     /// <summary>
-    /// Gets the new version for the query set.
+    /// Gets or sets the new version.
     /// </summary>
     public int NewVersion { get; init; } = 1;
 
     /// <summary>
-    /// Gets the query set modifications.
+    /// Gets or sets the modifications.
     /// </summary>
     public QuerySetModification[] Modifications { get; init; } = [];
 }
@@ -329,25 +338,28 @@ public record ModifyQuerySetMessage : ClientMessage
 /// </summary>
 public record MutationMessage : ClientMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Mutation";
 
     /// <summary>
-    /// Gets the request identifier.
+    /// Gets or sets the unique ID.
     /// </summary>
     public required string RequestId { get; init; }
 
     /// <summary>
-    /// Gets the UDF path.
+    /// Gets or sets the udf path.
     /// </summary>
     public required string UdfPath { get; init; }
 
     /// <summary>
-    /// Gets the function arguments.
+    /// Gets or sets the args.
     /// </summary>
     public object?[] Args { get; init; } = [];
 
     /// <summary>
-    /// Gets the component path for component isolation.
+    /// Gets or sets the component path.
     /// Only admin auth is allowed to run mutations on non-root components.
     /// </summary>
     public string? ComponentPath { get; init; }
@@ -358,25 +370,28 @@ public record MutationMessage : ClientMessage
 /// </summary>
 public record ActionMessage : ClientMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Action";
 
     /// <summary>
-    /// Gets the request identifier.
+    /// Gets or sets the unique ID.
     /// </summary>
     public required string RequestId { get; init; }
 
     /// <summary>
-    /// Gets the UDF path.
+    /// Gets or sets the udf path.
     /// </summary>
     public required string UdfPath { get; init; }
 
     /// <summary>
-    /// Gets the function arguments.
+    /// Gets or sets the args.
     /// </summary>
     public object?[] Args { get; init; } = [];
 
     /// <summary>
-    /// Gets the component path for component isolation.
+    /// Gets or sets the component path.
     /// Only admin auth is allowed to run actions on non-root components.
     /// </summary>
     public string? ComponentPath { get; init; }
@@ -388,7 +403,7 @@ public record ActionMessage : ClientMessage
 public abstract record ServerMessage
 {
     /// <summary>
-    /// Gets the message type.
+    /// Gets or sets the type.
     /// </summary>
     public abstract string Type { get; }
 }
@@ -398,15 +413,18 @@ public abstract record ServerMessage
 /// </summary>
 public record FatalErrorMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "FatalError";
 
     /// <summary>
-    /// Gets the error message.
+    /// Gets or sets the error message.
     /// </summary>
     public required string ErrorMessage { get; init; }
 
     /// <summary>
-    /// Gets the error code.
+    /// Gets or sets the error code.
     /// </summary>
     public string? ErrorCode { get; init; }
 }
@@ -416,15 +434,18 @@ public record FatalErrorMessage : ServerMessage
 /// </summary>
 public record AuthErrorMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "AuthError";
 
     /// <summary>
-    /// Gets the error message.
+    /// Gets or sets the error message.
     /// </summary>
     public required string ErrorMessage { get; init; }
 
     /// <summary>
-    /// Gets the error code.
+    /// Gets or sets the error code.
     /// </summary>
     public string? ErrorCode { get; init; }
 }
@@ -434,6 +455,9 @@ public record AuthErrorMessage : ServerMessage
 /// </summary>
 public record PingMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Ping";
 }
 
@@ -442,15 +466,18 @@ public record PingMessage : ServerMessage
 /// </summary>
 public record TransitionMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Transition";
 
     /// <summary>
-    /// Gets the end version for this transition.
+    /// Gets or sets the end version.
     /// </summary>
     public JsonElement EndVersion { get; init; }
 
     /// <summary>
-    /// Gets the modifications in this transition.
+    /// Gets or sets the modifications.
     /// </summary>
     public JsonElement[] Modifications { get; init; } = [];
 }
@@ -460,25 +487,28 @@ public record TransitionMessage : ServerMessage
 /// </summary>
 public record MutationResponseMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "MutationResponse";
 
     /// <summary>
-    /// Gets the request identifier.
+    /// Gets or sets the unique ID.
     /// </summary>
     public required string RequestId { get; init; }
 
     /// <summary>
-    /// Gets whether the mutation was successful.
+    /// Gets or sets a value indicating whether success.
     /// </summary>
     public bool Success { get; init; }
 
     /// <summary>
-    /// Gets the mutation result (if successful).
+    /// Gets or sets the result.
     /// </summary>
     public JsonElement? Result { get; init; }
 
     /// <summary>
-    /// Gets the error message (if failed).
+    /// Gets or sets the error message.
     /// </summary>
     public string? ErrorMessage { get; init; }
 }
@@ -488,25 +518,28 @@ public record MutationResponseMessage : ServerMessage
 /// </summary>
 public record ActionResponseMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "ActionResponse";
 
     /// <summary>
-    /// Gets the request identifier.
+    /// Gets or sets the unique ID.
     /// </summary>
     public required string RequestId { get; init; }
 
     /// <summary>
-    /// Gets whether the action was successful.
+    /// Gets or sets a value indicating whether success.
     /// </summary>
     public bool Success { get; init; }
 
     /// <summary>
-    /// Gets the action result (if successful).
+    /// Gets or sets the result.
     /// </summary>
     public JsonElement? Result { get; init; }
 
     /// <summary>
-    /// Gets the error message (if failed).
+    /// Gets or sets the error message.
     /// </summary>
     public string? ErrorMessage { get; init; }
 }
@@ -517,38 +550,38 @@ public record ActionResponseMessage : ServerMessage
 public record QuerySetModification
 {
     /// <summary>
-    /// Gets the modification type ("Add" or "Remove").
+    /// Gets or sets the type.
     /// </summary>
     [JsonPropertyName("type")]
     public required string Type { get; init; }
 
     /// <summary>
-    /// Gets the query identifier.
+    /// Gets or sets the query ID.
     /// </summary>
     [JsonPropertyName("queryId")]
     public required int QueryId { get; init; }
 
     /// <summary>
-    /// Gets the UDF path (for Add operations).
+    /// Gets or sets the udf path.
     /// </summary>
     [JsonPropertyName("udfPath")]
     public string? UdfPath { get; init; }
 
     /// <summary>
-    /// Gets the function arguments (for Add operations).
+    /// Gets or sets the args.
     /// </summary>
     [JsonPropertyName("args")]
     public object?[]? Args { get; init; }
 
     /// <summary>
-    /// Gets the component path for component isolation (for Add operations).
+    /// Gets or sets the component path.
     /// </summary>
     [JsonPropertyName("componentPath")]
     public string? ComponentPath { get; init; }
 }
 
 /// <summary>
-/// Represents a Convex timestamp with base64 encoding support.
+/// Executes the convex timestamp operation.
 /// </summary>
 /// <remarks>
 /// Initializes a new instance of the ConvexTimestamp struct.
@@ -557,7 +590,7 @@ public record QuerySetModification
 public readonly struct ConvexTimestamp(long value) : IEquatable<ConvexTimestamp>
 {
     /// <summary>
-    /// Gets the timestamp value.
+    /// Gets the value.
     /// </summary>
     public long Value { get; } = value;
 
@@ -568,28 +601,46 @@ public readonly struct ConvexTimestamp(long value) : IEquatable<ConvexTimestamp>
     public string ToBase64String() => ConvexWebSocketProtocol.TimestampToBase64(Value);
 
     /// <summary>
-    /// Creates a timestamp from a base64-encoded string.
+    /// Gets the from base 64 string.
     /// </summary>
     /// <param name="base64String">The base64-encoded timestamp.</param>
     /// <returns>The decoded timestamp.</returns>
     public static ConvexTimestamp FromBase64String(string base64String) => new(ConvexWebSocketProtocol.Base64ToTimestamp(base64String));
 
     /// <summary>
-    /// Creates a timestamp from the current time.
+    /// Gets the now.
     /// </summary>
     /// <returns>A timestamp representing the current time.</returns>
     public static ConvexTimestamp Now() => new(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public bool Equals(ConvexTimestamp other) => Value == other.Value;
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public override bool Equals(object? obj) => obj is ConvexTimestamp other && Equals(other);
 
+    /// <summary>
+    /// Serves as the default hash function.
+    /// </summary>
     public override int GetHashCode() => Value.GetHashCode();
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator ==(ConvexTimestamp left, ConvexTimestamp right) => left.Equals(right);
 
+    /// <summary>
+    /// Gets or sets a value indicating whether operator.
+    /// </summary>
     public static bool operator !=(ConvexTimestamp left, ConvexTimestamp right) => !left.Equals(right);
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => $"ConvexTimestamp({Value})";
 }
 
@@ -598,5 +649,8 @@ public readonly struct ConvexTimestamp(long value) : IEquatable<ConvexTimestamp>
 /// </summary>
 public record ConnectedMessage : ServerMessage
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
     public override string Type => "Connected";
 }

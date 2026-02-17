@@ -126,7 +126,7 @@ public class TimeBasedBatcher<TEvent> : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Sets or updates the metadata for batches.
+    /// Sets metadata.
     /// This metadata is used to identify and update existing batches.
     /// </summary>
     /// <param name="metadata">The metadata dictionary.</param>
@@ -226,7 +226,7 @@ public class TimeBasedBatcher<TEvent> : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Attempts to calculate the distance between two events for spatial filtering.
+    /// Attempts to calculate distance.
     /// Returns false if the event type doesn't support distance calculation.
     /// </summary>
     /// <param name="event1">The first event.</param>

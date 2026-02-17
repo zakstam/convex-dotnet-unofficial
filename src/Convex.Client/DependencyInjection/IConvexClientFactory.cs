@@ -7,7 +7,7 @@ namespace Convex.Client.Extensions.DependencyInjection;
 public interface IConvexClientFactory
 {
     /// <summary>
-    /// Creates a Convex client instance for the specified name.
+    /// Creates client.
     /// </summary>
     /// <param name="name">
     /// The logical name of the client to create.

@@ -18,7 +18,7 @@ public record QueryResult<T>(
     bool IsCached = false)
 {
     /// <summary>
-    /// Gets the total execution time including network round-trip.
+    /// Gets the execution time.
     /// </summary>
     public TimeSpan ExecutionTime => ResponseTimestamp - RequestTimestamp;
 
@@ -39,19 +39,19 @@ public record QueryResult<T>(
 public class QueryResultOptions
 {
     /// <summary>
-    /// Gets or sets whether to include server log lines in the result.
+    /// Gets or sets a value indicating whether include log lines.
     /// Default is false for performance.
     /// </summary>
     public bool IncludeLogLines { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets whether to track execution timing.
+    /// Gets or sets a value indicating whether track execution time.
     /// Default is true.
     /// </summary>
     public bool TrackExecutionTime { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the minimum execution time threshold for logging slow queries.
+    /// Gets or sets the slow query threshold.
     /// Queries slower than this threshold will be logged as warnings.
     /// Default is null (no threshold).
     /// </summary>

@@ -10,37 +10,37 @@ namespace Convex.Client.Infrastructure.ErrorHandling;
 public class ErrorContext
 {
     /// <summary>
-    /// Gets or sets the request ID for correlation.
+    /// Gets or sets the unique ID.
     /// </summary>
     public string? RequestId { get; set; }
 
     /// <summary>
-    /// Gets or sets the function name that was being executed.
+    /// Gets or sets the function name.
     /// </summary>
     public string? FunctionName { get; set; }
 
     /// <summary>
-    /// Gets or sets the operation type (query, mutation, action).
+    /// Gets or sets the operation type.
     /// </summary>
     public string? OperationType { get; set; }
 
     /// <summary>
-    /// Gets or sets the timestamp when the error occurred.
+    /// Gets or sets the timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// Gets or sets additional contextual data.
+    /// Gets or sets the string.
     /// </summary>
     public Dictionary<string, JsonElement?> Data { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets the client-side stack trace.
+    /// Gets or sets the client stack trace.
     /// </summary>
     public string? ClientStackTrace { get; set; }
 
     /// <summary>
-    /// Gets or sets the server-side stack trace (if available).
+    /// Gets or sets the server stack trace.
     /// </summary>
     public string? ServerStackTrace { get; set; }
 
@@ -85,7 +85,7 @@ public class ErrorContext
     }
 
     /// <summary>
-    /// Creates an error context from a request context.
+    /// Creates from request context.
     /// </summary>
     public static ErrorContext FromRequestContext(RequestContext? requestContext)
     {
@@ -100,6 +100,9 @@ public class ErrorContext
             };
     }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -128,7 +131,7 @@ public class ErrorContext
 public class EnhancedConvexException : ConvexException
 {
     /// <summary>
-    /// Gets the enhanced error context.
+    /// Gets the context.
     /// </summary>
     public ErrorContext Context { get; }
 
@@ -152,6 +155,9 @@ public class EnhancedConvexException : ConvexException
         Context.ClientStackTrace = new StackTrace(true).ToString();
     }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -182,6 +188,9 @@ public class ConvexValidationException(string message, List<ValidationError>? er
     /// </summary>
     public List<ValidationError> ValidationErrors { get; } = errors ?? [];
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -202,14 +211,26 @@ public class ConvexValidationException(string message, List<ValidationError>? er
 }
 
 /// <summary>
-/// Represents a validation error.
+/// Represents validation error.
 /// </summary>
 public record ValidationError
 {
+    /// <summary>
+    /// Gets or sets the field.
+    /// </summary>
     public string Field { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
     public string Message { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the code.
+    /// </summary>
     public string? Code { get; init; }
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => $"{Field}: {Message}" + (Code != null ? $" (Code: {Code})" : "");
 }
 
@@ -222,15 +243,18 @@ public record ValidationError
 public class ConvexTimeoutException(string message, TimeSpan timeout, TimeSpan elapsed, ErrorContext? context = null) : EnhancedConvexException(message, context)
 {
     /// <summary>
-    /// Gets the timeout duration that was exceeded.
+    /// Gets the timeout.
     /// </summary>
     public TimeSpan Timeout { get; } = timeout;
 
     /// <summary>
-    /// Gets the elapsed time before timeout.
+    /// Gets the elapsed.
     /// </summary>
     public TimeSpan Elapsed { get; } = elapsed;
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString() => base.ToString() + $"\nTimeout: {Timeout.TotalSeconds:F1}s, Elapsed: {Elapsed.TotalSeconds:F1}s";
 
 }
@@ -244,15 +268,18 @@ public class ConvexTimeoutException(string message, TimeSpan timeout, TimeSpan e
 public class ConvexRetryExhaustedException(string message, int attemptCount, List<Exception>? attempts = null, ErrorContext? context = null) : EnhancedConvexException(message, context)
 {
     /// <summary>
-    /// Gets the number of retry attempts made.
+    /// Gets the attempt count.
     /// </summary>
     public int AttemptCount { get; } = attemptCount;
 
     /// <summary>
-    /// Gets the exceptions from each attempt.
+    /// Gets the attempts.
     /// </summary>
     public List<Exception> Attempts { get; } = attempts ?? [];
 
+    /// <summary>
+    /// Returns a string representation of the current instance.
+    /// </summary>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -279,12 +306,18 @@ public class ErrorContextBuilder
 {
     private readonly ErrorContext _context = new();
 
+    /// <summary>
+    /// Configures request ID.
+    /// </summary>
     public ErrorContextBuilder WithRequestId(string requestId)
     {
         _context.RequestId = requestId;
         return this;
     }
 
+    /// <summary>
+    /// Configures function.
+    /// </summary>
     public ErrorContextBuilder WithFunction(string functionName, string operationType)
     {
         _context.FunctionName = functionName;
@@ -292,6 +325,9 @@ public class ErrorContextBuilder
         return this;
     }
 
+    /// <summary>
+    /// Configures data.
+    /// </summary>
     public ErrorContextBuilder WithData<T>(string key, T? value)
     {
         var jsonString = JsonSerializer.Serialize(value);
@@ -299,11 +335,17 @@ public class ErrorContextBuilder
         return this;
     }
 
+    /// <summary>
+    /// Configures server stack.
+    /// </summary>
     public ErrorContextBuilder WithServerStack(string serverStackTrace)
     {
         _context.ServerStackTrace = serverStackTrace;
         return this;
     }
 
+    /// <summary>
+    /// Gets the build.
+    /// </summary>
     public ErrorContext Build() => _context;
 }

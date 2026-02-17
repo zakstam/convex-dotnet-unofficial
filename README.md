@@ -2465,6 +2465,8 @@ dotnet test
 - Follow existing code style
 - Add tests for new features
 - Update documentation
+- Add XML documentation comments for all public members in package projects (`Convex.Client`, `Convex.SourceGenerator`, `Convex.Client.AspNetCore`, `Convex.Client.Blazor`, `Convex.BetterAuth`)
+- Verify locally with: `dotnet build src/Convex.Client/Convex.Client.csproj -t:Rebuild` (repeat for each package project)
 - Use [Conventional Commits](https://www.conventionalcommits.org/)
 - Ensure compatibility tests pass
 

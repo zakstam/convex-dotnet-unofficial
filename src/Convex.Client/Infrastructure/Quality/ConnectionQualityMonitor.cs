@@ -153,7 +153,7 @@ internal sealed class ConnectionQualityMonitor(ILogger? logger = null, bool enab
     }
 
     /// <summary>
-    /// Creates a comprehensive quality assessment based on recent metrics.
+    /// Executes the assess quality operation.
     /// </summary>
     public ConnectionQualityInfo AssessQuality(bool isConnected)
     {

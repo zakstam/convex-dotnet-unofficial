@@ -49,7 +49,7 @@ public interface IOptimisticLocalStore
 }
 
 /// <summary>
-/// Represents a query result with its arguments.
+/// Executes the query result operation.
 /// </summary>
 /// <typeparam name="TResult">The type of the query result.</typeparam>
 /// <typeparam name="TArgs">The type of the query arguments.</typeparam>

@@ -6,27 +6,27 @@ namespace Convex.Client.Infrastructure.Interceptors;
 public sealed class ConvexErrorContext
 {
     /// <summary>
-    /// Gets or sets the original request context.
+    /// Gets or sets the request.
     /// </summary>
     public ConvexRequestContext Request { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the exception that occurred during request execution.
+    /// Gets or sets the exception.
     /// </summary>
     public Exception Exception { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the timestamp when the error occurred.
+    /// Gets or sets the error timestamp.
     /// </summary>
     public DateTimeOffset ErrorTimestamp { get; set; }
 
     /// <summary>
-    /// Gets the duration from request creation to error occurrence.
+    /// Gets the duration.
     /// </summary>
     public TimeSpan Duration => ErrorTimestamp - Request.Timestamp;
 
     /// <summary>
-    /// Gets or sets additional metadata for the error.
+    /// Gets or sets the string.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = [];
 }

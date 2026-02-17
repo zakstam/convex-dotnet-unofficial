@@ -65,7 +65,7 @@ public class BetterAuthService : IBetterAuthService, IDisposable
     }
 
     /// <summary>
-    /// Creates a new instance of <see cref="BetterAuthService"/>.
+    /// Executes the better auth service operation.
     /// </summary>
     public BetterAuthService(
         HttpClient httpClient,

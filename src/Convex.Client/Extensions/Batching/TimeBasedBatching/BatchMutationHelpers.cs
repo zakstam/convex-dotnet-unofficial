@@ -9,7 +9,7 @@ namespace Convex.Client.Extensions.Batching.TimeBasedBatching;
 public static class BatchMutationHelpers
 {
     /// <summary>
-    /// Creates a mutation builder for storing batches.
+    /// Creates batch store mutation.
     /// The mutation should accept a Batch&lt;TEvent&gt; and return the batch ID or result.
     /// </summary>
     /// <typeparam name="TEvent">The type of events in the batch.</typeparam>
@@ -27,7 +27,7 @@ public static class BatchMutationHelpers
     }
 
     /// <summary>
-    /// Creates a query builder for finding a specific batch by metadata.
+    /// Creates batch find query.
     /// The query should accept metadata and return a Batch&lt;TEvent&gt; or null.
     /// </summary>
     /// <typeparam name="TEvent">The type of events in the batch.</typeparam>
@@ -45,7 +45,7 @@ public static class BatchMutationHelpers
     }
 
     /// <summary>
-    /// Creates a query builder for listing all batches matching criteria.
+    /// Creates batch list query.
     /// The query should accept filter criteria and return a list of Batch&lt;TEvent&gt;.
     /// </summary>
     /// <typeparam name="TEvent">The type of events in the batch.</typeparam>

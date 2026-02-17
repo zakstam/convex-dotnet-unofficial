@@ -3,7 +3,7 @@
 namespace Convex.SourceGenerator.Core.Models;
 
 /// <summary>
-/// Represents a strongly-typed document ID type definition.
+/// Represents ID definition.
 /// </summary>
 public class IdDefinition
 {
@@ -17,7 +17,13 @@ public class IdDefinition
     /// </summary>
     public string TableName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
     public override bool Equals(object? obj) => obj is IdDefinition other && TableName == other.TableName;
 
+    /// <summary>
+    /// Serves as the default hash function.
+    /// </summary>
     public override int GetHashCode() => TableName.GetHashCode();
 }

@@ -45,7 +45,7 @@ public class MutationsSlice(
     private readonly SemaphoreSlim _queueProcessingLock = new(1, 1);
 
     /// <summary>
-    /// Creates a mutation builder for the specified Convex function.
+    /// Executes the mutate operation.
     /// </summary>
     /// <typeparam name="TResult">The type of result returned by the mutation.</typeparam>
     /// <param name="functionName">The name of the Convex function to mutate.</param>
@@ -140,7 +140,7 @@ public class MutationsSlice(
     }
 
     /// <summary>
-    /// Represents a pending mutation in the queue.
+    /// Executes the pending mutation operation.
     /// </summary>
     private sealed class PendingMutation(Func<CancellationToken, Task> execute, CancellationToken cancellationToken)
     {

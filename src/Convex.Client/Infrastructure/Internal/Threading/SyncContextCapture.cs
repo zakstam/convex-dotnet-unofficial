@@ -21,7 +21,7 @@ public sealed class SyncContextCapture
     public SyncContextCapture(SynchronizationContext? context) => _capturedContext = context;
 
     /// <summary>
-    /// Gets whether a SynchronizationContext was captured.
+    /// Gets or sets a value indicating whether context.
     /// </summary>
     public bool HasContext => _capturedContext != null;
 

@@ -10,7 +10,7 @@ namespace Convex.Client.Analyzer;
 public abstract class ConvexAnalyzerBase : DiagnosticAnalyzer
 {
     /// <summary>
-    /// Gets the diagnostic descriptors supported by this analyzer.
+    /// Gets the supported diagnostics.
     /// </summary>
     public abstract override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; }
 

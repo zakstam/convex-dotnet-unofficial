@@ -6,9 +6,10 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;RS0037;RS0016;RS0017</NoWarn>
+    <NoWarn>$(NoWarn);RS0037;RS0016;RS0017</NoWarn>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <BasePackageId>Convex.Client.AspNetCore</BasePackageId>
     <Product>Convex .NET Client - ASP.NET Core Extensions</Product>
     <Description>ASP.NET Core extensions for Convex .NET Client. Includes authentication middleware, health checks, and server-side integration helpers.</Description>

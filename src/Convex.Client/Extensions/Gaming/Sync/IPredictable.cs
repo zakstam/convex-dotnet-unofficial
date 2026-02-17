@@ -1,7 +1,7 @@
 namespace Convex.Client.Extensions.Gaming.Sync;
 
 /// <summary>
-/// Represents a state type that supports client-side prediction.
+/// Defines operations for i predictable t state.
 /// Implement this interface to enable instant local response to player inputs
 /// while maintaining server authority.
 /// </summary>
@@ -60,7 +60,7 @@ public interface IPredictable<TState, in TInput>
     TState ApplyInput(TInput input, double deltaTimeMs);
 
     /// <summary>
-    /// Creates a deep copy of the current state.
+    /// Executes the clone operation.
     /// </summary>
     /// <returns>A new instance that is a copy of the current state.</returns>
     /// <remarks>

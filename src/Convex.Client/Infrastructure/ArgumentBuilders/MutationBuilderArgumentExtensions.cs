@@ -8,7 +8,7 @@ namespace Convex.Client.Infrastructure.ArgumentBuilders;
 public static class MutationBuilderArgumentExtensions
 {
     /// <summary>
-    /// Sets arguments using an ArgumentBuilder for fluent construction.
+    /// Configures args.
     /// </summary>
     /// <typeparam name="TResult">The result type.</typeparam>
     /// <typeparam name="TArgs">The arguments type.</typeparam>

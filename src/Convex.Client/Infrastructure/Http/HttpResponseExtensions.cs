@@ -41,7 +41,7 @@ public static class HttpResponseExtensions
     }
 
     /// <summary>
-    /// Gets response headers including content headers, handling null content gracefully.
+    /// Gets all headers.
     /// </summary>
     /// <param name="response">The HTTP response message.</param>
     /// <returns>A dictionary of all response headers.</returns>
@@ -68,7 +68,7 @@ public static class HttpResponseExtensions
     }
 
     /// <summary>
-    /// Gets the content type from the response, handling null content gracefully.
+    /// Gets the get content type.
     /// </summary>
     /// <param name="response">The HTTP response message.</param>
     /// <returns>The content type media type, or null if content is null or content type is not set.</returns>

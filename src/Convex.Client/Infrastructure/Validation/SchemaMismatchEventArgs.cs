@@ -4,7 +4,7 @@ namespace Convex.Client.Infrastructure.Validation;
 /// Event arguments for schema mismatch events.
 /// </summary>
 /// <remarks>
-/// Creates new schema mismatch event arguments.
+/// Executes the schema mismatch event args operation.
 /// </remarks>
 public sealed class SchemaMismatchEventArgs(
     string functionName,
@@ -14,17 +14,17 @@ public sealed class SchemaMismatchEventArgs(
     object? actualValue = null) : EventArgs
 {
     /// <summary>
-    /// Gets the function name where the mismatch occurred.
+    /// Gets the function name.
     /// </summary>
     public string FunctionName { get; } = functionName;
 
     /// <summary>
-    /// Gets the expected type name.
+    /// Gets the expected type.
     /// </summary>
     public string ExpectedType { get; } = expectedType;
 
     /// <summary>
-    /// Gets the actual type name received.
+    /// Gets the actual type.
     /// </summary>
     public string ActualType { get; } = actualType;
 
@@ -34,7 +34,7 @@ public sealed class SchemaMismatchEventArgs(
     public IReadOnlyList<string> ValidationErrors { get; } = validationErrors;
 
     /// <summary>
-    /// Gets the raw response value.
+    /// Gets the actual value.
     /// </summary>
     public object? ActualValue { get; } = actualValue;
 }
