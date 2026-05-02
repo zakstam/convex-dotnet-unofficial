@@ -1,25 +1,48 @@
-// Storage actions for file upload/download
-// These are wrapper functions that expose Convex storage APIs as actions
+// Storage actions for file upload/download.
+// These wrappers are authenticated and only allow callers to access attachments
+// referenced by their own messages.
 
-import { action } from "./_generated/server";
+import { api } from "./_generated/api";
+import { action, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUser } from "./auth";
+
+export const assertStorageAccess = query({
+  args: {
+    storageId: v.string(),
+    userId: v.string(),
+  },
+  handler: async (ctx, { storageId, userId }) => {
+    const messages = await ctx.db.query("messages").collect();
+    const ownsAttachment = messages.some(
+      (message) =>
+        message.userId === userId &&
+        message.attachments?.some((attachment) => attachment.storageId === storageId),
+    );
+
+    if (!ownsAttachment) {
+      throw new Error("You can only access attachments from your own messages");
+    }
+
+    return true;
+  },
+});
 
 // Generate an upload URL for file uploads
 export const generateUploadUrl = action({
   args: {
     filename: v.optional(v.string()),
   },
-  handler: async (ctx, { filename }) => {
-    // Generate upload URL using Convex storage API
-    // Note: Convex's generateUploadUrl() only returns the URL string.
-    // The actual storage ID is returned AFTER the file is uploaded to this URL.
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
     const uploadUrl = await ctx.storage.generateUploadUrl();
-    
-    // Return a placeholder storage ID to satisfy the .NET client's validation.
-    // The actual storage ID will be returned in the upload POST response.
     return {
       uploadUrl,
-      storageId: "pending", // Placeholder - actual storage ID comes from upload response
+      storageId: "pending",
     };
   },
 });
@@ -30,6 +53,13 @@ export const getUrl = action({
     storageId: v.string(),
   },
   handler: async (ctx, { storageId }) => {
+    const user = await getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
+    await ctx.runQuery(api.storage.assertStorageAccess, { storageId, userId: user._id });
+
     const url = await ctx.storage.getUrl(storageId);
     return {
       url: url ?? null,
@@ -43,7 +73,13 @@ export const getMetadata = action({
     storageId: v.string(),
   },
   handler: async (ctx, { storageId }) => {
-    // Get metadata using the storage API
+    const user = await getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
+    await ctx.runQuery(api.storage.assertStorageAccess, { storageId, userId: user._id });
+
     const fileMetadata = await ctx.storage.getMetadata(storageId);
     if (!fileMetadata) {
       return {
@@ -55,13 +91,13 @@ export const getMetadata = action({
         sha256: null,
       };
     }
-    
+
     return {
       storageId,
-      filename: null, // Storage metadata doesn't include filename
+      filename: null,
       contentType: fileMetadata.contentType ?? null,
       size: fileMetadata.size ?? 0,
-      uploadedAt: 0, // Storage metadata doesn't include creation time
+      uploadedAt: 0,
       sha256: fileMetadata.sha256 ?? null,
     };
   },
@@ -73,10 +109,16 @@ export const deleteFile = action({
     storageId: v.string(),
   },
   handler: async (ctx, { storageId }) => {
+    const user = await getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
+    await ctx.runQuery(api.storage.assertStorageAccess, { storageId, userId: user._id });
+
     await ctx.storage.delete(storageId as any);
     return {
       deleted: true,
     };
   },
 });
-

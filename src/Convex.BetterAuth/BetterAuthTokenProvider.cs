@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Convex.Client.Infrastructure.Common;
+using Convex.Client.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.BetterAuth;
@@ -146,7 +147,7 @@ public class BetterAuthTokenProvider : IAuthTokenProvider, IDisposable
             _logger?.LogWarning(
                 "Failed to get Convex JWT: {StatusCode} - {Error}",
                 response.StatusCode,
-                errorContent);
+                SensitiveDataRedactor.Redact(errorContent));
 
             // Return null if JWT exchange fails
             return null;

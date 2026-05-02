@@ -58,7 +58,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Schedule request: FunctionName: {FunctionName}, Args: {Args}",
-                    functionName, argsJson);
+                    functionName, SensitiveDataRedactor.Redact(argsJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:schedule", requestArgs, cancellationToken);
@@ -71,7 +71,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Job scheduling failed: Invalid response, FunctionName: {FunctionName}, Response: {Response}, Duration: {DurationMs}ms",
-                        functionName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        functionName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -121,7 +121,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[Scheduling] Starting job scheduling with args: FunctionName: {FunctionName}, ScheduledTime: {ScheduledTime}, ScheduleType: OneTime, Args: {Args}",
-                functionName, scheduledTime, argsJson);
+                functionName, scheduledTime, SensitiveDataRedactor.Redact(argsJson));
         }
 
         try
@@ -143,7 +143,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Schedule request: FunctionName: {FunctionName}, Request: {Request}",
-                    functionName, requestJson);
+                    functionName, SensitiveDataRedactor.Redact(requestJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:schedule", requestArgs, cancellationToken);
@@ -156,7 +156,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Job scheduling failed: Invalid response, FunctionName: {FunctionName}, Response: {Response}, Duration: {DurationMs}ms",
-                        functionName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        functionName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -227,7 +227,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Schedule request: FunctionName: {FunctionName}, Args: {Args}",
-                    functionName, argsJson);
+                    functionName, SensitiveDataRedactor.Redact(argsJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:schedule", requestArgs, cancellationToken);
@@ -240,7 +240,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Recurring job scheduling failed: Invalid response, FunctionName: {FunctionName}, Response: {Response}, Duration: {DurationMs}ms",
-                        functionName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        functionName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -290,7 +290,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[Scheduling] Starting recurring job scheduling with args: FunctionName: {FunctionName}, CronExpression: {CronExpression}, Timezone: {Timezone}, ScheduleType: Cron, Args: {Args}",
-                functionName, cronExpression, timezone, argsJson);
+                functionName, cronExpression, timezone, SensitiveDataRedactor.Redact(argsJson));
         }
 
         try
@@ -313,7 +313,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Schedule request: FunctionName: {FunctionName}, Request: {Request}",
-                    functionName, requestJson);
+                    functionName, SensitiveDataRedactor.Redact(requestJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:schedule", requestArgs, cancellationToken);
@@ -326,7 +326,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Recurring job scheduling failed: Invalid response, FunctionName: {FunctionName}, Response: {Response}, Duration: {DurationMs}ms",
-                        functionName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        functionName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -398,7 +398,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Schedule request: FunctionName: {FunctionName}, Args: {Args}",
-                    functionName, argsJson);
+                    functionName, SensitiveDataRedactor.Redact(argsJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:schedule", requestArgs, cancellationToken);
@@ -411,7 +411,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Interval job scheduling failed: Invalid response, FunctionName: {FunctionName}, Response: {Response}, Duration: {DurationMs}ms",
-                        functionName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        functionName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -461,7 +461,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[Scheduling] Starting interval job scheduling with args: FunctionName: {FunctionName}, Interval: {IntervalMs}ms, StartTime: {StartTime}, EndTime: {EndTime}, ScheduleType: Interval, Args: {Args}",
-                functionName, interval.TotalMilliseconds, startTime?.ToString() ?? "null", endTime?.ToString() ?? "null", argsJson);
+                functionName, interval.TotalMilliseconds, startTime?.ToString() ?? "null", endTime?.ToString() ?? "null", SensitiveDataRedactor.Redact(argsJson));
         }
 
         try
@@ -485,7 +485,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Schedule request: FunctionName: {FunctionName}, Request: {Request}",
-                    functionName, requestJson);
+                    functionName, SensitiveDataRedactor.Redact(requestJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:schedule", requestArgs, cancellationToken);
@@ -498,7 +498,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Interval job scheduling failed: Invalid response, FunctionName: {FunctionName}, Response: {Response}, Duration: {DurationMs}ms",
-                        functionName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        functionName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -653,7 +653,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[Scheduling] Job list retrieval failed: Invalid response, Response: {Response}, Duration: {DurationMs}ms",
-                        response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -698,7 +698,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[Scheduling] Starting schedule update: JobId: {JobId}, NewSchedule: {Schedule}",
-                jobId, scheduleJsonStr);
+                jobId, SensitiveDataRedactor.Redact(scheduleJsonStr));
         }
 
         try
@@ -716,7 +716,7 @@ internal class SchedulingImplementation(IHttpClientProvider httpProvider, IConve
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Scheduling] Update schedule request: JobId: {JobId}, Request: {Request}",
-                    jobId, requestJson);
+                    jobId, SensitiveDataRedactor.Redact(requestJson));
             }
 
             var response = await ExecuteMutationAsync<JsonElement>("scheduler:updateSchedule", requestArgs, cancellationToken);

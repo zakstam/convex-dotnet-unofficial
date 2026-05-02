@@ -97,7 +97,7 @@ internal sealed class ActionBuilder<TResult>(
     public async Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        var argsJson = _args != null ? _serializer.Serialize(_args) : "null";
+        var argsJson = SensitiveDataRedactor.Redact(_args != null ? _serializer.Serialize(_args) : "null");
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
@@ -127,7 +127,7 @@ internal sealed class ActionBuilder<TResult>(
                     stopwatch.Stop();
                     if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                     {
-                        var resultJson = _serializer.Serialize(result);
+                        var resultJson = SensitiveDataRedactor.Redact(_serializer.Serialize(result));
                         _logger!.LogDebug("[Action] Action execution completed: {FunctionName}, Duration: {DurationMs}ms, Attempt: {Attempt}, ResultType: {ResultType}, Result: {Result}",
                             _functionName, stopwatch.Elapsed.TotalMilliseconds, attempt, typeof(TResult).Name, resultJson);
                     }
@@ -178,7 +178,7 @@ internal sealed class ActionBuilder<TResult>(
             stopwatch.Stop();
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var resultJson = _serializer.Serialize(result);
+                var resultJson = SensitiveDataRedactor.Redact(_serializer.Serialize(result));
                 _logger!.LogDebug("[Action] Action execution completed: {FunctionName}, Duration: {DurationMs}ms, ResultType: {ResultType}, Result: {Result}",
                     _functionName, stopwatch.Elapsed.TotalMilliseconds, typeof(TResult).Name, resultJson);
             }
@@ -246,7 +246,7 @@ internal sealed class ActionBuilder<TResult>(
     /// </summary>
     private async Task<TResult> ExecuteDirectAsync(CancellationToken cancellationToken)
     {
-        var argsJson = _args != null ? _serializer.Serialize(_args) : "null";
+        var argsJson = SensitiveDataRedactor.Redact(_args != null ? _serializer.Serialize(_args) : "null");
 
         var request = ConvexRequestBuilder.BuildActionRequest(
             _httpProvider.DeploymentUrl,
@@ -265,7 +265,7 @@ internal sealed class ActionBuilder<TResult>(
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
             _logger!.LogDebug("[Action] Action response received: {FunctionName}, StatusCode: {StatusCode}, Headers: {Headers}",
-                _functionName, response.StatusCode, string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}")));
+                _functionName, response.StatusCode, SensitiveDataRedactor.RedactHeaders(response.Headers));
         }
 
         var result = await ConvexResponseParser.ParseResponseAsync<TResult>(
@@ -277,7 +277,7 @@ internal sealed class ActionBuilder<TResult>(
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            var resultJson = _serializer.Serialize(result);
+            var resultJson = SensitiveDataRedactor.Redact(_serializer.Serialize(result));
             _logger!.LogDebug("[Action] Action response parsed: {FunctionName}, ResultType: {ResultType}, Result: {Result}",
                 _functionName, typeof(TResult).Name, resultJson);
         }

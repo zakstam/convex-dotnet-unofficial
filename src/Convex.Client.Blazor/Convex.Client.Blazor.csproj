@@ -2,19 +2,13 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);RS0037;RS0016;RS0017</NoWarn>
-    <Deterministic>true</Deterministic>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <BasePackageId>Convex.Client.Blazor</BasePackageId>
     <Product>Convex .NET Client - Blazor Extensions</Product>
     <Description>Blazor WebAssembly and Server extensions for Convex .NET Client. Includes StateHasChanged integration, Clerk authentication with automatic JavaScript injection, and Blazor-specific helpers.</Description>
     <PackageTags>convex;blazor;blazor-wasm;blazor-server;clerk;authentication;reactive;extensions;net8;net9</PackageTags>
-    <PackageReleaseNotes>Initial release (0.0.1) of Blazor extensions for Convex .NET SDK. Includes Clerk authentication support with automatic JS injection. See CHANGELOG.md for full details.</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- Source Link -->

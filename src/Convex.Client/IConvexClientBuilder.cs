@@ -33,6 +33,11 @@ public interface IConvexClientBuilder
     IConvexClientBuilder WithTimeout(TimeSpan timeout);
 
     /// <summary>
+    /// Allows insecure HTTP and WS transport for local development scenarios.
+    /// </summary>
+    IConvexClientBuilder AllowInsecureDevelopmentTransport(bool enabled = true);
+
+    /// <summary>
     /// Configures the reconnection policy for WebSocket connections.
     /// </summary>
     IConvexClientBuilder WithReconnectionPolicy(ReconnectionPolicy policy);

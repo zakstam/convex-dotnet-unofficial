@@ -81,11 +81,12 @@ internal sealed class QueryBuilder<TResult>(
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Metadata-bearing query responses are not implemented yet.
+    /// Use the standard query pipeline until a richer result shape is introduced.
+    /// </remarks>
     public IQueryBuilder<TResult> IncludeMetadata() =>
-        // TODO: Implement metadata support - planned for future version
-        // Will require updating HTTP request to request metadata
-        // and returning a richer result type with execution details
-        throw new NotImplementedException("Metadata support is not yet implemented. Use standard queries without metadata for now.");
+        throw new NotImplementedException("Metadata-bearing query responses are not supported yet. Use the standard query pipeline for now.");
 
     /// <inheritdoc/>
     [Obsolete("This API is experimental: it may change or disappear. Use standard queries instead.")]
@@ -94,9 +95,9 @@ internal sealed class QueryBuilder<TResult>(
         if (timestamp < 0)
             throw new ArgumentException("Timestamp must be non-negative.", nameof(timestamp));
 
-        // TODO: Implement consistent query support - planned for future version
-        // Will require adding timestamp to HTTP request headers or query params
-        throw new NotImplementedException("Consistent queries are not yet implemented. This API is experimental.");
+        // Preview API placeholder: consistent reads are not wired through the transport yet.
+        // Use the standard query pipeline until timestamp-based consistency is implemented end to end.
+        throw new NotImplementedException("Timestamp-based consistent queries are not supported yet. Use the standard query pipeline instead.");
     }
 
     /// <inheritdoc/>
@@ -105,10 +106,9 @@ internal sealed class QueryBuilder<TResult>(
         if (cacheDuration <= TimeSpan.Zero)
             throw new ArgumentException("Cache duration must be positive.", nameof(cacheDuration));
 
-        // TODO: Implement caching - planned for future version
-        // Will require coordination with ConvexClient's QueryCache
-        // This is a signal to the facade - caching should be handled at ConvexClient level
-        throw new NotImplementedException("Query caching is not yet implemented. Use the ConvexClient caching slice instead.");
+        // Preview API placeholder: query-builder caching is intentionally deferred.
+        // Use the existing `ConvexClient` caching slice for supported cache behavior.
+        throw new NotImplementedException("Query-builder caching is not supported yet. Use the `ConvexClient` caching slice instead.");
     }
 
     /// <inheritdoc/>
@@ -367,7 +367,7 @@ internal sealed class QueryBuilder<TResult>(
     private async Task<TResult> ExecuteDirectAsync(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var argsJson = _args != null ? _serializer.Serialize(_args) : "null";
+        var argsJson = SensitiveDataRedactor.Redact(_args != null ? _serializer.Serialize(_args) : "null");
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
@@ -394,7 +394,7 @@ internal sealed class QueryBuilder<TResult>(
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
                 _logger!.LogDebug("[Query] Query response received: {FunctionName}, StatusCode: {StatusCode}, Headers: {Headers}",
-                    _functionName, response.StatusCode, string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}")));
+                    _functionName, response.StatusCode, SensitiveDataRedactor.RedactHeaders(response.Headers));
             }
 
             // Use ConvexResponseParser to handle standard Convex response format (status/value/errorMessage wrapper)

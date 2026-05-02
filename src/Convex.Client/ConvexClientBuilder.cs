@@ -68,6 +68,7 @@ public sealed class ConvexClientBuilder
     public ConvexClientBuilder UseDeployment(string deploymentUrl)
     {
         _deploymentUrl = deploymentUrl;
+        _options.DeploymentUrl = deploymentUrl;
         return this;
     }
 
@@ -127,6 +128,17 @@ public sealed class ConvexClientBuilder
     public ConvexClientBuilder WithTimeout(TimeSpan timeout)
     {
         _options.DefaultTimeout = timeout;
+        return this;
+    }
+
+    /// <summary>
+    /// Allows insecure HTTP and WS transport for local development scenarios.
+    /// </summary>
+    /// <param name="enabled">Whether insecure transport is allowed.</param>
+    /// <returns>The builder for method chaining.</returns>
+    public ConvexClientBuilder AllowInsecureDevelopmentTransport(bool enabled = true)
+    {
+        _options.AllowInsecureDevelopmentTransport = enabled;
         return this;
     }
 

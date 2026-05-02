@@ -40,6 +40,12 @@ public class ConvexOptions
     public bool EnableDebugLogging { get; set; } = false;
 
     /// <summary>
+    /// Allows insecure HTTP and WS transport for local development scenarios.
+    /// Default is false.
+    /// </summary>
+    public bool AllowInsecureDevelopmentTransport { get; set; } = false;
+
+    /// <summary>
     /// Custom configuration action for the ConvexClientBuilder.
     /// Allows advanced configuration beyond the standard options.
     /// </summary>
@@ -55,6 +61,11 @@ public class ConvexOptions
             throw new InvalidOperationException(
                 "DeploymentUrl must be configured. " +
                 "Set it via options.DeploymentUrl or in configuration.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(DeploymentUrl))
+        {
+            Infrastructure.Http.DeploymentUrlValidator.Validate(DeploymentUrl, AllowInsecureDevelopmentTransport);
         }
 
         if (MaxReconnectAttempts < 0)

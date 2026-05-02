@@ -102,6 +102,13 @@ public sealed class ConvexClientOptions
     public bool PreConnect { get; set; } = false;
 
     /// <summary>
+    /// Gets or sets a value indicating whether insecure HTTP or WS transport is allowed.
+    /// Only enable this for local development against loopback or trusted non-production endpoints.
+    /// Default is false.
+    /// </summary>
+    public bool AllowInsecureDevelopmentTransport { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets a value indicating whether enable quality monitoring.
     /// When enabled, the client will periodically assess connection quality
     /// and raise ConnectionQualityChanged events when quality changes.
@@ -143,6 +150,11 @@ public sealed class ConvexClientOptions
         if (DefaultTimeout <= TimeSpan.Zero)
         {
             throw new ArgumentException("DefaultTimeout must be greater than zero.", nameof(DefaultTimeout));
+        }
+
+        if (!string.IsNullOrWhiteSpace(DeploymentUrl))
+        {
+            Infrastructure.Http.DeploymentUrlValidator.Validate(DeploymentUrl, AllowInsecureDevelopmentTransport);
         }
 
         if (ReconnectionPolicy != null)

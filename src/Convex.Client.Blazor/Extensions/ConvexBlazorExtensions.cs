@@ -85,9 +85,10 @@ public static class ConvexBlazorExtensions
                 onError ?? DefaultErrorHandler);
     }
 
-    private static void DefaultErrorHandler(Exception ex) =>
-        // Default error handler - just log to console in development
-        Console.WriteLine($"Convex subscription error: {ex.Message}");
+    private static void DefaultErrorHandler(Exception ex)
+    {
+        _ = ex;
+    }
 
     /// <summary>
     /// Subscribes to the observable and automatically calls StateHasChanged on the component

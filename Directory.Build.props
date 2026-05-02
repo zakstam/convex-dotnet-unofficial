@@ -2,6 +2,14 @@
   <!-- Conditionally import PackForGitHub.props when packing for GitHub Packages -->
   <Import Project="build/PackForGitHub.props" Condition="'$(PackForGitHub)' == 'true' And Exists('build/PackForGitHub.props')" />
 
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+  </PropertyGroup>
+
   <!-- Common Packaging Properties -->
   <PropertyGroup>
     <!-- Package Metadata - Common across all Convex packages -->
@@ -18,6 +26,7 @@
     <!-- CI/CD can override via MSBuild property: -p:Version=1.2.3 -p:PackageVersion=1.2.3 -->
     <Version Condition="'$(Version)' == ''">5.0.0-beta</Version>
     <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+    <PackageReleaseNotes Condition="'$(PackageReleaseNotes)' == ''">See `CHANGELOG.md` for release details.</PackageReleaseNotes>
 
     <!-- Source Link and Symbols -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

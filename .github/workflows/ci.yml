@@ -3,6 +3,8 @@ name: CI/CD
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   release:
     types: [published]
 
@@ -42,7 +44,7 @@ jobs:
       - name: Run unit tests
         run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category!=Integration"
 
-      - name: Pack packages (main branch only)
+      - name: Pack packages on `main` and releases
         if: github.ref == 'refs/heads/main' || github.event_name == 'release'
         run: |
           mkdir -p ./nupkg

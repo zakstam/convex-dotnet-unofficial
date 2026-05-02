@@ -1,5 +1,6 @@
-// Storage actions for file upload/download
-// These are wrapper functions that expose Convex storage APIs as actions
+// Storage actions for file upload/download.
+// SECURITY: This unauthenticated example is for local demo use only.
+// Do not expose these actions in production; prefer the auth-enabled chat examples.
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
@@ -67,16 +68,13 @@ export const getMetadata = action({
   },
 });
 
-// Delete a file
+// Delete is intentionally disabled in the unauthenticated demo.
 export const deleteFile = action({
   args: {
     storageId: v.string(),
   },
-  handler: async (ctx, { storageId }) => {
-    await ctx.storage.delete(storageId as any);
-    return {
-      deleted: true,
-    };
+  handler: async () => {
+    throw new Error("File deletion is disabled in the unauthenticated demo. Use an auth-enabled example for production storage operations.");
   },
 });
 

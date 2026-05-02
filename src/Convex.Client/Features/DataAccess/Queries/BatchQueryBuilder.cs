@@ -402,7 +402,7 @@ internal sealed class BatchQueryBuilder(
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            _logger!.LogDebug("[BatchQuery] Batch request body: {RequestJson}", json);
+            _logger!.LogDebug("[BatchQuery] Batch request body: {RequestJson}", SensitiveDataRedactor.Redact(json));
         }
 
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -435,7 +435,7 @@ internal sealed class BatchQueryBuilder(
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            _logger!.LogDebug("[BatchQuery] Batch query response body: {ResponseJson}", responseJson);
+            _logger!.LogDebug("[BatchQuery] Batch query response body: {ResponseJson}", SensitiveDataRedactor.Redact(responseJson));
         }
 
         if (string.IsNullOrWhiteSpace(responseJson))

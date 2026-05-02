@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Convex.Client.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.Client.Infrastructure.Serialization;
@@ -43,7 +44,7 @@ public class DefaultConvexSerializer(ILogger<DefaultConvexSerializer>? logger = 
         catch (JsonException ex)
         {
             var targetTypeName = typeof(T).Name;
-            var jsonPreview = json[..Math.Min(500, json.Length)];
+            var jsonPreview = SensitiveDataRedactor.Redact(json[..Math.Min(500, json.Length)]);
             var message = $"Failed to deserialize JSON to {targetTypeName}. " +
                          $"Error: {ex.Message}. " +
                          $"JSON content (first 500 chars): {jsonPreview}";
@@ -70,7 +71,7 @@ public class DefaultConvexSerializer(ILogger<DefaultConvexSerializer>? logger = 
         catch (JsonException ex)
         {
             var targetTypeName = type.Name;
-            var jsonPreview = json[..Math.Min(500, json.Length)];
+            var jsonPreview = SensitiveDataRedactor.Redact(json[..Math.Min(500, json.Length)]);
             var message = $"Failed to deserialize JSON to {targetTypeName}. " +
                          $"Error: {ex.Message}. " +
                          $"JSON content (first 500 chars): {jsonPreview}";

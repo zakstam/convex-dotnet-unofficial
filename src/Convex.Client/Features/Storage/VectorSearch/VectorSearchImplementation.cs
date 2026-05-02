@@ -32,7 +32,7 @@ internal sealed class VectorSearchImplementation(IHttpClientProvider httpProvide
             ValidateSearchParameters(indexName, vector, limit);
 
             var args = new { indexName, vector, limit };
-            var argsJson = _serializer.Serialize(args);
+            var argsJson = SensitiveDataRedactor.Redact(_serializer.Serialize(args));
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
@@ -50,7 +50,7 @@ internal sealed class VectorSearchImplementation(IHttpClientProvider httpProvide
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[VectorSearch] Vector search failed: Invalid response, IndexName: {IndexName}, Response: {Response}, Duration: {DurationMs}ms",
-                        indexName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        indexName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -134,7 +134,7 @@ internal sealed class VectorSearchImplementation(IHttpClientProvider httpProvide
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[VectorSearch] Filtered vector search failed: Invalid response, IndexName: {IndexName}, Response: {Response}, Duration: {DurationMs}ms",
-                        indexName, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        indexName, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -306,7 +306,7 @@ internal sealed class VectorSearchImplementation(IHttpClientProvider httpProvide
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[VectorSearch] Embedding creation failed: Invalid response, Response: {Response}, Duration: {DurationMs}ms",
-                        response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -363,7 +363,7 @@ internal sealed class VectorSearchImplementation(IHttpClientProvider httpProvide
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[VectorSearch] Batch embedding creation failed: Invalid response, Response: {Response}, Duration: {DurationMs}ms",
-                        response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -474,7 +474,7 @@ internal sealed class VectorSearchImplementation(IHttpClientProvider httpProvide
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[VectorSearch] List indices failed: Invalid response, Response: {Response}, Duration: {DurationMs}ms",
-                        response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }

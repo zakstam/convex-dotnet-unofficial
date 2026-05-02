@@ -3,8 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net8.0;net9.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
 
     <!-- Package metadata -->
     <BasePackageId>Convex.BetterAuth</BasePackageId>
@@ -14,8 +12,6 @@
 
     <!-- Enable XML documentation -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

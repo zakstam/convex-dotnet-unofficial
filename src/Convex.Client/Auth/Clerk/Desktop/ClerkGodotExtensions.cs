@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,11 +23,6 @@ public static class ClerkGodotExtensions
         ClerkOptions options,
         CancellationToken cancellationToken = default)
     {
-        // Use both Debug.WriteLine and Console.WriteLine for maximum visibility
-        var startMsg = "[ClerkGodotExtensions] AddClerkAuthToConvexClientAsync START";
-        Debug.WriteLine(startMsg);
-        Console.WriteLine(startMsg);
-
         if (client == null)
         {
             throw new ArgumentNullException(nameof(client));
@@ -44,34 +38,10 @@ public static class ClerkGodotExtensions
             throw new ArgumentNullException(nameof(options));
         }
 
-        var createMsg = $"[ClerkGodotExtensions] Creating ClerkAuthTokenProvider...";
-        Debug.WriteLine(createMsg);
-        Console.WriteLine(createMsg);
-
         // Create a token provider that wraps the Godot token service
         var tokenProvider = new ClerkAuthTokenProvider(tokenService, options);
 
-        var checkMsg = $"[ClerkGodotExtensions] Checking if client is ConvexClient: {client is ConvexClient}";
-        Debug.WriteLine(checkMsg);
-        Console.WriteLine(checkMsg);
-
-        var typeMsg = $"[ClerkGodotExtensions] Client type: {client.GetType().Name}";
-        Debug.WriteLine(typeMsg);
-        Console.WriteLine(typeMsg);
-
-        var callMsg = $"[ClerkGodotExtensions] Calling SetAuthTokenProviderAsync...";
-        Debug.WriteLine(callMsg);
-        Console.WriteLine(callMsg);
-
         await client.Auth.SetAuthTokenProviderAsync(tokenProvider, cancellationToken);
-
-        var completeMsg = $"[ClerkGodotExtensions] SetAuthTokenProviderAsync completed!";
-        Debug.WriteLine(completeMsg);
-        Console.WriteLine(completeMsg);
-
-        var endMsg = "[ClerkGodotExtensions] AddClerkAuthToConvexClientAsync COMPLETE";
-        Debug.WriteLine(endMsg);
-        Console.WriteLine(endMsg);
     }
 
     /// <summary>

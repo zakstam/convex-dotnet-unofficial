@@ -50,7 +50,7 @@ internal sealed class FileStorageImplementation(
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[FileStorage] Upload URL generation failed: Invalid response, Response: {Response}, Duration: {DurationMs}ms",
-                        response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -293,7 +293,7 @@ internal sealed class FileStorageImplementation(
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[FileStorage] Download URL retrieval failed: Invalid response, StorageId: {StorageId}, Response: {Response}, Duration: {DurationMs}ms",
-                        storageId, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        storageId, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }
@@ -357,7 +357,7 @@ internal sealed class FileStorageImplementation(
                 if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
                 {
                     _logger!.LogError(error, "[FileStorage] File metadata retrieval failed: Invalid response, StorageId: {StorageId}, Response: {Response}, Duration: {DurationMs}ms",
-                        storageId, response.GetRawText(), stopwatch.Elapsed.TotalMilliseconds);
+                        storageId, SensitiveDataRedactor.Redact(response.GetRawText()), stopwatch.Elapsed.TotalMilliseconds);
                 }
                 throw error;
             }

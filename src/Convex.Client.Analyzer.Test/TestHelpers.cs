@@ -1,5 +1,3 @@
-using System.IO;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -12,7 +10,6 @@ namespace Convex.Client.Analyzer.Test;
 public static class TestHelpers
 {
     private static MetadataReference? _convexClientReference;
-    private static MetadataReference? _convexClientExtensionsReference;
 
     /// <summary>
     /// Gets convex client reference.
@@ -26,51 +23,6 @@ public static class TestHelpers
         var assemblyPath = typeof(Convex.Client.IConvexClient).Assembly.Location;
         _convexClientReference = MetadataReference.CreateFromFile(assemblyPath);
         return _convexClientReference;
-    }
-
-    /// <summary>
-    /// Gets convex client extensions reference.
-    /// </summary>
-    public static MetadataReference? GetConvexClientExtensionsReference()
-    {
-        if (_convexClientExtensionsReference != null)
-            return _convexClientExtensionsReference;
-
-        // Try to get the extensions assembly from the same directory as Convex.Client
-        var convexClientAssembly = typeof(Convex.Client.IConvexClient).Assembly;
-        var convexClientLocation = convexClientAssembly.Location;
-        var convexClientDir = Path.GetDirectoryName(convexClientLocation);
-        
-        // Look for Convex.Client.Extensions.dll in the same directory
-        var extensionsPath = Path.Combine(convexClientDir!, "Convex.Client.Extensions.dll");
-        
-        if (File.Exists(extensionsPath))
-        {
-            _convexClientExtensionsReference = MetadataReference.CreateFromFile(extensionsPath);
-            return _convexClientExtensionsReference;
-        }
-
-        // Try alternative locations
-        var testAssemblyLocation = Assembly.GetExecutingAssembly().Location;
-        var testDir = Path.GetDirectoryName(testAssemblyLocation);
-        var alternativePaths = new[]
-        {
-            Path.Combine(testDir!, "Convex.Client.Extensions.dll"),
-            Path.Combine(testDir!, "..", "..", "..", "..", "src", "Convex.Client.Extensions", "bin", "Debug", "net8.0", "Convex.Client.Extensions.dll"),
-            Path.Combine(testDir!, "..", "..", "..", "..", "src", "Convex.Client.Extensions", "bin", "Debug", "net9.0", "Convex.Client.Extensions.dll"),
-        };
-
-        foreach (var path in alternativePaths)
-        {
-            if (File.Exists(path))
-            {
-                _convexClientExtensionsReference = MetadataReference.CreateFromFile(path);
-                return _convexClientExtensionsReference;
-            }
-        }
-
-        // Return null if not found - some tests might not need it
-        return null;
     }
 
     /// <summary>
@@ -104,12 +56,6 @@ public static class TestHelpers
         testState.ReferenceAssemblies = referenceAssemblies;
         testState.AdditionalReferences.Add(GetConvexClientReference());
         
-        // Attributes are now included in Convex.Client.dll, so no separate reference needed
-
-        var extensionsRef = GetConvexClientExtensionsReference();
-        if (extensionsRef != null)
-        {
-            testState.AdditionalReferences.Add(extensionsRef);
-        }
+        // Convex extension APIs now ship from `Convex.Client.dll`, so no extra assembly reference is needed.
     }
 }

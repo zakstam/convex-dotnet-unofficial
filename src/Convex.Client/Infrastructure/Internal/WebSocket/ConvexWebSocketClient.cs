@@ -24,11 +24,13 @@ namespace Convex.Client.Infrastructure.Internal.WebSocket;
 /// <param name="syncContext">Optional SynchronizationContext for UI thread marshalling.</param>
 /// <param name="reconnectionPolicy">Optional reconnection policy. Defaults to 5 attempts with exponential backoff.</param>
 /// <param name="logger">Optional logger for structured logging.</param>
+/// <param name="allowInsecureDevelopmentTransport">Whether insecure loopback or development transport is allowed.</param>
 internal sealed class ConvexWebSocketClient(
     string deploymentUrl,
     SyncContextCapture? syncContext = null,
     ReconnectionPolicy? reconnectionPolicy = null,
-    ILogger? logger = null) : IDisposable
+    ILogger? logger = null,
+    bool allowInsecureDevelopmentTransport = false) : IDisposable
 {
     /// <summary>
     /// Tracks subscription metadata needed for reconnection.
@@ -48,6 +50,7 @@ internal sealed class ConvexWebSocketClient(
     };
 
     private readonly string _deploymentUrl = deploymentUrl;
+    private readonly bool _allowInsecureDevelopmentTransport = allowInsecureDevelopmentTransport;
     private ClientWebSocket _webSocket = new ClientWebSocket();
     private readonly ConcurrentDictionary<string, SubscriptionInfo> _subscriptions = new ConcurrentDictionary<string, SubscriptionInfo>();
     private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
@@ -108,7 +111,10 @@ internal sealed class ConvexWebSocketClient(
             // Convex WebSocket endpoint format: wss://deployment.convex.cloud/api/{version}/sync
             // See: convex-js/src/browser/sync/client.ts:314
             const string ConvexProtocolVersion = "1.27.3"; // Match convex-js version from submodule
-            var wsUri = new Uri(_deploymentUrl.Replace("https://", "wss://").Replace("http://", "ws://") + $"/api/{ConvexProtocolVersion}/sync");
+            var wsUri = DeploymentUrlValidator.ToWebSocketUri(
+                _deploymentUrl,
+                $"api/{ConvexProtocolVersion}/sync",
+                _allowInsecureDevelopmentTransport);
 
             await _webSocket.ConnectAsync(wsUri, cancellationToken);
 
@@ -868,16 +874,12 @@ internal sealed class ConvexWebSocketClient(
             }
 
             _logger?.LogDebug("[WebSocket] Received message type: {MessageType}", messageType);
-            System.Diagnostics.Debug.WriteLine($"[WebSocket] Received message type: {messageType}");
-            System.Console.WriteLine($"[WebSocket] Received message type: {messageType}");
 
             switch (messageType)
             {
                 case "Transition":
                     // Handle Transition message with query modifications
                     _logger?.LogDebug("[WebSocket] Processing Transition message");
-                    System.Diagnostics.Debug.WriteLine("[WebSocket] Processing Transition message");
-                    System.Console.WriteLine("[WebSocket] Processing Transition message");
 
                     if (root.TryGetProperty("modifications", out var modificationsElement))
                     {
@@ -889,56 +891,40 @@ internal sealed class ConvexWebSocketClient(
                             // Log the modification structure to debug
                             var modJson = modification.GetRawText();
                             _logger?.LogDebug("[WebSocket] Modification {Index}: {Json}", modCount, modJson);
-                            System.Diagnostics.Debug.WriteLine($"[WebSocket] Modification {modCount}: {modJson}");
-                            System.Console.WriteLine($"[WebSocket] Modification {modCount}: {modJson}");
 
                             var hasQueryId = modification.TryGetProperty("queryId", out var queryIdElement);
                             var hasValue = modification.TryGetProperty("value", out var valueElement);
 
                             _logger?.LogDebug("[WebSocket] hasQueryId: {HasQueryId}, hasValue: {HasValue}", hasQueryId, hasValue);
-                            System.Diagnostics.Debug.WriteLine($"[WebSocket] hasQueryId: {hasQueryId}, hasValue: {hasValue}");
-                            System.Console.WriteLine($"[WebSocket] hasQueryId: {hasQueryId}, hasValue: {hasValue}");
 
                             if (hasQueryId && hasValue)
                             {
                                 var queryId = queryIdElement.GetInt32().ToString();
 
                                 _logger?.LogDebug("[WebSocket] Transition modification for queryId: {QueryId}", queryId);
-                                System.Diagnostics.Debug.WriteLine($"[WebSocket] Transition modification for queryId: {queryId}");
-                                System.Console.WriteLine($"[WebSocket] Transition modification for queryId: {queryId}");
 
                                 if (_subscriptions.TryGetValue(queryId, out var subscriptionInfo))
                                 {
                                     // Store the raw JSON string so LiveQuery can deserialize it to the correct type T
                                     var rawJson = valueElement.GetRawText();
                                     _logger?.LogDebug("[WebSocket] Writing to channel for queryId: {QueryId}", queryId);
-                                    System.Diagnostics.Debug.WriteLine($"[WebSocket] Writing to channel for queryId: {queryId}");
-                                    System.Console.WriteLine($"[WebSocket] Writing to channel for queryId: {queryId}");
                                     await subscriptionInfo.Channel.Writer.WriteAsync(rawJson);
                                 }
                                 else
                                 {
                                     _logger?.LogWarning("[WebSocket] No subscription found for queryId: {QueryId}", queryId);
-                                    System.Diagnostics.Debug.WriteLine($"[WebSocket] No subscription found for queryId: {queryId}");
-                                    System.Console.WriteLine($"[WebSocket] No subscription found for queryId: {queryId}");
                                 }
                             }
                             else
                             {
                                 _logger?.LogWarning("[WebSocket] Modification missing queryId or value");
-                                System.Diagnostics.Debug.WriteLine("[WebSocket] Modification missing queryId or value");
-                                System.Console.WriteLine("[WebSocket] Modification missing queryId or value");
                             }
                         }
                         _logger?.LogDebug("[WebSocket] Processed {ModCount} modifications", modCount);
-                        System.Diagnostics.Debug.WriteLine($"[WebSocket] Processed {modCount} modifications");
-                        System.Console.WriteLine($"[WebSocket] Processed {modCount} modifications");
                     }
                     else
                     {
                         _logger?.LogWarning("[WebSocket] Transition message missing modifications");
-                        System.Diagnostics.Debug.WriteLine("[WebSocket] Transition message missing modifications");
-                        System.Console.WriteLine("[WebSocket] Transition message missing modifications");
                     }
                     break;
 
@@ -953,8 +939,6 @@ internal sealed class ConvexWebSocketClient(
                         // Log error with helpful guidance
                         var guidance = GetAuthErrorGuidance(messageType, errorMessage);
                         _logger?.LogError("[WebSocket] {MessageType}: {Error}\n{Guidance}", messageType, errorMessage, guidance);
-                        System.Diagnostics.Debug.WriteLine($"[WebSocket] {messageType}: {errorMessage}\n{guidance}");
-                        System.Console.WriteLine($"[WebSocket] {messageType}: {errorMessage}\n{guidance}");
 
                         // Complete all subscription channels with error
                         foreach (var subscriptionInfo in _subscriptions.Values)

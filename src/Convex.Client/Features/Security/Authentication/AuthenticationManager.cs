@@ -173,7 +173,9 @@ internal sealed class AuthenticationManager(ILogger? logger = null, bool enableD
 
                     if (token != null)
                     {
-                        _authToken = token;
+                        // Provider-backed auth must remain fresh. Do not copy provider
+                        // tokens into _authToken, or future calls bypass refresh/revocation
+                        // logic owned by the provider.
                         UpdateAuthenticationState(AuthenticationState.Authenticated);
                         return token;
                     }

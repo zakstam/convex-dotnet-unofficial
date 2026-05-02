@@ -163,6 +163,49 @@ public class AuthenticationSliceTests
     }
 
     [Fact]
+    public async Task AuthenticationSlice_GetAuthTokenAsync_WithProvider_DoesNotCacheProviderToken()
+    {
+        // Arrange
+        var callCount = 0;
+        var mockProvider = new Mock<IAuthTokenProvider>();
+        mockProvider.Setup(p => p.GetTokenAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => $"provider-token-{Interlocked.Increment(ref callCount)}");
+
+        await _authenticationSlice.SetAuthTokenProviderAsync(mockProvider.Object);
+
+        // Act
+        var firstToken = await _authenticationSlice.GetAuthTokenAsync();
+        var secondToken = await _authenticationSlice.GetAuthTokenAsync();
+
+        // Assert
+        Assert.Equal("provider-token-1", firstToken);
+        Assert.Equal("provider-token-2", secondToken);
+        Assert.Null(_authenticationSlice.CurrentAuthToken);
+        mockProvider.Verify(p => p.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task AuthenticationSlice_ClearAuthAsync_WithProvider_RemovesProvider()
+    {
+        // Arrange
+        var mockProvider = new Mock<IAuthTokenProvider>();
+        mockProvider.Setup(p => p.GetTokenAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestToken);
+
+        await _authenticationSlice.SetAuthTokenProviderAsync(mockProvider.Object);
+        Assert.Equal(TestToken, await _authenticationSlice.GetAuthTokenAsync());
+
+        // Act
+        await _authenticationSlice.ClearAuthAsync();
+        var token = await _authenticationSlice.GetAuthTokenAsync();
+
+        // Assert
+        Assert.Null(token);
+        Assert.Equal(AuthenticationState.Unauthenticated, _authenticationSlice.AuthenticationState);
+        mockProvider.Verify(p => p.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task AuthenticationSlice_GetAuthHeadersAsync_WithToken_ReturnsHeaders()
     {
         // Arrange

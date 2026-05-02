@@ -27,40 +27,56 @@ internal sealed class ConvexClientFactory(
 
         var clientName = name ?? string.Empty;
 
-        return _clients.GetOrAdd(clientName, n =>
+        // The default IConvexClient registration is commonly used in request/auth scopes
+        // and its authentication state is mutable. Returning a cached default client can
+        // leak one request's token into another request. Named clients remain cached for
+        // callers that explicitly opt into shared long-lived clients through the factory.
+        if (string.IsNullOrEmpty(clientName))
         {
-            var options = _optionsMonitor.Get(n);
-            options.Validate();
+            return BuildClient(clientName);
+        }
 
-            var builder = new ConvexClientBuilder()
-                .UseDeployment(options.DeploymentUrl!);
+        return _clients.GetOrAdd(clientName, BuildClient);
+    }
 
-            // Configure logging if enabled
-            if (options.EnableLogging && _loggerFactory != null)
-            {
-                var logger = _loggerFactory.CreateLogger<ConvexClient>();
-                _ = builder.WithLogging(logger);
-            }
+    private IConvexClient BuildClient(string name)
+    {
+        var options = _optionsMonitor.Get(name);
+        options.Validate();
 
-            // Configure debug logging if enabled
-            if (options.EnableDebugLogging)
-            {
-                _ = builder.EnableDebugLogging(true);
-            }
+        var builder = new ConvexClientBuilder()
+            .UseDeployment(options.DeploymentUrl!);
 
-            // Configure auto-reconnect if enabled
-            if (options.EnableAutoReconnect)
-            {
-                _ = builder.WithAutoReconnect(
-                    maxAttempts: options.MaxReconnectAttempts,
-                    delayMs: options.ReconnectDelayMs);
-            }
+        // Configure logging if enabled
+        if (options.EnableLogging && _loggerFactory != null)
+        {
+            var logger = _loggerFactory.CreateLogger<ConvexClient>();
+            _ = builder.WithLogging(logger);
+        }
 
-            // Apply custom builder configuration if provided
-            options.ConfigureBuilder?.Invoke(builder);
+        // Configure debug logging if enabled
+        if (options.EnableDebugLogging)
+        {
+            _ = builder.EnableDebugLogging(true);
+        }
 
-            return builder.Build();
-        });
+        if (options.AllowInsecureDevelopmentTransport)
+        {
+            _ = builder.AllowInsecureDevelopmentTransport();
+        }
+
+        // Configure auto-reconnect if enabled
+        if (options.EnableAutoReconnect)
+        {
+            _ = builder.WithAutoReconnect(
+                maxAttempts: options.MaxReconnectAttempts,
+                delayMs: options.ReconnectDelayMs);
+        }
+
+        // Apply custom builder configuration if provided
+        options.ConfigureBuilder?.Invoke(builder);
+
+        return builder.Build();
     }
 
     public void Dispose()

@@ -21,16 +21,14 @@ public class DefaultHttpClientProvider : IHttpClientProvider
     /// <param name="deploymentUrl">The Convex deployment URL.</param>
     /// <param name="logger">Optional logger for logging HTTP operations.</param>
     /// <param name="enableDebugLogging">Whether debug logging is enabled.</param>
+    /// <param name="allowInsecureDevelopmentTransport">Whether insecure loopback or development transport is allowed.</param>
     /// <exception cref="ArgumentNullException">Thrown when httpClient or deploymentUrl is null.</exception>
     /// <exception cref="ArgumentException">Thrown when deploymentUrl is empty or whitespace.</exception>
-    public DefaultHttpClientProvider(HttpClient httpClient, string deploymentUrl, ILogger? logger = null, bool enableDebugLogging = false)
+    public DefaultHttpClientProvider(HttpClient httpClient, string deploymentUrl, ILogger? logger = null, bool enableDebugLogging = false, bool allowInsecureDevelopmentTransport = false)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
 
-        if (string.IsNullOrWhiteSpace(deploymentUrl))
-        {
-            throw new ArgumentException("Deployment URL cannot be null or whitespace.", nameof(deploymentUrl));
-        }
+        DeploymentUrlValidator.Validate(deploymentUrl, allowInsecureDevelopmentTransport);
 
         DeploymentUrl = deploymentUrl;
         _logger = logger;

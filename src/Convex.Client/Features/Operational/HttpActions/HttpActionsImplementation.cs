@@ -41,8 +41,8 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            var queryParamsStr = queryParameters != null ? string.Join(", ", queryParameters.Select(kvp => $"{kvp.Key}={kvp.Value}")) : "none";
-            var headersStr = headers != null ? string.Join(", ", headers.Select(kvp => $"{kvp.Key}={kvp.Value}")) : "none";
+            var queryParamsStr = queryParameters != null ? SensitiveDataRedactor.Redact(string.Join(", ", queryParameters.Select(kvp => $"{kvp.Key}={kvp.Value}"))) : "none";
+            var headersStr = headers != null ? string.Join(", ", headers.Select(kvp => $"{kvp.Key}={SensitiveDataRedactor.RedactHeader(kvp.Key, kvp.Value)}")) : "none";
             _logger!.LogDebug("[HttpAction] Starting HTTP action call: Method: {Method}, ActionPath: {ActionPath}, ContentType: {ContentType}, QueryParameters: {QueryParameters}, Headers: {Headers}",
                 method, actionPath, contentType, queryParamsStr, headersStr);
         }
@@ -76,7 +76,7 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var responseHeadersStr = string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"));
+                var responseHeadersStr = SensitiveDataRedactor.RedactHeaders(response.Headers);
                 _logger!.LogDebug("[HttpAction] HTTP action response received: Method: {Method}, ActionPath: {ActionPath}, StatusCode: {StatusCode}, Headers: {Headers}, Duration: {DurationMs}ms",
                     method, actionPath, response.StatusCode, responseHeadersStr, stopwatch.Elapsed.TotalMilliseconds);
             }
@@ -85,7 +85,7 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var bodyStr = result.RawBody?.Length > 1000 ? result.RawBody[..1000] + "..." : result.RawBody ?? "null";
+                var bodyStr = SensitiveDataRedactor.Redact(result.RawBody?.Length > 1000 ? result.RawBody[..1000] + "..." : result.RawBody ?? "null");
                 _logger!.LogDebug("[HttpAction] HTTP action call completed: Method: {Method}, ActionPath: {ActionPath}, StatusCode: {StatusCode}, ResponseBody: {ResponseBody}, Duration: {DurationMs}ms",
                     method, actionPath, result.StatusCode, bodyStr, stopwatch.Elapsed.TotalMilliseconds);
             }
@@ -136,9 +136,9 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            var queryParamsStr = queryParameters != null ? string.Join(", ", queryParameters.Select(kvp => $"{kvp.Key}={kvp.Value}")) : "none";
-            var headersStr = headers != null ? string.Join(", ", headers.Select(kvp => $"{kvp.Key}={kvp.Value}")) : "none";
-            var bodyStr = bodyContent.Length > 1000 ? bodyContent[..1000] + "..." : bodyContent;
+            var queryParamsStr = queryParameters != null ? SensitiveDataRedactor.Redact(string.Join(", ", queryParameters.Select(kvp => $"{kvp.Key}={kvp.Value}"))) : "none";
+            var headersStr = headers != null ? string.Join(", ", headers.Select(kvp => $"{kvp.Key}={SensitiveDataRedactor.RedactHeader(kvp.Key, kvp.Value)}")) : "none";
+            var bodyStr = SensitiveDataRedactor.Redact(bodyContent.Length > 1000 ? bodyContent[..1000] + "..." : bodyContent);
             _logger!.LogDebug("[HttpAction] Starting HTTP action call with body: Method: {Method}, ActionPath: {ActionPath}, ContentType: {ContentType}, QueryParameters: {QueryParameters}, Headers: {Headers}, Body: {Body}",
                 method, actionPath, contentType, queryParamsStr, headersStr, bodyStr);
         }
@@ -178,7 +178,7 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var responseHeadersStr = string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"));
+                var responseHeadersStr = SensitiveDataRedactor.RedactHeaders(response.Headers);
                 _logger!.LogDebug("[HttpAction] HTTP action response received: Method: {Method}, ActionPath: {ActionPath}, StatusCode: {StatusCode}, Headers: {Headers}, Duration: {DurationMs}ms",
                     method, actionPath, response.StatusCode, responseHeadersStr, stopwatch.Elapsed.TotalMilliseconds);
             }
@@ -187,7 +187,7 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var responseBodyStr = result.RawBody?.Length > 1000 ? result.RawBody[..1000] + "..." : result.RawBody ?? "null";
+                var responseBodyStr = SensitiveDataRedactor.Redact(result.RawBody?.Length > 1000 ? result.RawBody[..1000] + "..." : result.RawBody ?? "null");
                 _logger!.LogDebug("[HttpAction] HTTP action call completed: Method: {Method}, ActionPath: {ActionPath}, StatusCode: {StatusCode}, ResponseBody: {ResponseBody}, Duration: {DurationMs}ms",
                     method, actionPath, result.StatusCode, responseBodyStr, stopwatch.Elapsed.TotalMilliseconds);
             }
@@ -234,8 +234,8 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var additionalFieldsStr = additionalFields != null ? string.Join(", ", additionalFields.Select(kvp => $"{kvp.Key}={kvp.Value}")) : "none";
-                var headersStr = headers != null ? string.Join(", ", headers.Select(kvp => $"{kvp.Key}={kvp.Value}")) : "none";
+                var additionalFieldsStr = additionalFields != null ? SensitiveDataRedactor.Redact(string.Join(", ", additionalFields.Select(kvp => $"{kvp.Key}={kvp.Value}"))) : "none";
+                var headersStr = headers != null ? string.Join(", ", headers.Select(kvp => $"{kvp.Key}={SensitiveDataRedactor.RedactHeader(kvp.Key, kvp.Value)}")) : "none";
                 _logger!.LogDebug("[HttpAction] Starting file upload: ActionPath: {ActionPath}, FileName: {FileName}, ContentType: {ContentType}, Size: {Size}, AdditionalFields: {AdditionalFields}, Headers: {Headers}",
                     actionPath, fileName, contentType, fileSize?.ToString() ?? "unknown", additionalFieldsStr, headersStr);
             }
@@ -281,7 +281,7 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var responseHeadersStr = string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"));
+                var responseHeadersStr = SensitiveDataRedactor.RedactHeaders(response.Headers);
                 _logger!.LogDebug("[HttpAction] File upload response received: ActionPath: {ActionPath}, StatusCode: {StatusCode}, Headers: {Headers}, Duration: {DurationMs}ms",
                     actionPath, response.StatusCode, responseHeadersStr, stopwatch.Elapsed.TotalMilliseconds);
             }
@@ -290,7 +290,7 @@ internal class HttpActionsImplementation(IHttpClientProvider httpProvider, IConv
 
             if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
             {
-                var responseBodyStr = result.RawBody?.Length > 1000 ? result.RawBody[..1000] + "..." : result.RawBody ?? "null";
+                var responseBodyStr = SensitiveDataRedactor.Redact(result.RawBody?.Length > 1000 ? result.RawBody[..1000] + "..." : result.RawBody ?? "null");
                 _logger!.LogDebug("[HttpAction] File upload completed: ActionPath: {ActionPath}, StatusCode: {StatusCode}, ResponseBody: {ResponseBody}, Duration: {DurationMs}ms",
                     actionPath, result.StatusCode, responseBodyStr, stopwatch.Elapsed.TotalMilliseconds);
             }

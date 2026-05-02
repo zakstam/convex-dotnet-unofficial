@@ -288,7 +288,7 @@ internal sealed class MutationBuilder<TResult>(
 
         if (ConvexLoggerExtensions.IsDebugLoggingEnabled(_logger, _enableDebugLogging))
         {
-            var argsJson = _args != null ? _serializer.Serialize(_args) : "null";
+            var argsJson = SensitiveDataRedactor.Redact(_args != null ? _serializer.Serialize(_args) : "null");
             _logger!.LogDebug("[Mutation] Starting execution: Function={FunctionName}, Args={Args}, HasOptimistic={HasOptimistic}, HasRetry={HasRetry}, SkipQueue={SkipQueue}, Timeout={Timeout}",
                 _functionName, argsJson, _applyOptimistic != null, _retryPolicy != null, _skipQueue, _timeout);
         }

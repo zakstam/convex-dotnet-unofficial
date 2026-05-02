@@ -2,19 +2,13 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net8.0;net9.0</TargetFrameworks>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CA1513;CA2016;CA1716;CA1000;CVX001;CVX002</NoWarn>
-    <Deterministic>true</Deterministic>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <BasePackageId>Convex.Client</BasePackageId>
     <Product>Convex .NET Client</Product>
     <Description>Modern .NET client for Convex - the reactive backend-as-a-service. Provides real-time synchronization, authentication, file storage, vector search, and more. This is the main package that includes all Convex client features.</Description>
     <PackageTags>convex;database;realtime;backend-as-a-service;nosql;reactive;websocket;authentication;file-storage;vector-search;baas;netstandard21;net8;net9;unity</PackageTags>
-    <PackageReleaseNotes>Initial release (0.0.1) of Convex .NET SDK with vertical slice architecture, real-time subscriptions, authentication, file storage, and vector search. See CHANGELOG.md for full details.</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- Expose internal types to test projects -->

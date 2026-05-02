@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Convex.BetterAuth.Models;
+using Convex.Client.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Convex.BetterAuth;
@@ -382,7 +383,7 @@ public class BetterAuthService : IBetterAuthService, IDisposable
 #else
         var errorContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #endif
-        _logger?.LogWarning("{Operation} failed: {StatusCode} - {Error}", operationName, response.StatusCode, errorContent);
+        _logger?.LogWarning("{Operation} failed: {StatusCode} - {Error}", operationName, response.StatusCode, SensitiveDataRedactor.Redact(errorContent));
         return AuthResult.Failure(ParseErrorMessage(errorContent) ?? defaultErrorMessage);
     }
 
@@ -432,7 +433,7 @@ public class BetterAuthService : IBetterAuthService, IDisposable
         }
         catch (JsonException ex)
         {
-            _logger?.LogDebug(ex, "Failed to parse error message from response: {Content}", content);
+            _logger?.LogDebug(ex, "Failed to parse error message from response: {Content}", SensitiveDataRedactor.Redact(content));
         }
         return null;
     }
@@ -450,7 +451,7 @@ public class BetterAuthService : IBetterAuthService, IDisposable
         }
 
         var cookieHeader = string.Join(", ", values);
-        _logger?.LogDebug("Set-Better-Auth-Cookie header: {Header}", cookieHeader);
+        _logger?.LogDebug("Set-Better-Auth-Cookie header: {Header}", SensitiveDataRedactor.RedactHeader("Set-Better-Auth-Cookie", cookieHeader));
 
         // Parse the cookie header to extract all better-auth session cookies
         // Cookie names can have different prefixes depending on environment:
@@ -474,14 +475,14 @@ public class BetterAuthService : IBetterAuthService, IDisposable
                     ? trimmedCookie.Substring(0, endOfValue)
                     : trimmedCookie;
                 cookieParts.Add(cookieValue);
-                _logger?.LogDebug("Found session cookie: {Cookie}", cookieValue);
+                _logger?.LogDebug("Found session cookie: {Cookie}", SensitiveDataRedactor.Redact(cookieValue));
             }
         }
 
         if (cookieParts.Count > 0)
         {
             var result = string.Join("; ", cookieParts);
-            _logger?.LogDebug("Extracted session cookies: {Cookies}", result);
+            _logger?.LogDebug("Extracted session cookies: {Cookies}", SensitiveDataRedactor.Redact(result));
             return result;
         }
 

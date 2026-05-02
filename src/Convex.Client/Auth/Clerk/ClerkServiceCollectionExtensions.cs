@@ -197,6 +197,8 @@ public static class ClerkServiceCollectionExtensions
         _ = services.AddScoped<IConvexClient>(sp =>
         {
             var factory = sp.GetRequiredService<IConvexClientFactory>();
+            // Default factory resolution returns a fresh client so scoped auth state
+            // cannot leak between users or requests.
             var client = factory.CreateClient();
             var tokenProvider = sp.GetRequiredService<ClerkAuthTokenProvider>();
 

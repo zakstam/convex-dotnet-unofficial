@@ -313,6 +313,10 @@ public sealed class ConvexClient : IConvexClient
             throw new ArgumentException("Deployment URL cannot be null or empty.", nameof(deploymentUrl));
         }
 
+        Infrastructure.Http.DeploymentUrlValidator.Validate(
+            deploymentUrl,
+            options?.AllowInsecureDevelopmentTransport ?? false);
+
         options?.Validate();
 
         DeploymentUrl = deploymentUrl;
@@ -341,7 +345,12 @@ public sealed class ConvexClient : IConvexClient
         _httpClient.Timeout = _timeout;
 
         // Initialize Shared infrastructure for slices
-        _httpProvider = new DefaultHttpClientProvider(httpClient, deploymentUrl, logger, enableDebugLogging);
+        _httpProvider = new DefaultHttpClientProvider(
+            httpClient,
+            deploymentUrl,
+            logger,
+            enableDebugLogging,
+            options?.AllowInsecureDevelopmentTransport ?? false);
         _serializer = new DefaultConvexSerializer();
         _resilience = new Features.Observability.Resilience.ResilienceSlice(logger, enableDebugLogging);
         _queries = new QueriesSlice(_httpProvider, _serializer, logger, enableDebugLogging);
@@ -368,7 +377,12 @@ public sealed class ConvexClient : IConvexClient
         var reconnectionPolicy = options?.ReconnectionPolicy ?? ReconnectionPolicy.Default();
         _webSocketClient = new Lazy<ConvexWebSocketClient>(() =>
         {
-            var client = new ConvexWebSocketClient(deploymentUrl, _syncContext, reconnectionPolicy, logger);
+            var client = new ConvexWebSocketClient(
+                deploymentUrl,
+                _syncContext,
+                reconnectionPolicy,
+                logger,
+                options?.AllowInsecureDevelopmentTransport ?? false);
 
             // Wire up authentication to WebSocket client (slice coordination through facade)
             client.SetAuthTokenProvider(ct => _authentication.GetAuthTokenAsync(ct));
