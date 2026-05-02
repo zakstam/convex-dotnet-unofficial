@@ -5,6 +5,13 @@ All notable changes to the Convex .NET SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.5-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.4-beta...v5.2.5-beta) (2026-05-02)
+
+
+### Bug Fixes
+
+* harden auth handling and secure storage examples ([4b4b835](https://github.com/zakstam/convex-dotnet-unofficial/commit/4b4b835ab0eb6b315f43975d0294cede135d2e80))
+
 ## [5.2.4-beta](https://github.com/zakstam/convex-dotnet-unofficial/compare/v5.2.3-beta...v5.2.4-beta) (2026-02-17)
 
 
