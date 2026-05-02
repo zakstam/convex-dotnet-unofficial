@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 
@@ -59,104 +60,6 @@ public class ConvexHealthCheck(
     }
 }
 
-#if FALSE // TODO: Re-implement ConvexRealtimeHealthCheck for V2 API
-/// <summary>
-/// Health check for Convex real-time client connectivity and WebSocket status.
-/// </summary>
-public class ConvexRealtimeHealthCheck : IHealthCheck
-{
-    private readonly IConvexRealtimeClient _client;
-    private readonly ILogger<ConvexRealtimeHealthCheck> _logger;
-    private readonly ConvexRealtimeHealthCheckOptions _options;
-
-    public ConvexRealtimeHealthCheck(
-        IConvexRealtimeClient client,
-        ILogger<ConvexRealtimeHealthCheck> logger,
-        ConvexRealtimeHealthCheckOptions? options = null)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? new ConvexRealtimeHealthCheckOptions();
-    }
-
-    public async Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context,
-        CancellationToken cancellationToken = default)
-    {
-        // Ensure truly async behavior
-        await Task.CompletedTask;
-
-        try
-        {
-            var state = _client.ConnectionState;
-            var metrics = _client.Metrics.GetSnapshot();
-
-            // Build health check data
-            var data = new Dictionary<string, object>
-            {
-                { "connectionState", state.ToString() },
-                { "totalRequests", metrics.TotalRequests },
-                { "inflightRequests", metrics.InflightRequests },
-                { "successRate", metrics.SuccessRate }
-            };
-
-            // Add optional metric data
-            if (_options.IncludeDetailedMetrics)
-            {
-                data["connectionCount"] = metrics.ConnectionCount;
-                data["reconnectionAttempts"] = metrics.ReconnectionAttempts;
-                data["reconnectionSuccessRate"] = metrics.ReconnectionSuccessRate;
-                data["totalConnectedTime"] = metrics.TotalConnectedTime.TotalSeconds;
-
-                if (metrics.CurrentConnectionDuration.HasValue)
-                    data["currentConnectionDuration"] = metrics.CurrentConnectionDuration.Value.TotalSeconds;
-
-                if (metrics.AverageRequestDuration.HasValue)
-                    data["avgLatencyMs"] = metrics.AverageRequestDuration.Value.TotalMilliseconds;
-
-                if (metrics.P95RequestDuration.HasValue)
-                    data["p95LatencyMs"] = metrics.P95RequestDuration.Value.TotalMilliseconds;
-            }
-
-            // Determine health status
-            if (state == RealtimeCommunication.Contracts.ConnectionState.Connected)
-            {
-                // Check metrics thresholds
-                if (metrics.SuccessRate < _options.MinSuccessRate)
-                {
-                    return HealthCheckResult.Degraded(
-                        $"Convex success rate ({metrics.SuccessRate:F1}%) below threshold ({_options.MinSuccessRate}%)",
-                        data: data);
-                }
-
-                if (metrics.P95RequestDuration.HasValue &&
-                    metrics.P95RequestDuration.Value > _options.MaxP95Latency)
-                {
-                    return HealthCheckResult.Degraded(
-                        $"Convex P95 latency ({metrics.P95RequestDuration.Value.TotalMilliseconds:F0}ms) exceeds threshold ({_options.MaxP95Latency.TotalMilliseconds}ms)",
-                        data: data);
-                }
-
-                return HealthCheckResult.Healthy("Convex real-time client is connected and healthy", data);
-            }
-            else if (state == RealtimeCommunication.Contracts.ConnectionState.Connecting ||
-                     state == RealtimeCommunication.Contracts.ConnectionState.Reconnecting)
-            {
-                return HealthCheckResult.Degraded($"Convex real-time client is {state.ToString().ToLower()}", data: data);
-            }
-            else
-            {
-                return HealthCheckResult.Unhealthy($"Convex real-time client is {state.ToString().ToLower()}", data: data);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Convex real-time health check failed");
-            return HealthCheckResult.Unhealthy("Convex real-time client health check failed", ex);
-        }
-    }
-}
-#endif
 
 /// <summary>
 /// Options for Convex HTTP client health check.
@@ -175,30 +78,8 @@ public class ConvexHealthCheckOptions
     public object? HealthCheckArgs { get; set; }
 }
 
-#if FALSE // TODO: Re-implement ConvexRealtimeHealthCheckOptions for V2 API
 /// <summary>
-/// Options for Convex real-time client health check.
-/// </summary>
-public class ConvexRealtimeHealthCheckOptions
-{
-    /// <summary>
-    /// Gets or sets a value indicating whether include detailed metrics.
-    /// </summary>
-    public bool IncludeDetailedMetrics { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the min success rate.
-    /// </summary>
-    public double MinSuccessRate { get; set; } = 95.0;
-
-    /// <summary>
-    /// Gets or sets the from seconds.
-    /// </summary>
-    public TimeSpan MaxP95Latency { get; set; } = TimeSpan.FromSeconds(5);
-}
-
-/// <summary>
-/// Extension methods for adding Convex health checks.
+/// Extension methods for registering Convex health checks.
 /// </summary>
 public static class ConvexHealthCheckExtensions
 {
@@ -206,52 +87,29 @@ public static class ConvexHealthCheckExtensions
     /// Adds a health check for the Convex HTTP client.
     /// </summary>
     /// <param name="builder">The health checks builder.</param>
-    /// <param name="name">The health check name (default: "convex").</param>
+    /// <param name="name">The health check name.</param>
     /// <param name="options">Optional health check configuration.</param>
-    /// <param name="failureStatus">The health status to report on failure (default: Unhealthy).</param>
+    /// <param name="failureStatus">The health status to report on failure.</param>
     /// <param name="tags">Optional tags for the health check.</param>
     /// <returns>The health checks builder for chaining.</returns>
-    public static IHealthChecksBuilder AddConvexCheck(
+    public static IHealthChecksBuilder AddConvexHealthCheck(
         this IHealthChecksBuilder builder,
         string name = "convex",
         ConvexHealthCheckOptions? options = null,
         HealthStatus? failureStatus = null,
         IEnumerable<string>? tags = null)
     {
-        return builder.Add(new HealthCheckRegistration(
-            name,
-            sp => new ConvexHealthCheck(
-                sp.GetRequiredService<IConvexClient>(),
-                sp.GetRequiredService<ILogger<ConvexHealthCheck>>(),
-                options),
-            failureStatus,
-            tags));
-    }
+        if (builder == null)
+            throw new ArgumentNullException(nameof(builder));
 
-    /// <summary>
-    /// Adds a health check for the Convex real-time client.
-    /// </summary>
-    /// <param name="builder">The health checks builder.</param>
-    /// <param name="name">The health check name (default: "convex-realtime").</param>
-    /// <param name="options">Optional health check configuration.</param>
-    /// <param name="failureStatus">The health status to report on failure (default: Unhealthy).</param>
-    /// <param name="tags">Optional tags for the health check.</param>
-    /// <returns>The health checks builder for chaining.</returns>
-    public static IHealthChecksBuilder AddConvexRealtimeCheck(
-        this IHealthChecksBuilder builder,
-        string name = "convex-realtime",
-        ConvexRealtimeHealthCheckOptions? options = null,
-        HealthStatus? failureStatus = null,
-        IEnumerable<string>? tags = null)
-    {
         return builder.Add(new HealthCheckRegistration(
             name,
-            sp => new ConvexRealtimeHealthCheck(
-                sp.GetRequiredService<IConvexRealtimeClient>(),
-                sp.GetRequiredService<ILogger<ConvexRealtimeHealthCheck>>(),
+            serviceProvider => new ConvexHealthCheck(
+                serviceProvider.GetRequiredService<IConvexClient>(),
+                serviceProvider.GetRequiredService<ILogger<ConvexHealthCheck>>(),
                 options),
             failureStatus,
             tags));
     }
 }
-#endif
+

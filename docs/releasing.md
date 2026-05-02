@@ -124,7 +124,7 @@ When you merge commits to `main`, release-please:
 
 The Release PR includes:
 
-- **Version bump** in `msbuild/Directory.Build.props`
+- **Version bump** in `Directory.Build.props`
 - **CHANGELOG.md update** with categorized changes
 - **Commit history** since last release
 
@@ -163,7 +163,7 @@ When you merge the Release PR:
 ### Version Source of Truth
 
 - **Git Tags**: Created automatically by release-please
-- **Source Files**: `msbuild/Directory.Build.props` is updated automatically by release-please
+- **Source Files**: `Directory.Build.props` is updated automatically by release-please
 - **Manual Override**: Not recommended (breaks automation)
 
 ### Version Format
@@ -219,7 +219,7 @@ Configures release-please behavior:
 
 - Release type: `simple`
 - Changelog sections: Features, fixes, performance, docs, etc.
-- Extra files to update: `msbuild/Directory.Build.props`
+- Extra files to update: `Directory.Build.props`
 - PR title pattern: `chore: release v${version}`
 
 ### Release-Please Manifest
@@ -303,7 +303,7 @@ Release workflows require:
 
 3. **Manual override (not recommended)**
    - Edit the Release PR to change version
-   - Update both `msbuild/Directory.Build.props` and `CHANGELOG.md`
+   - Update both `Directory.Build.props` and `CHANGELOG.md`
    - **Note:** This breaks automatic versioning
 
 ### CHANGELOG Missing Commits
@@ -472,7 +472,7 @@ If you were using the old manual release process:
 If you absolutely must override the version:
 
 1. Edit the Release PR
-2. Update version in `msbuild/Directory.Build.props`
+2. Update version in `Directory.Build.props`
 3. Update version in `CHANGELOG.md`
 4. Update version in `.github/.release-please-manifest.json`
 5. Commit and merge

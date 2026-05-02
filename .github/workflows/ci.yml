@@ -89,7 +89,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
-          path: ./nupkg/*.nupkg
+          path: |
+            ./nupkg/*.nupkg
+            ./nupkg/*.snupkg
           retention-days: 7
 
   publish-nuget:
@@ -103,6 +105,11 @@ jobs:
         with:
           name: nuget-packages
           path: ./nupkg
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Publish to NuGet.org
         env:

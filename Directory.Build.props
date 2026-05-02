@@ -12,8 +12,12 @@
     <PackageProjectUrl>https://github.com/zakstam/convex-dotnet-unofficial</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zakstam/convex-dotnet-unofficial</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <!-- Version management is handled in msbuild/Directory.Build.props -->
-    <!-- PackageVersion will be set from Version property defined there -->
+
+    <!-- Centralized version management for NuGet packages -->
+    <!-- Version is automatically managed by release-please based on conventional commits -->
+    <!-- CI/CD can override via MSBuild property: -p:Version=1.2.3 -p:PackageVersion=1.2.3 -->
+    <Version Condition="'$(Version)' == ''">5.0.0-beta</Version>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
 
     <!-- Source Link and Symbols -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

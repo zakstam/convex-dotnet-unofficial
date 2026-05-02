@@ -4,17 +4,19 @@ Developer automation scripts for the Convex .NET Client project.
 
 ## Available Scripts
 
-### Build Scripts
+### Build scripts
 
 #### `build.ps1` / `build.sh`
-Build the project or specific components.
+
+Build the full solution or a specific project.
 
 **PowerShell:**
+
 ```powershell
 # Build entire solution
 .\scripts\build.ps1
 
-# Build specific project
+# Build a specific project
 .\scripts\build.ps1 -Target Convex.Client
 
 # Release build with clean
@@ -22,151 +24,73 @@ Build the project or specific components.
 ```
 
 **Bash:**
+
 ```bash
 # Build entire solution
 ./scripts/build.sh
 
-# Build specific project
+# Build a specific project
 ./scripts/build.sh Convex.Client Release
 
 # Clean build
 ./scripts/build.sh all Debug clean
 ```
 
-### Test Scripts
+## Testing
 
-#### `test.ps1` / `test.sh`
-Run tests with filtering and coverage options.
+There are no test wrapper scripts in this folder. Use `dotnet test` directly against the solution or the relevant test project.
 
-**PowerShell:**
-```powershell
-# Run all tests
-.\scripts\test.ps1
-
-# Run specific category
-.\scripts\test.ps1 -Category Unit
-.\scripts\test.ps1 -Category Integration
-.\scripts\test.ps1 -Category Compatibility
-
-# Run with coverage
-.\scripts\test.ps1 -Category Unit -Coverage
-
-# Custom filter
-.\scripts\test.ps1 -Filter "FullyQualifiedName~Authentication"
-```
-
-**Bash:**
 ```bash
-# Run all tests
-./scripts/test.sh
+# Run all tests in the solution
+dotnet test convex-dotnet-client.sln
 
-# Run specific category
-./scripts/test.sh Unit
-./scripts/test.sh Integration
+# Run all non-integration tests, matching CI
+dotnet test convex-dotnet-client.sln --filter "Category!=Integration"
 
-# Run with coverage
-./scripts/test.sh Unit false true
+# Run integration tests only
+dotnet test tests/Convex.Client.Tests.Integration/Convex.Client.Tests.Integration.csproj --filter "Category=Integration"
+
+# Run architecture tests only
+dotnet test tests/Convex.Client.ArchitectureTests/Convex.Client.ArchitectureTests.csproj --filter "TestCategory=Architecture"
+
+# Run unit tests marked as edge cases
+dotnet test tests/Convex.Client.Tests.Unit/Convex.Client.Tests.Unit.csproj --filter "Category=EdgeCase"
 ```
 
-### Benchmark Scripts
+## Test category reference
 
-#### `benchmark.ps1` / `benchmark.sh`
-Run performance benchmarks.
+| Category | Where it appears | Description |
+| --- | --- | --- |
+| `Integration` | xUnit integration tests | Tests that require configured Convex integration settings |
+| `EdgeCase` | xUnit unit tests | Focused unit coverage for boundary and edge-case behavior |
+| `Bug` | xUnit unit tests | Regression tests for known bugs |
+| `Architecture` | MSTest architecture tests | Vertical-slice and dependency-boundary checks |
+| `FeatureIsolation` | MSTest architecture tests | Feature-to-feature dependency checks |
+| `InfrastructureIsolation` | MSTest architecture tests | Infrastructure dependency checks |
+| `FeatureStructure` | MSTest architecture tests | Feature folder and structure checks |
+| `NamingConventions` | MSTest architecture tests | Naming convention checks |
+| `LegacyCode` | MSTest architecture tests | Legacy-code boundary checks |
+| `Documentation` | MSTest architecture tests | Documentation coverage checks |
 
-**PowerShell:**
-```powershell
-# Run all benchmarks
-.\scripts\benchmark.ps1
+## Testing utilities
 
-# Filter benchmarks
-.\scripts\benchmark.ps1 -Filter "*Query*"
+The `scripts/testing/` subdirectory contains standalone C# helpers for serialization and oracle debugging:
 
-# Export results
-.\scripts\benchmark.ps1 -Export html,markdown
-```
+- `debug-oracle.cs`
+- `test-serialization.cs`
+- `test-serialization-compatibility.cs`
 
-**Bash:**
-```bash
-# Run all benchmarks
-./scripts/benchmark.sh
-
-# Filter benchmarks
-./scripts/benchmark.sh "*Query*"
-```
-
-### Oracle Scripts
-
-#### `oracle-start.ps1` / `oracle-start.sh`
-Start the TypeScript Test Oracle for compatibility testing.
-
-**PowerShell:**
-```powershell
-# Start oracle (default port 3000)
-.\scripts\oracle-start.ps1
-
-# Start on custom port
-.\scripts\oracle-start.ps1 -Port 3001
-
-# Install dependencies and start
-.\scripts\oracle-start.ps1 -Install
-```
-
-**Bash:**
-```bash
-# Start oracle (default port 3000)
-./scripts/oracle-start.sh
-
-# Start on custom port
-./scripts/oracle-start.sh 3001
-
-# Install dependencies first
-./scripts/oracle-start.sh 3000 true
-```
-
-## Test Category Reference
-
-| Category | Description |
-|----------|-------------|
-| `Unit` | Fast, isolated unit tests |
-| `Integration` | Integration tests with dependencies |
-| `Acceptance` | End-to-end acceptance tests |
-| `Performance` | Performance and load tests |
-| `Compatibility` | TypeScript protocol compatibility tests |
-| `LiveIntegration` | Tests against live Convex backend |
-
-## Testing Utilities
-
-The `testing/` subdirectory contains additional test utilities:
-- `debug-oracle.cs` - Oracle debugging helpers
-- `test-serialization.cs` - Serialization testing utilities
-- `test-serialization-compatibility.cs` - Compatibility test helpers
+The Convex test backend used by integration tests lives under `tests/convex-test-backend/`.
 
 ## Tips
 
-- **Quick testing workflow:**
-  ```powershell
-  .\scripts\build.ps1
-  .\scripts\test.ps1 -Category Unit
+- **Quick local check:**
+
+  ```bash
+  dotnet build convex-dotnet-client.sln
+  dotnet test convex-dotnet-client.sln --filter "Category!=Integration"
   ```
 
-- **Pre-commit checks:**
-  ```powershell
-  .\scripts\build.ps1 -Configuration Release
-  .\scripts\test.ps1 -Category Unit
-  .\scripts\test.ps1 -Category Integration
-  ```
+- **Integration test setup:**
 
-- **Compatibility testing:**
-  ```powershell
-  # Terminal 1: Start oracle
-  .\scripts\oracle-start.ps1
-
-  # Terminal 2: Run compatibility tests
-  .\scripts\test.ps1 -Category Compatibility
-  ```
-
-- **Performance testing:**
-  ```powershell
-  .\scripts\benchmark.ps1 -Export html
-  # Open benchmarks/Convex.Client.Benchmarks/BenchmarkDotNet.Artifacts/results/index.html
-  ```
+  Keep local credentials in ignored development settings files. The tracked integration-test `appsettings.json` is only a placeholder/config baseline.

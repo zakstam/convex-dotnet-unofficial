@@ -72,7 +72,7 @@
       "extra-files": [
         {
           "type": "generic",
-          "path": "msbuild/Directory.Build.props",
+          "path": "Directory.Build.props",
           "glob": false
         }
       ]

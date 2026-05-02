@@ -28,7 +28,7 @@
     <ProjectReference Include="..\Convex.Client\Convex.Client.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(PackForGitHub)' == 'true'">
-    <PackageReference Include="$(GitHubOwner).Convex.Client" Version="1.0.0" />
+    <PackageReference Include="$(GitHubOwner).Convex.Client" VersionOverride="$(PackageVersion)" />
   </ItemGroup>
 
   <!-- Embedded Resources -->

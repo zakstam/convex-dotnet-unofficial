@@ -7,15 +7,10 @@
     <LangVersion>latest</LangVersion>
 
     <!-- Package metadata -->
-    <PackageId>Convex.BetterAuth</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>Convex .NET Contributors</Authors>
+    <BasePackageId>Convex.BetterAuth</BasePackageId>
+    <Product>Convex .NET Client - Better Auth Integration</Product>
     <Description>Better Auth integration for Convex .NET client. Provides out-of-box authentication support with email/password sign-in, sign-up, and session management. Supports all platforms including Unity and Godot.</Description>
     <PackageTags>convex;better-auth;authentication;blazor;dotnet;unity;godot;netstandard21</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/AdisonCavani/convex-dotnet</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
 
     <!-- Enable XML documentation -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
